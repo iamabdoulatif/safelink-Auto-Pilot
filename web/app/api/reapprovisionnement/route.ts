@@ -262,12 +262,13 @@ export async function POST(req: Request) {
       }
       const { rows: profils } = await db.query(
         `INSERT INTO hotspot_profiles
-           (tenant_id, router_connection_id, nom, valide, actif, updated_at)
-         VALUES ($1,$2,$3,true,true,now())
+           (tenant_id, utilisateur_id, router_connection_id, nom, valide, actif,
+            updated_at)
+         VALUES ($1,$2,$3,$4,true,true,now())
          ON CONFLICT (tenant_id, router_connection_id, nom) DO UPDATE
          SET valide = true, actif = true, updated_at = now()
          RETURNING id`,
-        [ctx.tenantId, routerConnectionId, profil],
+        [ctx.tenantId, ctx.utilisateurId, routerConnectionId, profil],
       );
       profilIdEnregistre = (profils[0] as { id: string | number }).id;
     }
