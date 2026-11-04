@@ -38,6 +38,7 @@ import {
 type Regle = {
   id: number;
   utilisateur_id: string;
+  router_connection_id: number;
   routeur_nom: string;
   profil: string;
   seuil: number;
@@ -46,6 +47,8 @@ type Regle = {
   frequence_minutes: number;
   canal: string;
   destinataire: string;
+  duree_limite: string | null;
+  volume_limite_octets: number | null;
   actif: boolean;
   simulation_reussie: boolean;
   dernier_stock: number | null;
@@ -95,6 +98,7 @@ function Contenu({
   const [regles, setRegles] = useState<Regle[]>(resolues.regles);
   const [routeurs, setRouteurs] = useState<RouteurChoix[]>(resolues.routeurs);
   const [form, setForm] = useState(VIDE);
+  const [regleEnModification, setRegleEnModification] = useState<number | null>(null);
   const [cible, setCible] = useState<Regle | null>(null);
   const [erreur, setErreur] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -155,8 +159,11 @@ function Contenu({
       if (!r.ok) {
         setErreur(corps.error ?? "Enregistrement impossible.");
       } else {
-        setMessage("Réglage enregistré. Activez-le après les vérifications.");
+        setMessage(regleEnModification === null
+          ? "Réglage enregistré. Activez-le après les vérifications."
+          : "Réglage modifié avec succès.");
         setForm(VIDE);
+        setRegleEnModification(null);
         await charger();
       }
     } catch {
@@ -164,6 +171,33 @@ function Contenu({
     } finally {
       setOccupe(false);
     }
+  }
+
+  function modifier(regle: Regle) {
+    setErreur(null);
+    setMessage(null);
+    setRegleEnModification(regle.id);
+    setForm({
+      routerConnectionId: String(regle.router_connection_id),
+      profil: regle.profil,
+      seuil: String(regle.seuil),
+      quantiteGeneration: String(regle.quantite_generation),
+      quantiteCible: String(regle.quantite_cible),
+      frequenceMinutes: String(regle.frequence_minutes),
+      canal: regle.canal,
+      destinataire: regle.destinataire,
+      dureeLimite: regle.duree_limite ?? "",
+      volumeLimiteOctets: regle.volume_limite_octets === null
+        ? ""
+        : String(regle.volume_limite_octets),
+    });
+  }
+
+  function annulerModification() {
+    setRegleEnModification(null);
+    setForm(VIDE);
+    setErreur(null);
+    setMessage(null);
   }
 
   async function changerActivation(regle: Regle, actif: boolean) {
@@ -253,21 +287,30 @@ function Contenu({
                     )}
                   </TableCell>
                   <TableCell>
-                    {regle.actif ? (
+                    <div className="flex flex-wrap gap-2">
                       <Button
                         disabled={occupe}
-                        onClick={() => void changerActivation(regle, false)}
+                        variant="outline"
+                        onClick={() => modifier(regle)}
                       >
-                        Mettre en pause
+                        Modifier
                       </Button>
-                    ) : (
-                      <Button
-                        disabled={occupe}
-                        onClick={() => setCible(regle)}
-                      >
-                        Activer le réapprovisionnement automatique
-                      </Button>
-                    )}
+                      {regle.actif ? (
+                        <Button
+                          disabled={occupe}
+                          onClick={() => void changerActivation(regle, false)}
+                        >
+                          Mettre en pause
+                        </Button>
+                      ) : (
+                        <Button
+                          disabled={occupe}
+                          onClick={() => setCible(regle)}
+                        >
+                          Activer le réapprovisionnement automatique
+                        </Button>
+                      )}
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
@@ -281,7 +324,9 @@ function Contenu({
 
       <Card>
         <CardHeader>
-          <CardTitle>Nouvelle règle</CardTitle>
+          <CardTitle>
+            {regleEnModification === null ? "Nouvelle règle" : "Modifier la règle"}
+          </CardTitle>
           <CardDescription>
             Valeurs par défaut : seuil 50 tickets neufs, génération 120
             tickets, vérification toutes les 15 minutes.
@@ -355,9 +400,22 @@ function Contenu({
             <Input id="volume" inputMode="numeric"
               {...champ("volumeLimiteOctets")} />
           </div>
-          <Button disabled={occupe} onClick={() => void enregistrer()}>
-            Enregistrer la règle
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button disabled={occupe} onClick={() => void enregistrer()}>
+              {regleEnModification === null
+                ? "Enregistrer la règle"
+                : "Enregistrer les modifications"}
+            </Button>
+            {regleEnModification !== null && (
+              <Button
+                disabled={occupe}
+                variant="outline"
+                onClick={annulerModification}
+              >
+                Annuler la modification
+              </Button>
+            )}
+          </div>
         </CardContent>
       </Card>
 
