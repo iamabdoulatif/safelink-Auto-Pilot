@@ -10,6 +10,7 @@
     "db:migrer": "node scripts/migrer-base.mjs"
   },
   "dependencies": {
+    "@tailwindcss/turbopack": "^4.3.4",
     "class-variance-authority": "^0.7.1",
     "cn": "^0.5.2",
     "lucide-react": "^1.66.0",
@@ -25,7 +26,6 @@
     "undici": "^8.12.3"
   },
   "devDependencies": {
-    "@tailwindcss/turbopack": "^4.3.4",
     "@types/node": "^20",
     "@types/pg": "^8.23.1",
     "@types/react": "^19",
@@ -33,6 +33,6 @@
     "eslint": "^9",
     "eslint-config-next": "16.4.4",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "5.9.3"
   }
 }
