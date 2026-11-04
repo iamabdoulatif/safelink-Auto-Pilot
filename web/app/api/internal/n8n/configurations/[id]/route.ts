@@ -129,7 +129,12 @@ export async function GET(
           chatId: bot.chat_id,
           botVerifie: bot.bot_verifie,
           statutConnexion: bot.statut_connexion,
-          jeton: bot.jeton_chiffre ? dechiffrer(bot.jeton_chiffre) : null,
+          // En mode « bot central », le jeton n'est volontairement pas
+          // stocké dans la base : il reste dans l'environnement serveur.
+          // n8n doit néanmoins le recevoir pendant le job signé.
+          jeton: bot.jeton_chiffre
+            ? dechiffrer(bot.jeton_chiffre)
+            : (process.env.TELEGRAM_BOT_TOKEN ?? null),
         };
       }
     }
