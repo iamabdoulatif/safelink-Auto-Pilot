@@ -94,11 +94,13 @@ export async function POST(req: Request) {
     }
     const enSurveillance = !regle.stock_rearme;
     try {
-      const { rows: verrous } = await db.query(VERROU_SQL,
-        [regle.tenant_id, regle.router_connection_id, regle.profil]);
-      if (verrous.length > 0) {
-        ignores.push({ ...base, motif: "run déjà actif" });
-        continue;
+      if (!simulation) {
+        const { rows: verrous } = await db.query(VERROU_SQL,
+          [regle.tenant_id, regle.router_connection_id, regle.profil]);
+        if (verrous.length > 0) {
+          ignores.push({ ...base, motif: "run déjà actif" });
+          continue;
+        }
       }
       const runId = randomUUID();
       const creeLe = new Date().toISOString();
