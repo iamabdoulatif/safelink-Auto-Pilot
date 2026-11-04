@@ -37,7 +37,10 @@ const VERROU_SQL = `SELECT id FROM ticket_generation_runs
       AND demarre_le > now() - interval '2 hours'))
   LIMIT 1`;
 
-async function reglesActives(surveillance: boolean): Promise<Regle[]> {
+async function reglesActives(
+  surveillance: boolean,
+  simulation: boolean,
+): Promise<Regle[]> {
   const { rows } = await db.query(
     `SELECT s.id AS regle_id, s.tenant_id, s.utilisateur_id,
        s.router_connection_id, s.mikhmon_connection_id, s.profile_id,
@@ -48,7 +51,8 @@ async function reglesActives(surveillance: boolean): Promise<Regle[]> {
      JOIN configurations_routeurs r
        ON r.id = s.router_connection_id AND r.actif = true
      LEFT JOIN hotspot_profiles p ON p.id = s.profile_id
-     WHERE s.actif = true AND s.stock_rearme = ${surveillance ? "false" : "true"}
+       WHERE ${simulation ? "true" : "s.actif = true"}
+       AND s.stock_rearme = ${surveillance ? "false" : "true"}
        AND (s.derniere_verif_le IS NULL
          OR s.derniere_verif_le <
            now() - (s.frequence_minutes || ' minutes')::interval)`,
@@ -64,8 +68,8 @@ export async function POST(req: Request) {
   let regles: Regle[];
   try {
     regles = [
-      ...(await reglesActives(false)),
-      ...(simulation ? [] : await reglesActives(true)),
+      ...(await reglesActives(false, simulation)),
+      ...(simulation ? [] : await reglesActives(true, false)),
     ];
   } catch {
     return Response.json({ error: "Lecture des règles impossible." },

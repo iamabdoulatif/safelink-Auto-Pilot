@@ -1,5 +1,9 @@
 import { db } from "@/lib/db";
 import { session } from "@/lib/session";
+import {
+  listerProfilsHotspot,
+  lireMotDePasseLecture,
+} from "@/lib/connexions-routeur";
 
 // Reglages de reapprovisionnement de l'espace connecte : source de
 // configuration par utilisateur lue par n8n. Isolation stricte : chaque
@@ -200,6 +204,7 @@ export async function POST(req: Request) {
     : null;
   const profilBrut = b["profileId"];
   const profilId = Number.isInteger(profilBrut) ? profilBrut as number : null;
+  const routeurId = routerConnectionId as number;
 
   try {
     const { rows: routeurs } = await db.query(
@@ -221,6 +226,7 @@ export async function POST(req: Request) {
           { status: 404 });
       }
     }
+    let profilIdEnregistre: number | string | null = profilId;
     if (profilId !== null) {
       const { rows: profils } = await db.query(
         `SELECT id FROM hotspot_profiles
@@ -231,6 +237,39 @@ export async function POST(req: Request) {
         return Response.json({ error: "Profil inconnu pour ce routeur." },
           { status: 404 });
       }
+    } else {
+      const motDePasseLecture = await lireMotDePasseLecture(
+        { tenantId: ctx.tenantId, utilisateurId: ctx.utilisateurId },
+        routeurId,
+      );
+      if (!motDePasseLecture) {
+        return Response.json({
+          error: "Mot de passe de lecture RouterOS manquant pour valider le profil.",
+        }, { status: 409 });
+      }
+      const resultatProfils = await listerProfilsHotspot(
+        { tenantId: ctx.tenantId, utilisateurId: ctx.utilisateurId },
+        routeurId,
+        motDePasseLecture,
+      );
+      if ("erreur" in resultatProfils) {
+        return Response.json({ error: resultatProfils.erreur }, { status: 502 });
+      }
+      if (!resultatProfils.profils.some((p) => p.nom === profil)) {
+        return Response.json({
+          error: "Profil Hotspot introuvable sur RouterOS.",
+        }, { status: 400 });
+      }
+      const { rows: profils } = await db.query(
+        `INSERT INTO hotspot_profiles
+           (tenant_id, router_connection_id, nom, valide, actif, updated_at)
+         VALUES ($1,$2,$3,true,true,now())
+         ON CONFLICT (tenant_id, router_connection_id, nom) DO UPDATE
+         SET valide = true, actif = true, updated_at = now()
+         RETURNING id`,
+        [ctx.tenantId, routerConnectionId, profil],
+      );
+      profilIdEnregistre = (profils[0] as { id: string | number }).id;
     }
     const { rows } = await db.query(
       `INSERT INTO auto_replenishment_settings
@@ -251,7 +290,7 @@ export async function POST(req: Request) {
          updated_at = now()
        RETURNING id`,
       [ctx.tenantId, ctx.utilisateurId, routerConnectionId, mikhmonId,
-        profilId, profil, seuil, quantiteGeneration, quantiteCible,
+      profilIdEnregistre, profil, seuil, quantiteGeneration, quantiteCible,
         frequence, canal, destinataire, dureeLimite, volume],
     );
     const regleId = (rows[0] as { id: number }).id;
