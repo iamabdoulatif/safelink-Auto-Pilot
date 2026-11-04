@@ -53,9 +53,9 @@ async function reglesActives(
      LEFT JOIN hotspot_profiles p ON p.id = s.profile_id
        WHERE ${simulation ? "true" : "s.actif = true"}
        AND s.stock_rearme = ${surveillance ? "false" : "true"}
-       AND (s.derniere_verif_le IS NULL
+       AND (${simulation ? "true" : `(s.derniere_verif_le IS NULL
          OR s.derniere_verif_le <
-           now() - (s.frequence_minutes || ' minutes')::interval)`,
+           now() - (s.frequence_minutes || ' minutes')::interval)`})`,
   );
   return rows as Regle[];
 }
