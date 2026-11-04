@@ -81,7 +81,12 @@ export async function verifierAppelInterne(
       ),
     };
   }
-  if (!(await signatureFraiche(signature))) {
+  // Une requete GET n'a pas de corps : plusieurs jobs distincts portent donc
+  // volontairement la meme signature HMAC du corps vide. La cle d'idempotence
+  // doit aussi inclure le runId et l'horodatage pour ne pas rejeter le deuxieme
+  // et le troisieme job du meme cycle comme des doublons.
+  const cleIdempotence = `${signature}:${runId}:${horodatage}`;
+  if (!(await signatureFraiche(cleIdempotence))) {
     return {
       reponse: Response.json(
         { error: "Requête déjà traitée." },
