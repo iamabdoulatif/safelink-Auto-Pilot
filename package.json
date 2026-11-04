@@ -1,0 +1,25 @@
+{
+  "name": "safelink-auto-pilot",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "node index.js",
+    "start": "node index.js",
+    "check:integrations": "node scripts/check-integrations.js",
+    "check:workflows": "python3 scripts/n8n/verifier-workflows.py",
+    "test:n8n": "node --test scripts/n8n/aiguillage.test.mjs scripts/n8n/generation.test.mjs",
+    "test": "node scripts/test-base.mjs"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "@prisma/client": "^7.10.1",
+    "dotenv": "^18.0.9"
+  },
+  "devDependencies": {
+    "prisma": "^7.10.1"
+  }
+}

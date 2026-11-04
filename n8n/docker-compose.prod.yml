@@ -1,0 +1,101 @@
+# Production VPS — n8n + PostgreSQL + Gotenberg derrière Caddy (HTTPS).
+# Doc : docs/deploiement-vps.md. AUCUN secret en dur ici : tout vient de
+# n8n/.env (copie de n8n/.env.prod.example). Les variables absentes font
+# echouer `docker compose config` au lieu d'un demarrage bancal.
+# Lancement (depuis la racine) :
+#   docker compose -f n8n/docker-compose.prod.yml --env-file n8n/.env up -d
+
+services:
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    ports: ["80:80", "443:443"]
+    # Pour joindre l'app Next.js (port 3000) qui tourne sur l'hote Linux.
+    extra_hosts: ["host.docker.internal:host-gateway"]
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    environment:
+      - N8N_HOST=${N8N_HOST:?renseigner N8N_HOST}
+      - APP_HOST=${APP_HOST:?renseigner APP_HOST}
+
+  n8n:
+    # Branche 1.x stable, compatible avec nos workflows (WEBHOOK_URL lu).
+    image: n8nio/n8n:1.123.92
+    restart: unless-stopped
+    # Pas de port public : seul Caddy parle a n8n (reverse proxy).
+    expose: ["5678"]
+    environment:
+      # --- n8n lui-meme ---
+      - N8N_HOST=${N8N_HOST:?renseigner N8N_HOST}
+      - N8N_PORT=5678
+      - N8N_PROTOCOL=https
+      - N8N_PROXY_HOPS=1
+      # URL publique des webhooks (une seule valeur projet).
+      - N8N_WEBHOOK_URL=https://${N8N_HOST:?renseigner N8N_HOST}/
+      - WEBHOOK_URL=https://${N8N_HOST:?renseigner N8N_HOST}/
+      - GENERIC_TIMEZONE=Africa/Abidjan
+      - N8N_BASIC_AUTH_ACTIVE=true
+      - N8N_BASIC_AUTH_USER=admin
+      - N8N_BASIC_AUTH_PASSWORD=${N8N_BASIC_AUTH_PASSWORD:?renseigner N8N_BASIC_AUTH_PASSWORD}
+      # Cle de chiffrement n8n : GENEREE UNE FOIS, SAUVEGARDEE HORS VPS.
+      # La perdre = credentials n8n illisibles (recreer + reconfigurer).
+      - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY:?renseigner N8N_ENCRYPTION_KEY}
+      # --- lien avec SafeLink (DOIT matcher web/.env.local en prod) ---
+      - N8N_WEBHOOK_SECRET=${N8N_WEBHOOK_SECRET:?renseigner N8N_WEBHOOK_SECRET}
+      - N8N_CALLBACK_SECRET=${N8N_CALLBACK_SECRET:?renseigner N8N_CALLBACK_SECRET}
+      # --- le routeur (compte dedie vouchers, jamais admin) ---
+      # Joint DEPUIS le VPS : adresse publique, VPN ou tunnel (voir guide).
+      # Jamais l'interface d'administration exposee sur Internet.
+      - ROUTEROS_BASE_URL=${ROUTEROS_BASE_URL:?renseigner ROUTEROS_BASE_URL}
+      - ROUTEROS_USER=${ROUTEROS_USER:-n8n-vouchers}
+      # Conversion explicite : l'app dit ROUTEROS_PASS, n8n lit ROUTEROS_PASSWORD.
+      - ROUTEROS_PASSWORD=${ROUTEROS_PASS:-}
+      # --- les tickets ---
+      - MIKHMON_PROFILE=${MIKHMON_PROFILE:-03-JOURS}
+      - MIKHMON_HOTSPOT_SERVER=${MIKHMON_HOTSPOT_SERVER:-all}
+      - MIKHMON_VARIANT=${MIKHMON_VARIANT:-v3}
+      # Mikhmon VU DEPUIS le VPS (jamais 127.0.0.1 ni host.docker.internal).
+      - MIKHMON_BASE_URL=${MIKHMON_BASE_URL:?renseigner MIKHMON_BASE_URL}
+      - TICKET_THRESHOLD=${TICKET_THRESHOLD:-50}
+      - TICKET_QUANTITY=${TICKET_QUANTITY:-120}
+      - TICKET_PREFIX=${TICKET_PREFIX:-}
+      - TICKET_LIMIT_UPTIME=${TICKET_LIMIT_UPTIME:-}
+      - TICKET_LIMIT_BYTES_TOTAL=${TICKET_LIMIT_BYTES_TOTAL:-}
+      # --- la livraison ---
+      - DELIVERY_CHANNEL=${DELIVERY_CHANNEL:-interface}
+      - DELIVERY_RECIPIENT=${DELIVERY_RECIPIENT:-}
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN:-}
+      - WHATSAPP_WEBHOOK_URL=${WHATSAPP_WEBHOOK_URL:-}
+      - PRINTNODE_API_KEY=${PRINTNODE_API_KEY:-}
+      - PRINTNODE_PRINTER_ID=${PRINTNODE_PRINTER_ID:-0}
+      - PDF_SERVICE_URL=http://gotenberg:3000/forms/chromium/convert/html
+      # --- divers ---
+      - REAPPRO_SIMULATION=${REAPPRO_SIMULATION:-true}
+    volumes: ["n8n_data:/home/node/.n8n"]
+    depends_on: ["postgres"]
+
+  postgres:
+    # PostgreSQL 17 (meme moteur que les tests, SQL standard).
+    image: postgres:17
+    restart: unless-stopped
+    # Pas de port public : seule l'app et n8n s'y connectent en interne.
+    expose: ["5432"]
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER:-autopilot}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:?renseigner POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB:-autopilot}
+      - PGTZ=Africa/Abidjan
+    volumes: ["pgdata:/var/lib/postgresql/data"]
+
+  gotenberg:
+    image: gotenberg/gotenberg:8
+    restart: unless-stopped
+    # pas de port public : seul n8n lui parle, par le reseau interne
+
+volumes:
+  n8n_data:
+  pgdata:
+  caddy_data:
+  caddy_config:

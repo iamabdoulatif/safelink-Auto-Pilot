@@ -1,0 +1,2212 @@
+{
+ "id": "PpsEaR517b9WGodZ",
+ "name": "Mikhmon - génération automatique de tickets Hotspot",
+ "description": "AUTO DÉSACTIVÉ : réactiver après configuration valide (routeur testé, profil validé, canal testé, simulation réussie). Flux jobs SafeLink : Schedule 15 min → jobs signés → config signée → stock → seuil → simulation ? → génération limitée → PDF Gotenberg → canal → callback interne signé. Tickets créés sur RouterOS (/ip/hotspot/user), visibles dans Mikhmon. Simulation : lecture seule, aucun ticket, aucun envoi.",
+ "active": true,
+ "activeVersionId": "aabba0f1-69a3-4751-9f78-5a14b94aa4b9",
+ "createdAt": "2026-11-01T13:26:06.234Z",
+ "updatedAt": "2026-11-01T13:27:40.309Z",
+ "isArchived": false,
+ "versionId": "aabba0f1-69a3-4751-9f78-5a14b94aa4b9",
+ "versionCounter": 4,
+ "sourceWorkflowId": null,
+ "triggerCount": 3,
+ "nodes": [
+  {
+   "id": "86a54d7c-f72d-466b-9641-c926553f6060",
+   "name": "Demande manuelle (Webhook)",
+   "webhookId": "mikhmon-ticket-generation",
+   "type": "n8n-nodes-base.webhook",
+   "typeVersion": 2,
+   "position": [
+    16,
+    128
+   ],
+   "parameters": {
+    "httpMethod": "POST",
+    "path": "mikhmon/tickets",
+    "options": {}
+   }
+  },
+  {
+   "id": "8535758f-6016-4ab8-bcc7-a93f39445860",
+   "name": "Contrôle périodique (15 min)",
+   "disabled": false,
+   "type": "n8n-nodes-base.scheduleTrigger",
+   "typeVersion": 1.2,
+   "position": [
+    16,
+    384
+   ],
+   "parameters": {
+    "rule": {
+     "interval": [
+      {
+       "field": "minutes",
+       "minutesInterval": 15
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "6bde7d9e-2742-4aef-86bd-7b9005bea272",
+   "name": "Paramètres Mikhmon",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    304,
+    272
+   ],
+   "parameters": {
+    "jsCode": "const input = $json.body ?? $json;\nvar reponseJob = input && input.data ? input.data : null;\nif (reponseJob && reponseJob.runId) {\n  var travailJob = {};\n  try {\n    var lusJob = $('Signer la lecture config').all();\n    for (var kJob = 0; kJob < lusJob.length; kJob++) {\n      var candJob = (lusJob[kJob] && lusJob[kJob].json) || {};\n      if (String(candJob.runId) === String(reponseJob.runId)) { travailJob = candJob; break; }\n    }\n  } catch (eJob) {}\n  var routeurJob = reponseJob.routeur || {};\n  var mikhmonJob = reponseJob.mikhmon || {};\n  var lotJob = reponseJob.lot || {};\n  var livraisonJob = reponseJob.livraison || {};\n  var tgJob = livraisonJob.telegram || {};\n  var waJob = livraisonJob.whatsapp || {};\n  var pnJob = livraisonJob.printnode || {};\n  var racineJob = String(travailJob.appUrl || '');\n  if (!racineJob) { try { racineJob = String(($(\"Signer l'appel jobs\").first().json || {}).appUrl || \"\"); } catch (eRacine) {} }\n  if (!routeurJob.adresse || !routeurJob.motDePasseEcriture) throw new Error('Configuration routeur incomplète.');\n  input.routerBaseUrl = String(routeurJob.adresse).replace(/\\/$/, '');\n  input.routerUser = routeurJob.utilisateurEcriture;\n  input.routerPassword = routeurJob.motDePasseEcriture;\n  input.hotspotServer = mikhmonJob.serveurHotspot || 'all';\n  input.profile = lotJob.profil;\n  input.quantity = lotJob.quantite;\n  input.threshold = lotJob.seuil;\n  var canalJob = String(livraisonJob.canal || 'telechargement');\n  input.deliveryChannel = canalJob === 'telechargement' ? 'pdf' : canalJob;\n  input.recipient = livraisonJob.destinataire || tgJob.chatId || waJob.destinataire || '';\n  input.tenantId = reponseJob.tenantId;\n  input.runId = reponseJob.runId;\n  input.cleIdempotence = reponseJob.runId;\n  input.simulation = reponseJob.simulation === true || travailJob.surveillance === true;\n  input.telegramBotToken = tgJob.jeton || '';\n  input.whatsappWebhookUrl = waJob.webhookUrl || '';\n  input.printNodeApiKey = pnJob.cle || '';\n  input.printNodePrinterId = pnJob.printerId || 0;\n  if (racineJob) input.callbackUrl = racineJob.replace(/\\/$/, '') + '/api/internal/n8n/callback';\n}\n// Normalisation des entrees imposees (/api/generer-tickets) : userId/tenantId,\n// mikhmonConnectionId, routerConnectionId, profile, quantity, deliveryChannel,\n// telegramChatId, runId, timestamp. runId = cle d'idempotence (cleIdempotence).\n// L'URL Mikhmon vient de la configuration applicative, jamais d'ici :\n// ce workflow n'appelle que RouterOS (/rest/ip/hotspot/user), source unique\n// de verite (tickets visibles automatiquement dans Mikhmon). AUCUN mot de\n// passe de ticket ne remonte vers l'application : seul le NOMBRE est signe.\nif (input.runId && !input.cleIdempotence) input.cleIdempotence = String(input.runId);\nif (input.quantity === undefined && input.quantite !== undefined) input.quantity = input.quantite;\nif (input.profile === undefined && input.profil !== undefined) input.profile = input.profil;\nif (input.deliveryChannel === undefined && input.canal !== undefined) input.deliveryChannel = input.canal;\nif (input.recipient === undefined && input.telegramChatId !== undefined) input.recipient = String(input.telegramChatId);\nif (input.userId === undefined && input.utilisateurId !== undefined) input.userId = String(input.utilisateurId);\nif (input.quantity === undefined && input.targetQuantity !== undefined) input.quantity = input.targetQuantity;\nif (input.recipient === undefined && input.whatsappRecipient !== undefined) input.recipient = String(input.whatsappRecipient);\nconst env = (name, fallback = '') => (($env && $env[name]) || fallback); // Entrees signees SafeLink d'abord, $env en repli (compose OK).\nconst asInt = (value, fallback) => { const n = Number(value); return Number.isFinite(n) ? Math.floor(n) : fallback; };\n\nconst rawBase = String(input.routerBaseUrl || env('ROUTEROS_BASE_URL', '')).replace(/\\/$/, '');\nif (!rawBase) throw new Error(\"ROUTEROS_BASE_URL est obligatoire (ex. http://host.docker.internal:9110 depuis n8n Docker).\");\nif (!/^https?:\\/\\/[^\\/\\s]+(\\/.*)?$/i.test(rawBase)) throw new Error('ROUTEROS_BASE_URL invalide : ' + rawBase);\nlet routerBaseUrl = rawBase;\nconst tenantId = String(input.tenantId || env('TENANT_ID', 'defaut') || 'defaut').slice(0, 64);\nconst cleIdempotence = String(input.cleIdempotence || '').slice(0, 128);\n\nconst profilesRaw = String(input.profiles ?? input.profile ?? env('MIKHMON_PROFILES', '') ?? env('MIKHMON_PROFILE', 'default'));\nconst profiles = [...new Set(profilesRaw.split(',').map(s => s.trim()).filter(Boolean))];\nif (!profiles.length) throw new Error('Aucun profil : renseignez profile ou MIKHMON_PROFILES (ex. \"default,vip\").');\n\nconst deliveryChannel = String(input.deliveryChannel || env('DELIVERY_CHANNEL', 'telegram')).toLowerCase();\nif (!['telegram', 'whatsapp', 'printnode', 'interface', 'pdf'].includes(deliveryChannel)) {\n  throw new Error('DELIVERY_CHANNEL inconnu : \"' + deliveryChannel + '\" (telegram, whatsapp, printnode, interface ou pdf).');\n}\n\nconst shared = {\n  routerBaseUrl,\n  routerUser: String(input.routerUser || env('ROUTEROS_USER', 'n8n-vouchers')),\n  routerPassword: String(input.routerPassword || env('ROUTEROS_PASSWORD', '')),\n  hotspotServer: String(input.hotspotServer || env('MIKHMON_HOTSPOT_SERVER', 'all')),\n  threshold: Math.max(0, asInt(input.threshold ?? env('TICKET_THRESHOLD', 50), 50)),\n  quantity: Math.max(1, Math.min(500, asInt(input.quantity ?? env('TICKET_QUANTITY', 50), 50))),\n  usernameLength: Math.max(3, Math.min(12, asInt(input.usernameLength ?? 4, 4))),\n  passwordLength: Math.max(3, Math.min(16, asInt(input.passwordLength ?? 4, 4))),\n  prefix: String(input.prefix ?? env('TICKET_PREFIX', '')),\n  limitUptime: String(input.limitUptime ?? env('TICKET_LIMIT_UPTIME', '')),\n  limitBytesTotal: String(input.limitBytesTotal ?? env('TICKET_LIMIT_BYTES_TOTAL', '')),\n  deliveryChannel,\n  recipient: String(input.recipient || env('DELIVERY_RECIPIENT', '')),\n  tenantId,\n  userId: String(input.userId || ''),\n  mikhmonConnectionId: input.mikhmonConnectionId === undefined || input.mikhmonConnectionId === null ? null : Number(input.mikhmonConnectionId),\n  routerConnectionId: input.routerConnectionId === undefined || input.routerConnectionId === null ? null : Number(input.routerConnectionId),\n  cleIdempotence: cleIdempotence,\n  forcerGeneration: input.forcerGeneration === true,\n  callbackUrl: String(input.callbackUrl || ''),\n  pdfServiceUrl: String(input.pdfServiceUrl || env('PDF_SERVICE_URL', 'http://gotenberg:3000/forms/chromium/convert/html')).replace(/\\/$/, ''),\n  whatsappWebhookUrl: String(input.whatsappWebhookUrl || env('WHATSAPP_WEBHOOK_URL', '')),\n  printNodePrinterId: asInt(input.printNodePrinterId ?? env('PRINTNODE_PRINTER_ID', 0), 0),\n  printNodeApiKey: String(input.printNodeApiKey || env('PRINTNODE_API_KEY', '')),\n  telegramBotToken: String(input.telegramBotToken || env('TELEGRAM_BOT_TOKEN', ''))\n};\nreturn profiles.map(profile => ({ json: { ...shared, profile } }));"
+   }
+  },
+  {
+   "id": "d0ae73dd-77d5-4da6-b256-6464fc533297",
+   "name": "Lire le stock du profil",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    576,
+    272
+   ],
+   "parameters": {
+    "jsCode": "const inputs = $input.all().map(i => i.json);\nfunction parseUptime(v) {\n  if (v === null || v === undefined) return 0;\n  if (typeof v === 'number') return Number.isFinite(v) && v > 0 ? v : 0;\n  const s = String(v).trim();\n  if (s === '' || s === '0' || s === '0s') return 0;\n  let m = s.match(/^(?:(\\d+)w)?(?:(\\d+)d)?(?:(\\d+)h)?(?:(\\d+)m)?(?:(\\d+)s)?$/i);\n  if (m && m[0] !== '') {\n    const g = i => parseInt(m[i] || '0', 10);\n    return (((g(1) * 7 + g(2)) * 24 + g(3)) * 60 + g(4)) * 60 + g(5);\n  }\n  m = s.match(/^(\\d+):(\\d{1,2}):(\\d{1,2})$/);\n  if (m) return (+m[1]) * 3600 + (+m[2]) * 60 + (+m[3]);\n  const n = Number(s);\n  return Number.isFinite(n) && n > 0 ? Math.floor(n) : 0;\n}\nfunction isDisabled(u) {\n  return u.disabled === true || String(u.disabled || '').toLowerCase() === 'true';\n}\nasync function assertPdfService(url, helpers) {\n  if (!url) throw new Error('PDF_SERVICE_URL est obligatoire.');\n  const base = url.replace(/\\/forms\\/.*$/, '');\n  try {\n    await helpers.httpRequest({ method: 'GET', url: base + '/health', timeout: 10000 });\n    return;\n  } catch (e) { /* repli : sonde directe de l'endpoint */ }\n  try {\n    await helpers.httpRequest({ method: 'GET', url, timeout: 10000 });\n    return;\n  } catch (e) {\n    const sc = e.statusCode || (e.response && (e.response.statusCode || e.response.status));\n    if (sc === 404 || sc === 405) return;\n    throw new Error('Service PDF injoignable : ' + url + ' (' + (e.message || e) + '). Demarrez Gotenberg.');\n  }\n}\nasync function validateConfig(cfg, telegramToken, helpers) {\n  if (!cfg.routerPassword) throw new Error('ROUTEROS_PASSWORD est obligatoire. Utilisez un compte RouterOS dédié (ex. app-fix).');\n  await assertPdfService(cfg.pdfServiceUrl, helpers);\n  if (cfg.deliveryChannel === 'telegram' && !telegramToken) throw new Error('TELEGRAM_BOT_TOKEN est obligatoire pour le canal telegram.');\n  if ((cfg.deliveryChannel === 'telegram' || cfg.deliveryChannel === 'whatsapp') && !cfg.recipient) throw new Error('Destinataire vide pour le canal ' + cfg.deliveryChannel + ' (DELIVERY_RECIPIENT).');\n  if (cfg.deliveryChannel === 'whatsapp' && !cfg.whatsappWebhookUrl) throw new Error(\"WHATSAPP_WEBHOOK_URL est obligatoire pour le canal whatsapp.\");\n  if (cfg.deliveryChannel === 'printnode' && (!cfg.printNodeApiKey || !cfg.printNodePrinterId)) throw new Error('PRINTNODE_API_KEY et PRINTNODE_PRINTER_ID sont obligatoires pour le canal printnode.');\n}\nconst out = [];\nfor (const cfg of inputs) {\n  const telegramToken = cfg.telegramBotToken || '';\n  await validateConfig(cfg, telegramToken, this.helpers);\n  const auth = 'Basic ' + Buffer.from(cfg.routerUser + ':' + cfg.routerPassword).toString('base64');\n  const response = await this.helpers.httpRequest({\n    method: 'GET',\n    url: cfg.routerBaseUrl + '/rest/ip/hotspot/user',\n    headers: { Authorization: auth, Accept: 'application/json' },\n    json: true,\n    timeout: 30000,\n    skipSslCertificateValidation: (['1', 'true', 'oui'].indexOf(String(($env && $env.ROUTEROS_TLS_INSECURE) || '').toLowerCase()) !== -1) /* Exception labo explicite uniquement, verifie par defaut. */\n  });\n  const profRes = await this.helpers.httpRequest({\n    method: 'GET',\n    url: cfg.routerBaseUrl + '/rest/ip/hotspot/user/profile',\n    headers: { Authorization: auth, Accept: 'application/json' },\n    json: true,\n    timeout: 30000,\n    skipSslCertificateValidation: (['1', 'true', 'oui'].indexOf(String(($env && $env.ROUTEROS_TLS_INSECURE) || '').toLowerCase()) !== -1) /* Exception labo explicite uniquement, verifie par defaut. */\n  });\n  const profs = Array.isArray(profRes) ? profRes : (profRes.data || profRes.results || []);\n  if (!profs.some(p => String(p.name) === cfg.profile)) throw new Error('Profil hotspot \"' + cfg.profile + '\" introuvable (creez-le dans /ip/hotspot/user/profile).');\n  const users = Array.isArray(response) ? response : (response.data || response.results || []);\n  const sameProfile = users.filter(u => String(u.profile || '') === cfg.profile);\n  const available = sameProfile.filter(u => !isDisabled(u) && parseUptime(u.uptime) === 0);\n  const shouldGenerate = available.length < cfg.threshold;\n  out.push({ json: { ...cfg, existingNames: users.map(u => String(u.name)), stockTotal: sameProfile.length, stockAvailable: available.length, shouldGenerate, checkedAt: new Date().toISOString() } });\n}\nreturn out;\n",
+    "onError": "continueErrorOutput"
+   }
+  },
+  {
+   "id": "9ee9fd30-057f-48e4-b9af-b16a1cc40133",
+   "name": "Stock inférieur au seuil ?",
+   "type": "n8n-nodes-base.if",
+   "typeVersion": 2.2,
+   "position": [
+    848,
+    272
+   ],
+   "parameters": {
+    "conditions": {
+     "boolean": [
+      {
+       "value1": "={{$json.shouldGenerate}}",
+       "operation": "isTrue"
+      },
+      {
+       "value1": "={{$json.forcerGeneration}}",
+       "operation": "isTrue"
+      }
+     ],
+     "combinator": "or",
+     "options": {
+      "caseSensitive": true,
+      "leftValue": "",
+      "typeValidation": "strict",
+      "version": 1
+     }
+    },
+    "options": {}
+   }
+  },
+  {
+   "id": "ba0a4392-fb1c-4585-96c2-969fc16085ee",
+   "name": "Générer les tickets dans RouterOS",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    1120,
+    160
+   ],
+   "parameters": {
+    "jsCode": "const inputs = $input.all().map(i => i.json);\nconst alphabet = '23456789abcdefghijkmnpqrstuvwxyz';\nconst aleatoireCrypto = (n) => { try { var NC = require('crypto'); if (NC && NC.randomBytes) return NC.randomBytes(n); } catch (eCrypto) {} throw new Error('Génération aléatoire sécurisée indisponible : aucun ticket créé.'); }; const rand = len => { const o = aleatoireCrypto(len); let s = ''; for (let i = 0; i < len; i++) s += alphabet[o[i] % alphabet.length]; return s; }; const esc = s => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\"/g, '&quot;'); \nconst usedNames = new Set();\nfor (const c of inputs) for (const n of (c.existingNames || [])) usedNames.add(n);\nfunction uniqueUsername(prefix, len) {\n  for (let attempt = 0; attempt < 25; attempt++) {\n    const u = (prefix || '') + rand(len);\n    if (!usedNames.has(u)) { usedNames.add(u); return u; }\n  }\n  throw new Error('Impossible de générer un identifiant unique après 25 essais (augmentez usernameLength ou prefix).');\n}\nconst out = [];\nconst clesVues = new Set();\nfor (const cfg of inputs) {\n  const auth = 'Basic ' + Buffer.from(cfg.routerUser + ':' + cfg.routerPassword).toString('base64');\n  const cle = String(cfg.cleIdempotence || '');\n  const marqueur = cle ? ('cle:' + cle) : '';\n  // Idempotence : un appel rejoue avec la meme cle retrouve les\n  // tickets deja crees (commentaire traceur) et n'en recree aucun.\n  if (marqueur && !clesVues.has(marqueur)) {\n    let existants = [];\n    try {\n      const deja = await this.helpers.httpRequest({ method: 'GET', url: cfg.routerBaseUrl + '/rest/ip/hotspot/user', headers: { Authorization: auth, Accept: 'application/json' }, json: true, timeout: 30000, skipSslCertificateValidation: (['1', 'true', 'oui'].indexOf(String(($env && $env.ROUTEROS_TLS_INSECURE) || '').toLowerCase()) !== -1) /* Exception labo explicite uniquement, verifie par defaut. */ });\n      existants = Array.isArray(deja) ? deja : (deja.data || deja.results || []);\n    } catch (e) {\n      throw new Error('Verification anti-doublon impossible : ' + (e.message || e));\n    }\n    if (existants.some(function (u) { return String((u && u.comment) || '').indexOf(marqueur) !== -1; })) {\n      out.push({ json: { ...cfg, tickets: [], generatedAt: new Date().toISOString(), html: '', generatedCount: 0, dejaGenere: true } });\n      clesVues.add(marqueur);\n      continue;\n    }\n  }\n  if (marqueur) clesVues.add(marqueur);\n  const tickets = [];\n  for (let i = 0; i < cfg.quantity; i++) {\n    const username = uniqueUsername(cfg.prefix, cfg.usernameLength);\n    const password = rand(cfg.passwordLength);\n    const body = { name: username, password, profile: cfg.profile, server: cfg.hotspotServer, comment: 'n8n-mikhmon tenant:' + (cfg.tenantId || 'defaut') + ' cle:' + (cle || 'sans') + ' ' + new Date().toISOString() };\n    if (cfg.limitUptime) body['limit-uptime'] = cfg.limitUptime;\n    if (cfg.limitBytesTotal) body['limit-bytes-total'] = cfg.limitBytesTotal;\n    try {\n      const result = await this.helpers.httpRequest({ method: 'PUT', url: cfg.routerBaseUrl + '/rest/ip/hotspot/user', headers: { Authorization: auth, 'Content-Type': 'application/json' }, body, json: true, timeout: 30000, skipSslCertificateValidation: (['1', 'true', 'oui'].indexOf(String(($env && $env.ROUTEROS_TLS_INSECURE) || '').toLowerCase()) !== -1) /* Exception labo explicite uniquement, verifie par defaut. */ });\n      tickets.push({ username, password, profile: cfg.profile, routerResult: result });\n    } catch (e) {\n      throw new Error('Échec création ticket ' + username + ' (' + (i + 1) + '/' + cfg.quantity + ') : ' + (e.message || e) + ' — ' + tickets.length + ' ticket(s) déjà créé(s).');\n    }\n  }\n  let stockApres = null;\n  try {\n    const relu = await this.helpers.httpRequest({ method: 'GET', url: cfg.routerBaseUrl + '/rest/ip/hotspot/user', headers: { Authorization: auth, Accept: 'application/json' }, json: true, timeout: 30000, skipSslCertificateValidation: (['1', 'true', 'oui'].indexOf(String(($env && $env.ROUTEROS_TLS_INSECURE) || '').toLowerCase()) !== -1) /* Exception labo explicite uniquement, verifie par defaut. */ });\n    const liste = Array.isArray(relu) ? relu : (relu.data || relu.results || []);\n    const neuf = function (u) { return String((u && u.profile) || '') === cfg.profile && (u && u.disabled) !== true && String((u && u.disabled) || '').toLowerCase() !== 'true' && ['0s', '00:00:00', ''].indexOf(String((u && u.uptime) || '0s').trim()) !== -1; };\n    stockApres = liste.filter(neuf).length;\n  } catch (eApres) { stockApres = null; }\n  const generatedAt = new Date().toISOString();\n  const rows = tickets.map(t => `<tr><td>${esc(t.username)}</td><td>${esc(t.password)}</td><td>${esc(t.profile)}</td></tr>`).join('');\n  const html = `<!doctype html><html><head><meta charset='utf-8'><style>body{font-family:Arial,sans-serif;margin:24px}h1{font-size:20px}.meta{color:#555;margin-bottom:16px}table{width:100%;border-collapse:collapse}td,th{border:1px solid #bbb;padding:8px;text-align:left}th{background:#f0a500;color:#111}.ticket{page-break-inside:avoid}</style></head><body><h1>Tickets Wi-Fi</h1><div class='meta'>Profil: ${esc(cfg.profile)} · Générés: ${tickets.length} · ${generatedAt}</div><table><thead><tr><th>Utilisateur</th><th>Mot de passe</th><th>Profil</th></tr></thead><tbody>${rows}</tbody></table>`;\n  out.push({ json: { ...cfg, tickets: tickets.map(({routerResult, ...t}) => t), generatedAt, html, generatedCount: tickets.length, stockAvant: (cfg.stockAvailable !== undefined ? cfg.stockAvailable : null), stockApres: stockApres } });\n}\nreturn out;",
+    "onError": "continueErrorOutput"
+   }
+  },
+  {
+   "id": "80c5d0b7-4a9a-45f3-b865-c78f94400988",
+   "name": "Préparer le HTML PDF",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    1376,
+    160
+   ],
+   "parameters": {
+    "jsCode": "const items = $input.all();\nconst out = [];\nfor (let i = 0; i < items.length; i++) {\n  const b = await this.helpers.prepareBinaryData(Buffer.from(items[i].json.html, 'utf8'), 'index.html', 'text/html');\n  b.pairedItem = { item: i };\n  out.push({ json: items[i].json, binary: { data: b } });\n}\nreturn out;"
+   }
+  },
+  {
+   "id": "68256b93-e25b-4031-8f30-c90762d5deed",
+   "name": "Convertir en PDF (Gotenberg)",
+   "type": "n8n-nodes-base.httpRequest",
+   "typeVersion": 4.2,
+   "position": [
+    1648,
+    160
+   ],
+   "parameters": {
+    "method": "POST",
+    "url": "={{$json.pdfServiceUrl}}",
+    "sendBody": true,
+    "contentType": "multipart-form-data",
+    "bodyParameters": {
+     "parameters": [
+      {
+       "parameterType": "formBinaryData",
+       "name": "files",
+       "inputDataFieldName": "data"
+      }
+     ]
+    },
+    "options": {
+     "timeout": 60000
+    }
+   }
+  },
+  {
+   "id": "a4163f99-a6d0-4495-9f01-8a25b70ffdfd",
+   "name": "Choisir le canal",
+   "type": "n8n-nodes-base.switch",
+   "typeVersion": 3.2,
+   "position": [
+    1904,
+    160
+   ],
+   "parameters": {
+    "rules": {
+     "values": [
+      {
+       "conditions": {
+        "options": {
+         "caseSensitive": true,
+         "leftValue": "",
+         "typeValidation": "strict",
+         "version": 2
+        },
+        "conditions": [
+         {
+          "leftValue": "={{$json.deliveryChannel}}",
+          "rightValue": "telegram",
+          "operator": {
+           "type": "string",
+           "operation": "equals"
+          },
+          "id": "b143aed6-dc4f-4026-ad6b-be5eb4e9cdfd"
+         }
+        ],
+        "combinator": "and"
+       },
+       "renameOutput": true,
+       "outputKey": "Telegram"
+      },
+      {
+       "conditions": {
+        "options": {
+         "caseSensitive": true,
+         "leftValue": "",
+         "typeValidation": "strict",
+         "version": 2
+        },
+        "conditions": [
+         {
+          "leftValue": "={{$json.deliveryChannel}}",
+          "rightValue": "whatsapp",
+          "operator": {
+           "type": "string",
+           "operation": "equals"
+          },
+          "id": "5e837017-c326-4c93-8653-d74d9199210a"
+         }
+        ],
+        "combinator": "and"
+       },
+       "renameOutput": true,
+       "outputKey": "WhatsApp"
+      },
+      {
+       "conditions": {
+        "options": {
+         "caseSensitive": true,
+         "leftValue": "",
+         "typeValidation": "strict",
+         "version": 2
+        },
+        "conditions": [
+         {
+          "leftValue": "={{$json.deliveryChannel}}",
+          "rightValue": "printnode",
+          "operator": {
+           "type": "string",
+           "operation": "equals"
+          },
+          "id": "5060ccaa-f847-4f88-b648-9e89c5c2d45b"
+         }
+        ],
+        "combinator": "and"
+       },
+       "renameOutput": true,
+       "outputKey": "PrintNode"
+      },
+      {
+       "conditions": {
+        "options": {
+         "caseSensitive": true,
+         "leftValue": "",
+         "typeValidation": "strict",
+         "version": 2
+        },
+        "conditions": [
+         {
+          "leftValue": "={{$json.deliveryChannel}}",
+          "rightValue": "interface",
+          "operator": {
+           "type": "string",
+           "operation": "equals"
+          },
+          "id": "c085d46e-8fa0-44fc-8476-2ace7197c7a7"
+         }
+        ],
+        "combinator": "and"
+       },
+       "renameOutput": true,
+       "outputKey": "Interface"
+      },
+      {
+       "conditions": {
+        "options": {
+         "caseSensitive": true,
+         "leftValue": "",
+         "typeValidation": "strict",
+         "version": 2
+        },
+        "conditions": [
+         {
+          "leftValue": "={{$json.deliveryChannel}}",
+          "rightValue": "pdf",
+          "operator": {
+           "type": "string",
+           "operation": "equals"
+          },
+          "id": "bc01b7a2-0ccc-46c8-a3f8-811cb9bbc641"
+         }
+        ],
+        "combinator": "and"
+       },
+       "renameOutput": true,
+       "outputKey": "PDF"
+      }
+     ]
+    },
+    "options": {}
+   }
+  },
+  {
+   "id": "ee5a5263-0340-42c8-8b24-54fbe5a19184",
+   "name": "Envoyer PDF Telegram",
+   "type": "n8n-nodes-base.httpRequest",
+   "typeVersion": 4.2,
+   "position": [
+    2176,
+    0
+   ],
+   "parameters": {
+    "method": "POST",
+    "url": "=https://api.telegram.org/bot{{ $json.telegramBotToken }}/sendDocument",
+    "sendBody": true,
+    "contentType": "multipart-form-data",
+    "bodyParameters": {
+     "parameters": [
+      {
+       "name": "chat_id",
+       "value": "={{$json.recipient}}"
+      },
+      {
+       "parameterType": "formBinaryData",
+       "name": "document",
+       "inputDataFieldName": "data"
+      },
+      {
+       "name": "caption",
+       "value": "=\"Routeur \" + ($json.routeurNom || $json.routerBaseUrl) + \" · Profil \" + $json.profile + \" · \" + $json.generatedCount + \" tickets créés · Stock \" + $json.stockAvant + \" → \" + $json.stockApres + \" · \" + $json.generatedAt"
+      }
+     ]
+    },
+    "options": {
+     "timeout": 60000
+    }
+   }
+  },
+  {
+   "id": "225f489b-aa45-4d71-ad06-5ccc4d4d0274",
+   "name": "Envoyer PDF WhatsApp (adaptateur)",
+   "type": "n8n-nodes-base.httpRequest",
+   "typeVersion": 4.2,
+   "position": [
+    2176,
+    160
+   ],
+   "parameters": {
+    "method": "POST",
+    "url": "={{$json.whatsappWebhookUrl}}",
+    "sendBody": true,
+    "contentType": "multipart-form-data",
+    "bodyParameters": {
+     "parameters": [
+      {
+       "name": "to",
+       "value": "={{$json.recipient}}"
+      },
+      {
+       "name": "filename",
+       "value": "tickets-mikhmon.pdf"
+      },
+      {
+       "parameterType": "formBinaryData",
+       "name": "file",
+       "inputDataFieldName": "data"
+      }
+     ]
+    },
+    "options": {
+     "timeout": 60000
+    }
+   }
+  },
+  {
+   "id": "b39c66ec-1d2c-4ede-9a11-296591971b31",
+   "name": "Imprimer via PrintNode",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    2176,
+    320
+   ],
+   "parameters": {
+    "jsCode": "const out = [];\nconst items = $input.all();\nfor (let i = 0; i < items.length; i++) {\n  const cfg = items[i].json;\n  const pdf = await this.helpers.getBinaryDataBuffer(i, 'data');\n  if (!cfg.printNodeApiKey || !cfg.printNodePrinterId) throw new Error('PRINTNODE_API_KEY et PRINTNODE_PRINTER_ID sont obligatoires.');\n  const auth = 'Basic ' + Buffer.from(cfg.printNodeApiKey + ':').toString('base64');\n  const result = await this.helpers.httpRequest({ method: 'POST', url: 'https://api.printnode.com/printjobs', headers: { Authorization: auth, 'Content-Type': 'application/json' }, body: { printerId: cfg.printNodePrinterId, title: 'Tickets Mikhmon ' + cfg.profile, contentType: 'pdf_base64', content: pdf.toString('base64'), source: 'n8n-mikhmon' }, json: true, timeout: 60000 });\n  out.push({ json: { status: 'printed', printNode: result, generatedCount: cfg.generatedCount, profile: cfg.profile } });\n}\nreturn out;"
+   }
+  },
+  {
+   "id": "49baa036-6a80-485c-a678-0399c3630d61",
+   "name": "Aucun ticket à générer",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    1120,
+    400
+   ],
+   "parameters": {
+    "jsCode": "return $input.all().map(i => ({ json: { status: 'no_generation', message: `Stock suffisant pour le profil ${i.json.profile}.`, profile: i.json.profile, stockAvailable: i.json.stockAvailable, threshold: i.json.threshold, checkedAt: i.json.checkedAt } }));"
+   }
+  },
+  {
+   "id": "a36dc459-cd25-4910-82df-9d3d5e69285c",
+   "name": "Demande avec approbation",
+   "webhookId": "mikhmon-ticket-approval-request",
+   "type": "n8n-nodes-base.webhook",
+   "typeVersion": 2,
+   "position": [
+    16,
+    672
+   ],
+   "parameters": {
+    "httpMethod": "POST",
+    "path": "mikhmon/tickets/request",
+    "responseMode": "lastNode",
+    "options": {}
+   }
+  },
+  {
+   "id": "0723ef13-b462-4846-95f3-cb5fa2af9c8f",
+   "name": "Lire la demande (profil + quantité)",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    288,
+    672
+   ],
+   "parameters": {
+    "jsCode": "const input = $json.body ?? $json;\n// Normalisation des entrees imposees (/api/generer-tickets) : userId/tenantId,\n// mikhmonConnectionId, routerConnectionId, profile, quantity, deliveryChannel,\n// telegramChatId, runId, timestamp. runId = cle d'idempotence (cleIdempotence).\n// L'URL Mikhmon vient de la configuration applicative, jamais d'ici :\n// ce workflow n'appelle que RouterOS (/rest/ip/hotspot/user), source unique\n// de verite (tickets visibles automatiquement dans Mikhmon). AUCUN mot de\n// passe de ticket ne remonte vers l'application : seul le NOMBRE est signe.\nif (input.runId && !input.cleIdempotence) input.cleIdempotence = String(input.runId);\nif (input.quantity === undefined && input.quantite !== undefined) input.quantity = input.quantite;\nif (input.profile === undefined && input.profil !== undefined) input.profile = input.profil;\nif (input.deliveryChannel === undefined && input.canal !== undefined) input.deliveryChannel = input.canal;\nif (input.recipient === undefined && input.telegramChatId !== undefined) input.recipient = String(input.telegramChatId);\nif (input.userId === undefined && input.utilisateurId !== undefined) input.userId = String(input.utilisateurId);\nconst env = (name, fallback = '') => (($env && $env[name]) || fallback); // Entrees signees SafeLink d'abord, $env en repli (compose OK).\nconst asInt = (value, fallback) => { const n = Number(value); return Number.isFinite(n) ? Math.floor(n) : fallback; };\nconst quantity = Math.max(1, Math.min(500, asInt(input.quantity, 50)));\nreturn [{ json: {\n  routerBaseUrl: String(input.routerBaseUrl || env('ROUTEROS_BASE_URL', 'https://10.x.x.1')).replace(/\\/$/, ''),\n  routerUser: String(input.routerUser || env('ROUTEROS_USER', 'n8n-vouchers')),\n  routerPassword: String(input.routerPassword || env('ROUTEROS_PASSWORD', '')),\n  profile: String(input.profile || env('MIKHMON_PROFILE', 'default')),\n  hotspotServer: String(input.hotspotServer || env('MIKHMON_HOTSPOT_SERVER', 'all')),\n  threshold: Math.max(0, asInt(input.threshold ?? env('TICKET_THRESHOLD', 50), 50)),\n  quantity, usernameLength: Math.max(3, Math.min(12, asInt(input.usernameLength ?? 4, 4))),\n  passwordLength: Math.max(3, Math.min(16, asInt(input.passwordLength ?? 4, 4))),\n  prefix: String(input.prefix ?? env('TICKET_PREFIX', '')),\n  limitUptime: String(input.limitUptime ?? env('TICKET_LIMIT_UPTIME', '')),\n  limitBytesTotal: String(input.limitBytesTotal ?? env('TICKET_LIMIT_BYTES_TOTAL', '')),\n  deliveryChannel: String(input.deliveryChannel || env('DELIVERY_CHANNEL', 'telegram')).toLowerCase(),\n  recipient: String(input.recipient || env('DELIVERY_RECIPIENT', '')),\n  pdfServiceUrl: String(input.pdfServiceUrl || env('PDF_SERVICE_URL', 'http://gotenberg:3000/forms/chromium/convert/html')).replace(/\\/$/, ''),\n  whatsappWebhookUrl: String(input.whatsappWebhookUrl || env('WHATSAPP_WEBHOOK_URL', '')),\n  printNodePrinterId: asInt(input.printNodePrinterId ?? env('PRINTNODE_PRINTER_ID', 0), 0),\n  printNodeApiKey: String(input.printNodeApiKey || env('PRINTNODE_API_KEY', '')),\n  telegramBotToken: String(input.telegramBotToken || env('TELEGRAM_BOT_TOKEN', '')),\n  approvalRecipient: String(input.approvalRecipient || input.recipient || env('APPROVAL_RECIPIENT', '')),\n  tenantId: String(input.tenantId || ''),\n  userId: String(input.userId || ''),\n  runId: String(input.runId || input.cleIdempotence || ''),\n  cleIdempotence: String(input.cleIdempotence || input.runId || ''),\n  callbackUrl: String(input.callbackUrl || '')\n} }];"
+   }
+  },
+  {
+   "id": "e84af43d-e18d-4499-9d3d-6d19427568f5",
+   "name": "Vérifier le stock avant approbation",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    544,
+    672
+   ],
+   "parameters": {
+    "jsCode": "const inputs = $input.all().map(i => i.json);\nfunction parseUptime(v) {\n  if (v === null || v === undefined) return 0;\n  if (typeof v === 'number') return Number.isFinite(v) && v > 0 ? v : 0;\n  const s = String(v).trim();\n  if (s === '' || s === '0' || s === '0s') return 0;\n  let m = s.match(/^(?:(\\d+)w)?(?:(\\d+)d)?(?:(\\d+)h)?(?:(\\d+)m)?(?:(\\d+)s)?$/i);\n  if (m && m[0] !== '') {\n    const g = i => parseInt(m[i] || '0', 10);\n    return (((g(1) * 7 + g(2)) * 24 + g(3)) * 60 + g(4)) * 60 + g(5);\n  }\n  m = s.match(/^(\\d+):(\\d{1,2}):(\\d{1,2})$/);\n  if (m) return (+m[1]) * 3600 + (+m[2]) * 60 + (+m[3]);\n  const n = Number(s);\n  return Number.isFinite(n) && n > 0 ? Math.floor(n) : 0;\n}\nfunction isDisabled(u) {\n  return u.disabled === true || String(u.disabled || '').toLowerCase() === 'true';\n}\nasync function assertPdfService(url, helpers) {\n  if (!url) throw new Error('PDF_SERVICE_URL est obligatoire.');\n  const base = url.replace(/\\/forms\\/.*$/, '');\n  try {\n    await helpers.httpRequest({ method: 'GET', url: base + '/health', timeout: 10000 });\n    return;\n  } catch (e) { /* repli : sonde directe de l'endpoint */ }\n  try {\n    await helpers.httpRequest({ method: 'GET', url, timeout: 10000 });\n    return;\n  } catch (e) {\n    const sc = e.statusCode || (e.response && (e.response.statusCode || e.response.status));\n    if (sc === 404 || sc === 405) return;\n    throw new Error('Service PDF injoignable : ' + url + ' (' + (e.message || e) + '). Demarrez Gotenberg.');\n  }\n}\nasync function validateConfig(cfg, telegramToken, helpers) {\n  if (!cfg.routerPassword) throw new Error('ROUTEROS_PASSWORD est obligatoire. Utilisez un compte RouterOS dédié (ex. app-fix).');\n  await assertPdfService(cfg.pdfServiceUrl, helpers);\n  if (cfg.deliveryChannel === 'telegram' && !telegramToken) throw new Error('TELEGRAM_BOT_TOKEN est obligatoire pour le canal telegram.');\n  if ((cfg.deliveryChannel === 'telegram' || cfg.deliveryChannel === 'whatsapp') && !cfg.recipient) throw new Error('Destinataire vide pour le canal ' + cfg.deliveryChannel + ' (DELIVERY_RECIPIENT).');\n  if (cfg.deliveryChannel === 'whatsapp' && !cfg.whatsappWebhookUrl) throw new Error(\"WHATSAPP_WEBHOOK_URL est obligatoire pour le canal whatsapp.\");\n  if (cfg.deliveryChannel === 'printnode' && (!cfg.printNodeApiKey || !cfg.printNodePrinterId)) throw new Error('PRINTNODE_API_KEY et PRINTNODE_PRINTER_ID sont obligatoires pour le canal printnode.');\n}\nconst out = [];\nfor (const cfg of inputs) {\n  const telegramToken = cfg.telegramBotToken || '';\n  await validateConfig(cfg, telegramToken, this.helpers);\n  const auth = 'Basic ' + Buffer.from(cfg.routerUser + ':' + cfg.routerPassword).toString('base64');\n  const response = await this.helpers.httpRequest({\n    method: 'GET',\n    url: cfg.routerBaseUrl + '/rest/ip/hotspot/user',\n    headers: { Authorization: auth, Accept: 'application/json' },\n    json: true,\n    timeout: 30000,\n    skipSslCertificateValidation: (['1', 'true', 'oui'].indexOf(String(($env && $env.ROUTEROS_TLS_INSECURE) || '').toLowerCase()) !== -1) /* Exception labo explicite uniquement, verifie par defaut. */\n  });\n  const profRes = await this.helpers.httpRequest({\n    method: 'GET',\n    url: cfg.routerBaseUrl + '/rest/ip/hotspot/user/profile',\n    headers: { Authorization: auth, Accept: 'application/json' },\n    json: true,\n    timeout: 30000,\n    skipSslCertificateValidation: (['1', 'true', 'oui'].indexOf(String(($env && $env.ROUTEROS_TLS_INSECURE) || '').toLowerCase()) !== -1) /* Exception labo explicite uniquement, verifie par defaut. */\n  });\n  const profs = Array.isArray(profRes) ? profRes : (profRes.data || profRes.results || []);\n  if (!profs.some(p => String(p.name) === cfg.profile)) throw new Error('Profil hotspot \"' + cfg.profile + '\" introuvable (creez-le dans /ip/hotspot/user/profile).');\n  const users = Array.isArray(response) ? response : (response.data || response.results || []);\n  const available = users.filter(u => String(u.profile || '') === cfg.profile && !isDisabled(u) && parseUptime(u.uptime) === 0);\n  out.push({ json: { ...cfg, existingNames: users.map(u => String(u.name)), stockAvailable: available.length, requestedAt: new Date().toISOString() } });\n}\nreturn out;\n"
+   }
+  },
+  {
+   "id": "ba7a2c66-f3b1-4236-a553-ee372069f21d",
+   "name": "Préparer le récapitulatif",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    800,
+    672
+   ],
+   "parameters": {
+    "jsCode": "return $input.all().map(i => {\n  const cfg = i.json;\n  const approvalUrl = $execution.resumeUrl;\n  const approveUrl = approvalUrl + '?approved=true';\n  const rejectUrl = approvalUrl + '?approved=false';\n  const text = `🔐 DEMANDE D'APPROBATION\\n\\nProfil: ${cfg.profile}\\nQuantité demandée: ${cfg.quantity}\\nStock actuel: ${cfg.stockAvailable}\\nSeuil: ${cfg.threshold}\\nCanal: ${cfg.deliveryChannel}\\nDestinataire: ${cfg.recipient}\\nRouteur: ${cfg.routeurNom || cfg.routerBaseUrl || '?'}\\nDate: ${new Date().toISOString()}\\n\\nUtilisez un bouton ci-dessous pour approuver ou refuser.`;\n  return { json: { ...cfg, approvalUrl, approveUrl, rejectUrl, approvalMessage: text } };\n});"
+   }
+  },
+  {
+   "id": "de162e5f-42ce-4860-ac9b-494ce30d3976",
+   "name": "Notifier le demandeur (Telegram)",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    1056,
+    672
+   ],
+   "parameters": {
+    "jsCode": "const out = [];\nfor (const item of $input.all()) {\n  const cfg = item.json;\n  if (!cfg.telegramBotToken) throw new Error('telegramBotToken est obligatoire pour notifier.');\n  const result = await this.helpers.httpRequest({ method: 'POST', url: 'https://api.telegram.org/bot' + cfg.telegramBotToken + '/sendMessage', body: { chat_id: cfg.approvalRecipient, text: cfg.approvalMessage, reply_markup: { inline_keyboard: [[{ text: '✅ Approuver', url: cfg.approveUrl }, { text: '❌ Refuser', url: cfg.rejectUrl }]] } }, json: true, timeout: 30000 });\n  out.push({ json: { ...cfg, approvalNotification: result, notificationSent: true } });\n}\nreturn out;"
+   }
+  },
+  {
+   "id": "c5799461-434e-47ff-83c7-779cd8466f96",
+   "name": "Attendre l'approbation",
+   "webhookId": "4fbdc254-7f4f-4aea-8020-7ea91c5ade9d",
+   "type": "n8n-nodes-base.wait",
+   "typeVersion": 1.1,
+   "position": [
+    1328,
+    672
+   ],
+   "parameters": {
+    "resume": "webhook",
+    "options": {
+     "webhookSuffix": "mikhmon-approval"
+    }
+   }
+  },
+  {
+   "id": "78e0d6d6-ecd0-4241-80b2-5a56b1f8e795",
+   "name": "Valider la décision",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    1584,
+    672
+   ],
+   "parameters": {
+    "jsCode": "return $input.all().map(i => {\n  const approval = i.json.query ?? i.json.body ?? i.json;\n  const approved = approval.approved === true || String(approval.approved).toLowerCase() === 'true' || String(approval.action).toLowerCase() === 'approve';\n  return { json: { ...i.json, approved, approvalDecisionAt: new Date().toISOString(), approvalComment: String(approval.comment || '') } };\n});"
+   }
+  },
+  {
+   "id": "017312e1-01a9-40f1-bc80-92d848bdfba5",
+   "name": "Génération approuvée ?",
+   "type": "n8n-nodes-base.if",
+   "typeVersion": 2.2,
+   "position": [
+    1840,
+    672
+   ],
+   "parameters": {
+    "conditions": {
+     "boolean": [
+      {
+       "value1": "={{$json.approved}}",
+       "operation": "isTrue"
+      }
+     ],
+     "combinator": "and",
+     "options": {
+      "caseSensitive": true,
+      "leftValue": "",
+      "typeValidation": "strict",
+      "version": 1
+     }
+    },
+    "options": {}
+   }
+  },
+  {
+   "id": "24b4f59e-4b57-4207-87db-40aa0085dc77",
+   "name": "Génération refusée",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    2128,
+    800
+   ],
+   "parameters": {
+    "jsCode": "return $input.all().map(i => ({ json: { status: 'rejected', message: 'Génération refusée par le demandeur.', profile: i.json.profile, quantity: i.json.quantity, approvalDecisionAt: i.json.approvalDecisionAt } }));"
+   }
+  },
+  {
+   "id": "07116963-8fa5-44b6-b6fd-1ebb9d8320a2",
+   "name": "Rattacher la config au PDF",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    1904,
+    160
+   ],
+   "parameters": {
+    "jsCode": "const src = $('Préparer le HTML PDF').all();\nconst out = $input.all();\nif (src.length !== out.length) throw new Error('Desalignement config/PDF : ' + src.length + ' configs pour ' + out.length + ' PDF.');\nreturn out.map((it, i) => ({ json: { ...src[i].json, pdfReady: true }, binary: it.binary }));"
+   }
+  },
+  {
+   "parameters": {
+    "jsCode": "// Fonctions embarquees dans les nodes Code n8n (pas de require disponible) :\n// SHA-256 + HMAC-SHA256 + JSON canonique (cles triees, sans espaces),\n// identique a web/lib/signature.ts cote application.\nfunction canon(v) {\n  if (v === null || v === undefined) return 'null';\n  if (Array.isArray(v)) return '[' + v.map(canon).join(',') + ']';\n  if (typeof v === 'object') {\n    var ks = Object.keys(v).filter(function (k) { return v[k] !== undefined; }).sort();\n    return '{' + ks.map(function (k) { return JSON.stringify(k) + ':' + canon(v[k]); }).join(',') + '}';\n  }\n  var t = JSON.stringify(v);\n  if (typeof t !== 'string') throw new Error('Valeur non signable.');\n  return t;\n}\nfunction sha256hex(asciiBytes) {\n  var K = [0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,\n    0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,\n    0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da,\n    0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7, 0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967,\n    0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13, 0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85,\n    0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3, 0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070,\n    0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3,\n    0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2];\n  var H = [0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19];\n  var i, j;\n  var bytes = [];\n  for (i = 0; i < asciiBytes.length; i++) bytes.push(asciiBytes.charCodeAt(i) & 0xff);\n  var bitLen = bytes.length * 8;\n  bytes.push(0x80);\n  while (bytes.length % 64 !== 56) bytes.push(0);\n  var hi = Math.floor(bitLen / 4294967296), lo = bitLen >>> 0;\n  bytes.push((hi >>> 24) & 0xff, (hi >>> 16) & 0xff, (hi >>> 8) & 0xff, hi & 0xff,\n    (lo >>> 24) & 0xff, (lo >>> 16) & 0xff, (lo >>> 8) & 0xff, lo & 0xff);\n  function rotr(x, n) { return (x >>> n) | (x << (32 - n)); }\n  var w = new Array(64);\n  for (i = 0; i < bytes.length; i += 64) {\n    for (j = 0; j < 16; j++) w[j] = ((bytes[i + j * 4] << 24) | (bytes[i + j * 4 + 1] << 16) | (bytes[i + j * 4 + 2] << 8) | bytes[i + j * 4 + 3]) >>> 0;\n    for (j = 16; j < 64; j++) {\n      var s0 = (rotr(w[j - 15], 7) ^ rotr(w[j - 15], 18) ^ (w[j - 15] >>> 3)) >>> 0;\n      var s1 = (rotr(w[j - 2], 17) ^ rotr(w[j - 2], 19) ^ (w[j - 2] >>> 10)) >>> 0;\n      w[j] = (w[j - 16] + s0 + w[j - 7] + s1) >>> 0;\n    }\n    var a = H[0], b = H[1], c = H[2], d = H[3], e = H[4], f = H[5], g = H[6], h = H[7];\n    for (j = 0; j < 64; j++) {\n      var S1 = (rotr(e, 6) ^ rotr(e, 11) ^ rotr(e, 25)) >>> 0;\n      var ch = ((e & f) ^ ((~e) & g)) >>> 0;\n      var t1 = (h + S1 + ch + K[j] + w[j]) >>> 0;\n      var S0 = (rotr(a, 2) ^ rotr(a, 13) ^ rotr(a, 22)) >>> 0;\n      var mj = ((a & b) ^ (a & c) ^ (b & c)) >>> 0;\n      var t2 = (S0 + mj) >>> 0;\n      h = g; g = f; f = e; e = (d + t1) >>> 0; d = c; c = b; b = a; a = (t1 + t2) >>> 0;\n    }\n    H[0] = (H[0] + a) >>> 0; H[1] = (H[1] + b) >>> 0; H[2] = (H[2] + c) >>> 0; H[3] = (H[3] + d) >>> 0;\n    H[4] = (H[4] + e) >>> 0; H[5] = (H[5] + f) >>> 0; H[6] = (H[6] + g) >>> 0; H[7] = (H[7] + h) >>> 0;\n  }\n  return H.map(function (x) { return ('00000000' + x.toString(16)).slice(-8); }).join('');\n}\nfunction utf8Bytes(s) {\n  var out = '';\n  for (var i = 0; i < s.length; i++) {\n    var c = s.charCodeAt(i);\n    if (c < 0x80) out += String.fromCharCode(c);\n    else if (c < 0x800) out += String.fromCharCode(0xc0 | (c >> 6), 0x80 | (c & 0x3f));\n    else if (c >= 0xd800 && c <= 0xdbff && i + 1 < s.length) {\n      var lo = s.charCodeAt(i + 1);\n      if (lo >= 0xdc00 && lo <= 0xdfff) {\n        var cp = 0x10000 + ((c - 0xd800) << 10) + (lo - 0xdc00);\n        out += String.fromCharCode(0xf0 | (cp >> 18), 0x80 | ((cp >> 12) & 0x3f), 0x80 | ((cp >> 6) & 0x3f), 0x80 | (cp & 0x3f));\n        i++;\n      } else out += String.fromCharCode(0xe0 | (c >> 12), 0x80 | ((c >> 6) & 0x3f), 0x80 | (c & 0x3f));\n    } else out += String.fromCharCode(0xe0 | (c >> 12), 0x80 | ((c >> 6) & 0x3f), 0x80 | (c & 0x3f));\n  }\n  return out;\n}\nfunction hmacHex(secret, message) {\n  var key = utf8Bytes(secret), msg = utf8Bytes(message);\n  var block = '';\n  if (key.length > 64) {\n    var h = sha256hex(key);\n    for (var i = 0; i < 32; i++) block += String.fromCharCode(parseInt(h.substr(i * 2, 2), 16));\n  } else block = key;\n  while (block.length < 64) block += String.fromCharCode(0);\n  var o = '', q = '';\n  for (var j = 0; j < 64; j++) { o += String.fromCharCode(block.charCodeAt(j) ^ 0x5c); q += String.fromCharCode(block.charCodeAt(j) ^ 0x36); }\n  var innerHex = sha256hex(q + msg);\n  var inner = '';\n  for (var k = 0; k < 64; k += 2) inner += String.fromCharCode(parseInt(innerHex.substr(k, 2), 16));\n  return sha256hex(o + inner);\n}\nfunction egaleConstant(a, b) {\n  if (a.length !== b.length) return false;\n  var diff = 0;\n  for (var i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);\n  return diff === 0;\n}\n// 1) tenantId obligatoire (isolement multi-utilisateur).\n// 2) signature HMAC-SHA256 du corps canonique, secret\n// N8N_WEBHOOK_SECRET declare dans l'environnement n8n.\n// Passe les elements inchanges si tout est bon.\nvar secret = (typeof $env !== 'undefined' && $env && $env.N8N_WEBHOOK_SECRET) || '';\nif (!secret) throw new Error('N8N_WEBHOOK_SECRET manquant : declarez-le dans le docker-compose de n8n, puis activez ce workflow.');\nvar elements = $input.all();\nfor (var k = 0; k < elements.length; k++) {\n  var j = elements[k].json || {};\n  var corps = (j.body && typeof j.body === 'object') ? j.body : j;\n  if (corps.runId && !corps.cleIdempotence) corps.cleIdempotence = String(corps.runId);\n  if (!corps.cleIdempotence) throw new Error('runId (cleIdempotence) obligatoire : appelez via /api/generer-tickets.');\n  var entetes = j.headers || {};\n  var recue = String(corps.signature || entetes['x-signature'] || '');\n  var tenant = String(corps.tenantId || '');\n  if (!tenant) throw new Error('tenantId obligatoire : appelez ce webhook via /api/tickets/lots.');\n  var charge = {};\n  Object.keys(corps).sort().forEach(function (cle) { if (cle !== 'signature') charge[cle] = corps[cle]; });\n  var attendue = hmacHex(secret, canon(charge));\n  if (!egaleConstant(recue, attendue)) throw new Error('Signature HMAC invalide : appel refuse.');\n}\nreturn elements;"
+   },
+   "id": "03e94384-9aa7-4e6e-be49-ca018eef1579",
+   "name": "Vérifier la signature",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    160,
+    200
+   ]
+  },
+  {
+   "parameters": {
+    "jsCode": "// Fonctions embarquees dans les nodes Code n8n (pas de require disponible) :\n// SHA-256 + HMAC-SHA256 + JSON canonique (cles triees, sans espaces),\n// identique a web/lib/signature.ts cote application.\nfunction canon(v) {\n  if (v === null || v === undefined) return 'null';\n  if (Array.isArray(v)) return '[' + v.map(canon).join(',') + ']';\n  if (typeof v === 'object') {\n    var ks = Object.keys(v).filter(function (k) { return v[k] !== undefined; }).sort();\n    return '{' + ks.map(function (k) { return JSON.stringify(k) + ':' + canon(v[k]); }).join(',') + '}';\n  }\n  var t = JSON.stringify(v);\n  if (typeof t !== 'string') throw new Error('Valeur non signable.');\n  return t;\n}\nfunction sha256hex(asciiBytes) {\n  var K = [0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,\n    0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,\n    0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da,\n    0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7, 0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967,\n    0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13, 0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85,\n    0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3, 0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070,\n    0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3,\n    0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2];\n  var H = [0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19];\n  var i, j;\n  var bytes = [];\n  for (i = 0; i < asciiBytes.length; i++) bytes.push(asciiBytes.charCodeAt(i) & 0xff);\n  var bitLen = bytes.length * 8;\n  bytes.push(0x80);\n  while (bytes.length % 64 !== 56) bytes.push(0);\n  var hi = Math.floor(bitLen / 4294967296), lo = bitLen >>> 0;\n  bytes.push((hi >>> 24) & 0xff, (hi >>> 16) & 0xff, (hi >>> 8) & 0xff, hi & 0xff,\n    (lo >>> 24) & 0xff, (lo >>> 16) & 0xff, (lo >>> 8) & 0xff, lo & 0xff);\n  function rotr(x, n) { return (x >>> n) | (x << (32 - n)); }\n  var w = new Array(64);\n  for (i = 0; i < bytes.length; i += 64) {\n    for (j = 0; j < 16; j++) w[j] = ((bytes[i + j * 4] << 24) | (bytes[i + j * 4 + 1] << 16) | (bytes[i + j * 4 + 2] << 8) | bytes[i + j * 4 + 3]) >>> 0;\n    for (j = 16; j < 64; j++) {\n      var s0 = (rotr(w[j - 15], 7) ^ rotr(w[j - 15], 18) ^ (w[j - 15] >>> 3)) >>> 0;\n      var s1 = (rotr(w[j - 2], 17) ^ rotr(w[j - 2], 19) ^ (w[j - 2] >>> 10)) >>> 0;\n      w[j] = (w[j - 16] + s0 + w[j - 7] + s1) >>> 0;\n    }\n    var a = H[0], b = H[1], c = H[2], d = H[3], e = H[4], f = H[5], g = H[6], h = H[7];\n    for (j = 0; j < 64; j++) {\n      var S1 = (rotr(e, 6) ^ rotr(e, 11) ^ rotr(e, 25)) >>> 0;\n      var ch = ((e & f) ^ ((~e) & g)) >>> 0;\n      var t1 = (h + S1 + ch + K[j] + w[j]) >>> 0;\n      var S0 = (rotr(a, 2) ^ rotr(a, 13) ^ rotr(a, 22)) >>> 0;\n      var mj = ((a & b) ^ (a & c) ^ (b & c)) >>> 0;\n      var t2 = (S0 + mj) >>> 0;\n      h = g; g = f; f = e; e = (d + t1) >>> 0; d = c; c = b; b = a; a = (t1 + t2) >>> 0;\n    }\n    H[0] = (H[0] + a) >>> 0; H[1] = (H[1] + b) >>> 0; H[2] = (H[2] + c) >>> 0; H[3] = (H[3] + d) >>> 0;\n    H[4] = (H[4] + e) >>> 0; H[5] = (H[5] + f) >>> 0; H[6] = (H[6] + g) >>> 0; H[7] = (H[7] + h) >>> 0;\n  }\n  return H.map(function (x) { return ('00000000' + x.toString(16)).slice(-8); }).join('');\n}\nfunction utf8Bytes(s) {\n  var out = '';\n  for (var i = 0; i < s.length; i++) {\n    var c = s.charCodeAt(i);\n    if (c < 0x80) out += String.fromCharCode(c);\n    else if (c < 0x800) out += String.fromCharCode(0xc0 | (c >> 6), 0x80 | (c & 0x3f));\n    else if (c >= 0xd800 && c <= 0xdbff && i + 1 < s.length) {\n      var lo = s.charCodeAt(i + 1);\n      if (lo >= 0xdc00 && lo <= 0xdfff) {\n        var cp = 0x10000 + ((c - 0xd800) << 10) + (lo - 0xdc00);\n        out += String.fromCharCode(0xf0 | (cp >> 18), 0x80 | ((cp >> 12) & 0x3f), 0x80 | ((cp >> 6) & 0x3f), 0x80 | (cp & 0x3f));\n        i++;\n      } else out += String.fromCharCode(0xe0 | (c >> 12), 0x80 | ((c >> 6) & 0x3f), 0x80 | (c & 0x3f));\n    } else out += String.fromCharCode(0xe0 | (c >> 12), 0x80 | ((c >> 6) & 0x3f), 0x80 | (c & 0x3f));\n  }\n  return out;\n}\nfunction hmacHex(secret, message) {\n  var key = utf8Bytes(secret), msg = utf8Bytes(message);\n  var block = '';\n  if (key.length > 64) {\n    var h = sha256hex(key);\n    for (var i = 0; i < 32; i++) block += String.fromCharCode(parseInt(h.substr(i * 2, 2), 16));\n  } else block = key;\n  while (block.length < 64) block += String.fromCharCode(0);\n  var o = '', q = '';\n  for (var j = 0; j < 64; j++) { o += String.fromCharCode(block.charCodeAt(j) ^ 0x5c); q += String.fromCharCode(block.charCodeAt(j) ^ 0x36); }\n  var innerHex = sha256hex(q + msg);\n  var inner = '';\n  for (var k = 0; k < 64; k += 2) inner += String.fromCharCode(parseInt(innerHex.substr(k, 2), 16));\n  return sha256hex(o + inner);\n}\nfunction egaleConstant(a, b) {\n  if (a.length !== b.length) return false;\n  var diff = 0;\n  for (var i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);\n  return diff === 0;\n}\n// Compte rendu signe vers /api/n8n/retour : l'application verifie\n// la signature (N8N_CALLBACK_SECRET) et l'idempotence (cle).\nvar secretRetour = (typeof $env !== 'undefined' && $env && $env.N8N_CALLBACK_SECRET) || '';\nif (!secretRetour) throw new Error('N8N_CALLBACK_SECRET manquant : declarez-le dans le docker-compose de n8n.');\nvar sorties = [];\nvar recus = $input.all();\nfor (var r = 0; r < recus.length; r++) {\n  var cfg = recus[r].json || {};\n  if (cfg.runId) {\n    if (!cfg.tenantId) throw new Error('tenantId manquant.');\n    if (!cfg.callbackUrl) throw new Error('callbackUrl manquante (flux automatique).');\n    var tixAuto = Array.isArray(cfg.tickets) ? cfg.tickets : [];\n    var errAuto = cfg.erreur || cfg.error || null;\n    var stockAv = (cfg.stockAvant !== undefined && cfg.stockAvant !== null) ? cfg.stockAvant : (cfg.stockAvailable !== undefined ? cfg.stockAvailable : null);\n    var stockAp = (cfg.stockApres !== undefined && cfg.stockApres !== null) ? cfg.stockApres : (cfg.stockAvailable !== undefined ? cfg.stockAvailable : null);\n    var contenuAuto = { runId: String(cfg.runId), tenantId: String(cfg.tenantId), statut: errAuto ? 'echoue' : 'termine', quantiteCreee: tixAuto.length, stockAvant: stockAv, stockApres: stockAp };\n    if (errAuto) contenuAuto.erreur = String(errAuto).slice(0, 500);\n    var texteAuto = canon(contenuAuto);\n    var horoAuto = String(Date.now());\n    sorties.push({ json: { callbackUrl: String(cfg.callbackUrl), corps: texteAuto, signature: hmacHex(secretRetour, texteAuto), horodatage: horoAuto, runId: contenuAuto.runId, tenantId: contenuAuto.tenantId, cleIdempotence: contenuAuto.runId } });\n  } else {\n\n      var cfg = recus[r].json || {};\n      if (!cfg.tenantId) throw new Error('tenantId manquant dans le retour.');\n      if (!cfg.cleIdempotence) throw new Error('cleIdempotence manquante dans le retour.');\n      if (!cfg.callbackUrl) throw new Error(\"callbackUrl manquante : l'appelant doit fournir callbackUrl (APP_URL + /api/n8n/retour).\");\n      var tix = Array.isArray(cfg.tickets) ? cfg.tickets : [];\n      var contenu = { tenantId: String(cfg.tenantId), cleIdempotence: String(cfg.cleIdempotence), statut: 'termine', quantiteCreee: tix.length };\n      var texte = canon(contenu);\n      sorties.push({ json: { callbackUrl: String(cfg.callbackUrl), corps: texte, signature: hmacHex(secretRetour, texte), tenantId: contenu.tenantId, cleIdempotence: contenu.cleIdempotence } });\n  }\n}\nreturn sorties;\n"
+   },
+   "id": "4050eaa1-fa3c-40d9-8118-6c2b05a77182",
+   "name": "Préparer le retour signé",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    2176,
+    320
+   ]
+  },
+  {
+   "parameters": {
+    "method": "POST",
+    "url": "={{$json.callbackUrl}}",
+    "sendBody": true,
+    "specifyBody": "json",
+    "jsonBody": "={{$json.corps}}",
+    "sendHeaders": true,
+    "headerParameters": {
+     "parameters": [
+      {
+       "name": "X-Signature",
+       "value": "={{$json.signature}}"
+      },
+      {
+       "name": "X-Timestamp",
+       "value": "={{$json.horodatage}}"
+      },
+      {
+       "name": "X-Run-Id",
+       "value": "={{$json.runId}}"
+      }
+     ]
+    },
+    "options": {
+     "timeout": 20000
+    }
+   },
+   "id": "ce449e72-fa00-41aa-9732-3b90da5ff7b4",
+   "name": "Rendre compte à l'application",
+   "type": "n8n-nodes-base.httpRequest",
+   "typeVersion": 4.2,
+   "position": [
+    2432,
+    320
+   ]
+  },
+  {
+   "parameters": {
+    "jsCode": "// Fonctions embarquees dans les nodes Code n8n (pas de require disponible) :\n// SHA-256 + HMAC-SHA256 + JSON canonique (cles triees, sans espaces),\n// identique a web/lib/signature.ts cote application.\nfunction canon(v) {\n  if (v === null || v === undefined) return 'null';\n  if (Array.isArray(v)) return '[' + v.map(canon).join(',') + ']';\n  if (typeof v === 'object') {\n    var ks = Object.keys(v).filter(function (k) { return v[k] !== undefined; }).sort();\n    return '{' + ks.map(function (k) { return JSON.stringify(k) + ':' + canon(v[k]); }).join(',') + '}';\n  }\n  var t = JSON.stringify(v);\n  if (typeof t !== 'string') throw new Error('Valeur non signable.');\n  return t;\n}\nfunction sha256hex(asciiBytes) {\n  var K = [0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,\n    0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,\n    0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da,\n    0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7, 0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967,\n    0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13, 0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85,\n    0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3, 0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070,\n    0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3,\n    0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2];\n  var H = [0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19];\n  var i, j;\n  var bytes = [];\n  for (i = 0; i < asciiBytes.length; i++) bytes.push(asciiBytes.charCodeAt(i) & 0xff);\n  var bitLen = bytes.length * 8;\n  bytes.push(0x80);\n  while (bytes.length % 64 !== 56) bytes.push(0);\n  var hi = Math.floor(bitLen / 4294967296), lo = bitLen >>> 0;\n  bytes.push((hi >>> 24) & 0xff, (hi >>> 16) & 0xff, (hi >>> 8) & 0xff, hi & 0xff,\n    (lo >>> 24) & 0xff, (lo >>> 16) & 0xff, (lo >>> 8) & 0xff, lo & 0xff);\n  function rotr(x, n) { return (x >>> n) | (x << (32 - n)); }\n  var w = new Array(64);\n  for (i = 0; i < bytes.length; i += 64) {\n    for (j = 0; j < 16; j++) w[j] = ((bytes[i + j * 4] << 24) | (bytes[i + j * 4 + 1] << 16) | (bytes[i + j * 4 + 2] << 8) | bytes[i + j * 4 + 3]) >>> 0;\n    for (j = 16; j < 64; j++) {\n      var s0 = (rotr(w[j - 15], 7) ^ rotr(w[j - 15], 18) ^ (w[j - 15] >>> 3)) >>> 0;\n      var s1 = (rotr(w[j - 2], 17) ^ rotr(w[j - 2], 19) ^ (w[j - 2] >>> 10)) >>> 0;\n      w[j] = (w[j - 16] + s0 + w[j - 7] + s1) >>> 0;\n    }\n    var a = H[0], b = H[1], c = H[2], d = H[3], e = H[4], f = H[5], g = H[6], h = H[7];\n    for (j = 0; j < 64; j++) {\n      var S1 = (rotr(e, 6) ^ rotr(e, 11) ^ rotr(e, 25)) >>> 0;\n      var ch = ((e & f) ^ ((~e) & g)) >>> 0;\n      var t1 = (h + S1 + ch + K[j] + w[j]) >>> 0;\n      var S0 = (rotr(a, 2) ^ rotr(a, 13) ^ rotr(a, 22)) >>> 0;\n      var mj = ((a & b) ^ (a & c) ^ (b & c)) >>> 0;\n      var t2 = (S0 + mj) >>> 0;\n      h = g; g = f; f = e; e = (d + t1) >>> 0; d = c; c = b; b = a; a = (t1 + t2) >>> 0;\n    }\n    H[0] = (H[0] + a) >>> 0; H[1] = (H[1] + b) >>> 0; H[2] = (H[2] + c) >>> 0; H[3] = (H[3] + d) >>> 0;\n    H[4] = (H[4] + e) >>> 0; H[5] = (H[5] + f) >>> 0; H[6] = (H[6] + g) >>> 0; H[7] = (H[7] + h) >>> 0;\n  }\n  return H.map(function (x) { return ('00000000' + x.toString(16)).slice(-8); }).join('');\n}\nfunction utf8Bytes(s) {\n  var out = '';\n  for (var i = 0; i < s.length; i++) {\n    var c = s.charCodeAt(i);\n    if (c < 0x80) out += String.fromCharCode(c);\n    else if (c < 0x800) out += String.fromCharCode(0xc0 | (c >> 6), 0x80 | (c & 0x3f));\n    else if (c >= 0xd800 && c <= 0xdbff && i + 1 < s.length) {\n      var lo = s.charCodeAt(i + 1);\n      if (lo >= 0xdc00 && lo <= 0xdfff) {\n        var cp = 0x10000 + ((c - 0xd800) << 10) + (lo - 0xdc00);\n        out += String.fromCharCode(0xf0 | (cp >> 18), 0x80 | ((cp >> 12) & 0x3f), 0x80 | ((cp >> 6) & 0x3f), 0x80 | (cp & 0x3f));\n        i++;\n      } else out += String.fromCharCode(0xe0 | (c >> 12), 0x80 | ((c >> 6) & 0x3f), 0x80 | (c & 0x3f));\n    } else out += String.fromCharCode(0xe0 | (c >> 12), 0x80 | ((c >> 6) & 0x3f), 0x80 | (c & 0x3f));\n  }\n  return out;\n}\nfunction hmacHex(secret, message) {\n  var key = utf8Bytes(secret), msg = utf8Bytes(message);\n  var block = '';\n  if (key.length > 64) {\n    var h = sha256hex(key);\n    for (var i = 0; i < 32; i++) block += String.fromCharCode(parseInt(h.substr(i * 2, 2), 16));\n  } else block = key;\n  while (block.length < 64) block += String.fromCharCode(0);\n  var o = '', q = '';\n  for (var j = 0; j < 64; j++) { o += String.fromCharCode(block.charCodeAt(j) ^ 0x5c); q += String.fromCharCode(block.charCodeAt(j) ^ 0x36); }\n  var innerHex = sha256hex(q + msg);\n  var inner = '';\n  for (var k = 0; k < 64; k += 2) inner += String.fromCharCode(parseInt(innerHex.substr(k, 2), 16));\n  return sha256hex(o + inner);\n}\nfunction egaleConstant(a, b) {\n  if (a.length !== b.length) return false;\n  var diff = 0;\n  for (var i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);\n  return diff === 0;\n}\n// Compte rendu signe vers /api/n8n/retour : l'application verifie\n// la signature (N8N_CALLBACK_SECRET) et l'idempotence (cle).\nvar secretInterne = (($env && $env.N8N_CALLBACK_SECRET) || '');\nif (!secretInterne) throw new Error('N8N_CALLBACK_SECRET manquant : déclarez-le dans le docker-compose de n8n.');\nvar appUrl = (($env && $env.APP_URL) || '').replace(/\\/$/, '');\nif (!appUrl) throw new Error('APP_URL manquant : déclarez-le dans le docker-compose de n8n.');\nvar simulation = String(($env && $env.REAPPRO_SIMULATION) || '').toLowerCase() === 'true';\n// Le corps envoyé est la chaîne canonique exacte signée : le\n// serveur vérifie le HMAC du corps BRUT reçu.\nvar texte = canon({ simulation: simulation });\nvar horodatage = String(Date.now());\nvar rafale = 'poll-' + horodatage + '-' + (function () { try { return require('crypto').randomBytes(6).toString('hex'); } catch (eNonce) { return String(Date.now()); } })();\nreturn [{ json: { corps: texte, signature: hmacHex(secretInterne, texte), horodatage: horodatage, rafale: rafale, appUrl: appUrl } }];\n"
+   },
+   "id": "7fd8b9dd-453d-46cf-9f1d-ab60024dcff6",
+   "name": "Signer l'appel jobs",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    16,
+    560
+   ]
+  },
+  {
+   "parameters": {
+    "method": "POST",
+    "url": "={{$json.appUrl}}/api/internal/n8n/replenishment/jobs",
+    "sendBody": true,
+    "specifyBody": "json",
+    "jsonBody": "={{$json.corps}}",
+    "sendHeaders": true,
+    "headerParameters": {
+     "parameters": [
+      {
+       "name": "X-Signature",
+       "value": "={{$json.signature}}"
+      },
+      {
+       "name": "X-Timestamp",
+       "value": "={{$json.horodatage}}"
+      },
+      {
+       "name": "X-Run-Id",
+       "value": "={{$json.rafale}}"
+      }
+     ]
+    },
+    "options": {
+     "timeout": 15000
+    }
+   },
+   "id": "34117eb0-3fd5-4a76-af16-a302829ed981",
+   "name": "Récupérer les jobs signés",
+   "type": "n8n-nodes-base.httpRequest",
+   "typeVersion": 4.2,
+   "position": [
+    208,
+    560
+   ]
+  },
+  {
+   "parameters": {
+    "jsCode": "var entree = ($input.first() || {}).json || {};\nvar donnees = entree.data || {};\nvar jobs = Array.isArray(donnees.jobs) ? donnees.jobs : [];\nvar appUrl = '';\ntry { appUrl = ($(\"Signer l'appel jobs\").first().json || {}).appUrl || \"\"; } catch (e) { throw new Error(\"Rafale introuvable.\"); }\n// Aucun job : sortie vide = arrêt propre, sans erreur.\nreturn jobs.map(function (job) {\n  return { json: Object.assign({}, job, { appUrl: appUrl }) };\n});\n"
+   },
+   "id": "311e56a6-da9f-4f68-bf50-8d0eab7408eb",
+   "name": "Fractionner les jobs",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    400,
+    560
+   ]
+  },
+  {
+   "parameters": {
+    "jsCode": "// Fonctions embarquees dans les nodes Code n8n (pas de require disponible) :\n// SHA-256 + HMAC-SHA256 + JSON canonique (cles triees, sans espaces),\n// identique a web/lib/signature.ts cote application.\nfunction canon(v) {\n  if (v === null || v === undefined) return 'null';\n  if (Array.isArray(v)) return '[' + v.map(canon).join(',') + ']';\n  if (typeof v === 'object') {\n    var ks = Object.keys(v).filter(function (k) { return v[k] !== undefined; }).sort();\n    return '{' + ks.map(function (k) { return JSON.stringify(k) + ':' + canon(v[k]); }).join(',') + '}';\n  }\n  var t = JSON.stringify(v);\n  if (typeof t !== 'string') throw new Error('Valeur non signable.');\n  return t;\n}\nfunction sha256hex(asciiBytes) {\n  var K = [0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,\n    0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,\n    0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da,\n    0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7, 0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967,\n    0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13, 0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85,\n    0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3, 0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070,\n    0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3,\n    0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2];\n  var H = [0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19];\n  var i, j;\n  var bytes = [];\n  for (i = 0; i < asciiBytes.length; i++) bytes.push(asciiBytes.charCodeAt(i) & 0xff);\n  var bitLen = bytes.length * 8;\n  bytes.push(0x80);\n  while (bytes.length % 64 !== 56) bytes.push(0);\n  var hi = Math.floor(bitLen / 4294967296), lo = bitLen >>> 0;\n  bytes.push((hi >>> 24) & 0xff, (hi >>> 16) & 0xff, (hi >>> 8) & 0xff, hi & 0xff,\n    (lo >>> 24) & 0xff, (lo >>> 16) & 0xff, (lo >>> 8) & 0xff, lo & 0xff);\n  function rotr(x, n) { return (x >>> n) | (x << (32 - n)); }\n  var w = new Array(64);\n  for (i = 0; i < bytes.length; i += 64) {\n    for (j = 0; j < 16; j++) w[j] = ((bytes[i + j * 4] << 24) | (bytes[i + j * 4 + 1] << 16) | (bytes[i + j * 4 + 2] << 8) | bytes[i + j * 4 + 3]) >>> 0;\n    for (j = 16; j < 64; j++) {\n      var s0 = (rotr(w[j - 15], 7) ^ rotr(w[j - 15], 18) ^ (w[j - 15] >>> 3)) >>> 0;\n      var s1 = (rotr(w[j - 2], 17) ^ rotr(w[j - 2], 19) ^ (w[j - 2] >>> 10)) >>> 0;\n      w[j] = (w[j - 16] + s0 + w[j - 7] + s1) >>> 0;\n    }\n    var a = H[0], b = H[1], c = H[2], d = H[3], e = H[4], f = H[5], g = H[6], h = H[7];\n    for (j = 0; j < 64; j++) {\n      var S1 = (rotr(e, 6) ^ rotr(e, 11) ^ rotr(e, 25)) >>> 0;\n      var ch = ((e & f) ^ ((~e) & g)) >>> 0;\n      var t1 = (h + S1 + ch + K[j] + w[j]) >>> 0;\n      var S0 = (rotr(a, 2) ^ rotr(a, 13) ^ rotr(a, 22)) >>> 0;\n      var mj = ((a & b) ^ (a & c) ^ (b & c)) >>> 0;\n      var t2 = (S0 + mj) >>> 0;\n      h = g; g = f; f = e; e = (d + t1) >>> 0; d = c; c = b; b = a; a = (t1 + t2) >>> 0;\n    }\n    H[0] = (H[0] + a) >>> 0; H[1] = (H[1] + b) >>> 0; H[2] = (H[2] + c) >>> 0; H[3] = (H[3] + d) >>> 0;\n    H[4] = (H[4] + e) >>> 0; H[5] = (H[5] + f) >>> 0; H[6] = (H[6] + g) >>> 0; H[7] = (H[7] + h) >>> 0;\n  }\n  return H.map(function (x) { return ('00000000' + x.toString(16)).slice(-8); }).join('');\n}\nfunction utf8Bytes(s) {\n  var out = '';\n  for (var i = 0; i < s.length; i++) {\n    var c = s.charCodeAt(i);\n    if (c < 0x80) out += String.fromCharCode(c);\n    else if (c < 0x800) out += String.fromCharCode(0xc0 | (c >> 6), 0x80 | (c & 0x3f));\n    else if (c >= 0xd800 && c <= 0xdbff && i + 1 < s.length) {\n      var lo = s.charCodeAt(i + 1);\n      if (lo >= 0xdc00 && lo <= 0xdfff) {\n        var cp = 0x10000 + ((c - 0xd800) << 10) + (lo - 0xdc00);\n        out += String.fromCharCode(0xf0 | (cp >> 18), 0x80 | ((cp >> 12) & 0x3f), 0x80 | ((cp >> 6) & 0x3f), 0x80 | (cp & 0x3f));\n        i++;\n      } else out += String.fromCharCode(0xe0 | (c >> 12), 0x80 | ((c >> 6) & 0x3f), 0x80 | (c & 0x3f));\n    } else out += String.fromCharCode(0xe0 | (c >> 12), 0x80 | ((c >> 6) & 0x3f), 0x80 | (c & 0x3f));\n  }\n  return out;\n}\nfunction hmacHex(secret, message) {\n  var key = utf8Bytes(secret), msg = utf8Bytes(message);\n  var block = '';\n  if (key.length > 64) {\n    var h = sha256hex(key);\n    for (var i = 0; i < 32; i++) block += String.fromCharCode(parseInt(h.substr(i * 2, 2), 16));\n  } else block = key;\n  while (block.length < 64) block += String.fromCharCode(0);\n  var o = '', q = '';\n  for (var j = 0; j < 64; j++) { o += String.fromCharCode(block.charCodeAt(j) ^ 0x5c); q += String.fromCharCode(block.charCodeAt(j) ^ 0x36); }\n  var innerHex = sha256hex(q + msg);\n  var inner = '';\n  for (var k = 0; k < 64; k += 2) inner += String.fromCharCode(parseInt(innerHex.substr(k, 2), 16));\n  return sha256hex(o + inner);\n}\nfunction egaleConstant(a, b) {\n  if (a.length !== b.length) return false;\n  var diff = 0;\n  for (var i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);\n  return diff === 0;\n}\n// Compte rendu signe vers /api/n8n/retour : l'application verifie\n// la signature (N8N_CALLBACK_SECRET) et l'idempotence (cle).\nvar secretInterne = (($env && $env.N8N_CALLBACK_SECRET) || '');\nif (!secretInterne) throw new Error('N8N_CALLBACK_SECRET manquant : déclarez-le dans le docker-compose de n8n.');\nreturn $input.all().map(function (entree) {\n  var job = entree.json || {};\n  if (!job.runId) throw new Error('Job sans runId.');\n  // GET sans corps : le serveur vérifie le HMAC de ''.\n  return { json: Object.assign({}, job, { configSignature: hmacHex(secretInterne, ''), configHorodatage: String(Date.now()) }) };\n});\n"
+   },
+   "id": "06ae9386-5109-469f-bb59-7ef08ea054f5",
+   "name": "Signer la lecture config",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    592,
+    560
+   ]
+  },
+  {
+   "parameters": {
+    "method": "GET",
+    "url": "={{$json.appUrl}}/api/internal/n8n/configurations/{{$json.runId}}",
+    "sendHeaders": true,
+    "headerParameters": {
+     "parameters": [
+      {
+       "name": "X-Signature",
+       "value": "={{$json.configSignature}}"
+      },
+      {
+       "name": "X-Timestamp",
+       "value": "={{$json.configHorodatage}}"
+      },
+      {
+       "name": "X-Run-Id",
+       "value": "={{$json.runId}}"
+      }
+     ]
+    },
+    "options": {
+     "timeout": 15000
+    }
+   },
+   "id": "fa7558ae-3f81-4fb7-a8f3-0c20f6b353d8",
+   "name": "Lire la configuration du job",
+   "type": "n8n-nodes-base.httpRequest",
+   "typeVersion": 4.2,
+   "position": [
+    784,
+    560
+   ]
+  },
+  {
+   "parameters": {
+    "jsCode": "// Fonctions embarquees dans les nodes Code n8n (pas de require disponible) :\n// SHA-256 + HMAC-SHA256 + JSON canonique (cles triees, sans espaces),\n// identique a web/lib/signature.ts cote application.\nfunction canon(v) {\n  if (v === null || v === undefined) return 'null';\n  if (Array.isArray(v)) return '[' + v.map(canon).join(',') + ']';\n  if (typeof v === 'object') {\n    var ks = Object.keys(v).filter(function (k) { return v[k] !== undefined; }).sort();\n    return '{' + ks.map(function (k) { return JSON.stringify(k) + ':' + canon(v[k]); }).join(',') + '}';\n  }\n  var t = JSON.stringify(v);\n  if (typeof t !== 'string') throw new Error('Valeur non signable.');\n  return t;\n}\nfunction sha256hex(asciiBytes) {\n  var K = [0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,\n    0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,\n    0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da,\n    0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7, 0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967,\n    0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13, 0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85,\n    0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3, 0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070,\n    0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3,\n    0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2];\n  var H = [0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19];\n  var i, j;\n  var bytes = [];\n  for (i = 0; i < asciiBytes.length; i++) bytes.push(asciiBytes.charCodeAt(i) & 0xff);\n  var bitLen = bytes.length * 8;\n  bytes.push(0x80);\n  while (bytes.length % 64 !== 56) bytes.push(0);\n  var hi = Math.floor(bitLen / 4294967296), lo = bitLen >>> 0;\n  bytes.push((hi >>> 24) & 0xff, (hi >>> 16) & 0xff, (hi >>> 8) & 0xff, hi & 0xff,\n    (lo >>> 24) & 0xff, (lo >>> 16) & 0xff, (lo >>> 8) & 0xff, lo & 0xff);\n  function rotr(x, n) { return (x >>> n) | (x << (32 - n)); }\n  var w = new Array(64);\n  for (i = 0; i < bytes.length; i += 64) {\n    for (j = 0; j < 16; j++) w[j] = ((bytes[i + j * 4] << 24) | (bytes[i + j * 4 + 1] << 16) | (bytes[i + j * 4 + 2] << 8) | bytes[i + j * 4 + 3]) >>> 0;\n    for (j = 16; j < 64; j++) {\n      var s0 = (rotr(w[j - 15], 7) ^ rotr(w[j - 15], 18) ^ (w[j - 15] >>> 3)) >>> 0;\n      var s1 = (rotr(w[j - 2], 17) ^ rotr(w[j - 2], 19) ^ (w[j - 2] >>> 10)) >>> 0;\n      w[j] = (w[j - 16] + s0 + w[j - 7] + s1) >>> 0;\n    }\n    var a = H[0], b = H[1], c = H[2], d = H[3], e = H[4], f = H[5], g = H[6], h = H[7];\n    for (j = 0; j < 64; j++) {\n      var S1 = (rotr(e, 6) ^ rotr(e, 11) ^ rotr(e, 25)) >>> 0;\n      var ch = ((e & f) ^ ((~e) & g)) >>> 0;\n      var t1 = (h + S1 + ch + K[j] + w[j]) >>> 0;\n      var S0 = (rotr(a, 2) ^ rotr(a, 13) ^ rotr(a, 22)) >>> 0;\n      var mj = ((a & b) ^ (a & c) ^ (b & c)) >>> 0;\n      var t2 = (S0 + mj) >>> 0;\n      h = g; g = f; f = e; e = (d + t1) >>> 0; d = c; c = b; b = a; a = (t1 + t2) >>> 0;\n    }\n    H[0] = (H[0] + a) >>> 0; H[1] = (H[1] + b) >>> 0; H[2] = (H[2] + c) >>> 0; H[3] = (H[3] + d) >>> 0;\n    H[4] = (H[4] + e) >>> 0; H[5] = (H[5] + f) >>> 0; H[6] = (H[6] + g) >>> 0; H[7] = (H[7] + h) >>> 0;\n  }\n  return H.map(function (x) { return ('00000000' + x.toString(16)).slice(-8); }).join('');\n}\nfunction utf8Bytes(s) {\n  var out = '';\n  for (var i = 0; i < s.length; i++) {\n    var c = s.charCodeAt(i);\n    if (c < 0x80) out += String.fromCharCode(c);\n    else if (c < 0x800) out += String.fromCharCode(0xc0 | (c >> 6), 0x80 | (c & 0x3f));\n    else if (c >= 0xd800 && c <= 0xdbff && i + 1 < s.length) {\n      var lo = s.charCodeAt(i + 1);\n      if (lo >= 0xdc00 && lo <= 0xdfff) {\n        var cp = 0x10000 + ((c - 0xd800) << 10) + (lo - 0xdc00);\n        out += String.fromCharCode(0xf0 | (cp >> 18), 0x80 | ((cp >> 12) & 0x3f), 0x80 | ((cp >> 6) & 0x3f), 0x80 | (cp & 0x3f));\n        i++;\n      } else out += String.fromCharCode(0xe0 | (c >> 12), 0x80 | ((c >> 6) & 0x3f), 0x80 | (c & 0x3f));\n    } else out += String.fromCharCode(0xe0 | (c >> 12), 0x80 | ((c >> 6) & 0x3f), 0x80 | (c & 0x3f));\n  }\n  return out;\n}\nfunction hmacHex(secret, message) {\n  var key = utf8Bytes(secret), msg = utf8Bytes(message);\n  var block = '';\n  if (key.length > 64) {\n    var h = sha256hex(key);\n    for (var i = 0; i < 32; i++) block += String.fromCharCode(parseInt(h.substr(i * 2, 2), 16));\n  } else block = key;\n  while (block.length < 64) block += String.fromCharCode(0);\n  var o = '', q = '';\n  for (var j = 0; j < 64; j++) { o += String.fromCharCode(block.charCodeAt(j) ^ 0x5c); q += String.fromCharCode(block.charCodeAt(j) ^ 0x36); }\n  var innerHex = sha256hex(q + msg);\n  var inner = '';\n  for (var k = 0; k < 64; k += 2) inner += String.fromCharCode(parseInt(innerHex.substr(k, 2), 16));\n  return sha256hex(o + inner);\n}\nfunction egaleConstant(a, b) {\n  if (a.length !== b.length) return false;\n  var diff = 0;\n  for (var i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);\n  return diff === 0;\n}\n// Compte rendu signe vers /api/n8n/retour : l'application verifie\n// la signature (N8N_CALLBACK_SECRET) et l'idempotence (cle).\nvar secretInterne = (($env && $env.N8N_CALLBACK_SECRET) || '');\nif (!secretInterne) throw new Error('N8N_CALLBACK_SECRET manquant : déclarez-le dans le docker-compose de n8n.');\nvar racineAccept = '';\ntry { racineAccept = ($(\"Signer l'appel jobs\").first().json || {}).appUrl || \"\"; } catch (eRacine) {}\nif (!racineAccept) throw new Error('Racine applicative introuvable.');\nvar passe = [];\nfor (var a = 0; a < $input.all().length; a++) {\n  var reponseAccept = ($input.all()[a].json || {}).data || {};\n  if (!reponseAccept.runId) throw new Error('Configuration sans runId.');\n  var texteAccept = canon({ runId: String(reponseAccept.runId) });\n  var horoAccept = String(Date.now());\n  await this.helpers.httpRequest({\n    method: 'POST',\n    url: racineAccept + '/api/internal/n8n/runs',\n    body: texteAccept,\n    headers: { 'Content-Type': 'application/json', 'X-Signature': hmacHex(secretInterne, texteAccept), 'X-Timestamp': horoAccept, 'X-Run-Id': String(reponseAccept.runId) },\n    timeout: 15000,\n  });\n  passe.push({ json: $input.all()[a].json });\n}\nreturn passe;\n"
+   },
+   "id": "1de34196-ccf4-466d-8b22-5df9084123ab",
+   "name": "Accepter le job",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    784,
+    720
+   ]
+  },
+  {
+   "parameters": {
+    "conditions": {
+     "boolean": [
+      {
+       "value1": "={{$json.simulation}}",
+       "operation": "isTrue"
+      }
+     ],
+     "combinator": "and",
+     "options": {
+      "caseSensitive": true,
+      "leftValue": "",
+      "typeValidation": "strict",
+      "version": 1
+     }
+    },
+    "options": {}
+   },
+   "id": "81cd8a2b-7a9e-4a2d-bb5a-87bfd09a85e6",
+   "name": "Mode simulation ?",
+   "type": "n8n-nodes-base.if",
+   "typeVersion": 2.2,
+   "position": [
+    984,
+    272
+   ]
+  },
+  {
+   "parameters": {
+    "jsCode": "return $input.all().map(function (entree) {\n  var cfg = entree.json || {};\n  if (!cfg.runId) throw new Error('Erreur sans runId : abandon.');\n  cfg.erreur = cfg.erreur || cfg.error || 'Échec pendant le traitement (voir l\\'exécution n8n).';\n  return { json: cfg };\n});\n"
+   },
+   "id": "75e9f30b-d789-4515-91a5-9f8f1fd87f47",
+   "name": "Préparer l'erreur signée",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    1408,
+    400
+   ]
+  },
+  {
+   "parameters": {
+    "jsCode": "// Les nodes d'envoi renvoient du HTTP : on reprend la config\n// complète (tickets créés, stock mesuré) pour le callback.\nvar rattaches = [];\ntry { rattaches = $('Rattacher la config au PDF').all(); }\ncatch (e) { throw new Error('Récapitulatif introuvable.'); }\nif (!rattaches.length) throw new Error('Aucun récapitulatif.');\nreturn rattaches.map(function (it) { return { json: it.json }; });\n"
+   },
+   "id": "90dbd38f-92fc-43c9-b30a-3c041fb28b84",
+   "name": "Clôturer l'envoi",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    2176,
+    160
+   ]
+  },
+  {
+   "parameters": {
+    "jsCode": "// Garde-fou avant envoi : le jeton doit etre reconnu par Telegram.\n// Le jeton transite dans l'entree signee serveur-a-serveur, jamais\n// dans les journaux : seul le diagnostic d'echec est conserve.\nvar elements = $input.all();\nfor (var k = 0; k < elements.length; k++) {\n  var cfg = elements[k].json || {};\n  var jeton = String(cfg.telegramBotToken || '');\n  if (!jeton) throw new Error('Jeton Telegram manquant : envoi annule.');\n  var rep;\n  try {\n    rep = await this.helpers.httpRequest({ method: 'GET', url: 'https://api.telegram.org/bot' + jeton + '/getMe', json: true, timeout: 15000 });\n  } catch (e) { throw new Error('Telegram injoignable pour getMe : ' + (e.message || e)); }\n  if (!rep || rep.ok !== true) throw new Error('Jeton Telegram refuse par getMe : envoi annule.');\n}\nreturn elements;"
+   },
+   "id": "952a4ac8-ef9a-4a22-96cb-d763f7bc62af",
+   "name": "Vérifier le bot Telegram",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    2176,
+    -160
+   ]
+  },
+  {
+   "parameters": {
+    "jsCode": "// Fonctions embarquees dans les nodes Code n8n (pas de require disponible) :\n// SHA-256 + HMAC-SHA256 + JSON canonique (cles triees, sans espaces),\n// identique a web/lib/signature.ts cote application.\nfunction canon(v) {\n  if (v === null || v === undefined) return 'null';\n  if (Array.isArray(v)) return '[' + v.map(canon).join(',') + ']';\n  if (typeof v === 'object') {\n    var ks = Object.keys(v).filter(function (k) { return v[k] !== undefined; }).sort();\n    return '{' + ks.map(function (k) { return JSON.stringify(k) + ':' + canon(v[k]); }).join(',') + '}';\n  }\n  var t = JSON.stringify(v);\n  if (typeof t !== 'string') throw new Error('Valeur non signable.');\n  return t;\n}\nfunction sha256hex(asciiBytes) {\n  var K = [0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,\n    0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,\n    0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da,\n    0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7, 0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967,\n    0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13, 0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85,\n    0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3, 0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070,\n    0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3,\n    0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2];\n  var H = [0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19];\n  var i, j;\n  var bytes = [];\n  for (i = 0; i < asciiBytes.length; i++) bytes.push(asciiBytes.charCodeAt(i) & 0xff);\n  var bitLen = bytes.length * 8;\n  bytes.push(0x80);\n  while (bytes.length % 64 !== 56) bytes.push(0);\n  var hi = Math.floor(bitLen / 4294967296), lo = bitLen >>> 0;\n  bytes.push((hi >>> 24) & 0xff, (hi >>> 16) & 0xff, (hi >>> 8) & 0xff, hi & 0xff,\n    (lo >>> 24) & 0xff, (lo >>> 16) & 0xff, (lo >>> 8) & 0xff, lo & 0xff);\n  function rotr(x, n) { return (x >>> n) | (x << (32 - n)); }\n  var w = new Array(64);\n  for (i = 0; i < bytes.length; i += 64) {\n    for (j = 0; j < 16; j++) w[j] = ((bytes[i + j * 4] << 24) | (bytes[i + j * 4 + 1] << 16) | (bytes[i + j * 4 + 2] << 8) | bytes[i + j * 4 + 3]) >>> 0;\n    for (j = 16; j < 64; j++) {\n      var s0 = (rotr(w[j - 15], 7) ^ rotr(w[j - 15], 18) ^ (w[j - 15] >>> 3)) >>> 0;\n      var s1 = (rotr(w[j - 2], 17) ^ rotr(w[j - 2], 19) ^ (w[j - 2] >>> 10)) >>> 0;\n      w[j] = (w[j - 16] + s0 + w[j - 7] + s1) >>> 0;\n    }\n    var a = H[0], b = H[1], c = H[2], d = H[3], e = H[4], f = H[5], g = H[6], h = H[7];\n    for (j = 0; j < 64; j++) {\n      var S1 = (rotr(e, 6) ^ rotr(e, 11) ^ rotr(e, 25)) >>> 0;\n      var ch = ((e & f) ^ ((~e) & g)) >>> 0;\n      var t1 = (h + S1 + ch + K[j] + w[j]) >>> 0;\n      var S0 = (rotr(a, 2) ^ rotr(a, 13) ^ rotr(a, 22)) >>> 0;\n      var mj = ((a & b) ^ (a & c) ^ (b & c)) >>> 0;\n      var t2 = (S0 + mj) >>> 0;\n      h = g; g = f; f = e; e = (d + t1) >>> 0; d = c; c = b; b = a; a = (t1 + t2) >>> 0;\n    }\n    H[0] = (H[0] + a) >>> 0; H[1] = (H[1] + b) >>> 0; H[2] = (H[2] + c) >>> 0; H[3] = (H[3] + d) >>> 0;\n    H[4] = (H[4] + e) >>> 0; H[5] = (H[5] + f) >>> 0; H[6] = (H[6] + g) >>> 0; H[7] = (H[7] + h) >>> 0;\n  }\n  return H.map(function (x) { return ('00000000' + x.toString(16)).slice(-8); }).join('');\n}\nfunction utf8Bytes(s) {\n  var out = '';\n  for (var i = 0; i < s.length; i++) {\n    var c = s.charCodeAt(i);\n    if (c < 0x80) out += String.fromCharCode(c);\n    else if (c < 0x800) out += String.fromCharCode(0xc0 | (c >> 6), 0x80 | (c & 0x3f));\n    else if (c >= 0xd800 && c <= 0xdbff && i + 1 < s.length) {\n      var lo = s.charCodeAt(i + 1);\n      if (lo >= 0xdc00 && lo <= 0xdfff) {\n        var cp = 0x10000 + ((c - 0xd800) << 10) + (lo - 0xdc00);\n        out += String.fromCharCode(0xf0 | (cp >> 18), 0x80 | ((cp >> 12) & 0x3f), 0x80 | ((cp >> 6) & 0x3f), 0x80 | (cp & 0x3f));\n        i++;\n      } else out += String.fromCharCode(0xe0 | (c >> 12), 0x80 | ((c >> 6) & 0x3f), 0x80 | (c & 0x3f));\n    } else out += String.fromCharCode(0xe0 | (c >> 12), 0x80 | ((c >> 6) & 0x3f), 0x80 | (c & 0x3f));\n  }\n  return out;\n}\nfunction hmacHex(secret, message) {\n  var key = utf8Bytes(secret), msg = utf8Bytes(message);\n  var block = '';\n  if (key.length > 64) {\n    var h = sha256hex(key);\n    for (var i = 0; i < 32; i++) block += String.fromCharCode(parseInt(h.substr(i * 2, 2), 16));\n  } else block = key;\n  while (block.length < 64) block += String.fromCharCode(0);\n  var o = '', q = '';\n  for (var j = 0; j < 64; j++) { o += String.fromCharCode(block.charCodeAt(j) ^ 0x5c); q += String.fromCharCode(block.charCodeAt(j) ^ 0x36); }\n  var innerHex = sha256hex(q + msg);\n  var inner = '';\n  for (var k = 0; k < 64; k += 2) inner += String.fromCharCode(parseInt(innerHex.substr(k, 2), 16));\n  return sha256hex(o + inner);\n}\nfunction egaleConstant(a, b) {\n  if (a.length !== b.length) return false;\n  var diff = 0;\n  for (var i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);\n  return diff === 0;\n}\n// Mise en pause : previent l'application AVANT le node Wait, pour que\n// l'ecran Approbations liste la demande (tenant + URL de reprise).\n// Meilleur effort : si l'application est injoignable, on continue quand\n// meme (les boutons Telegram restent une voie d'approbation de secours)\n// mais on marque attenteSignalee=false pour le compte rendu final.\nvar secret = (typeof $env !== 'undefined' && $env && $env.N8N_CALLBACK_SECRET) || '';\nif (!secret) throw new Error('N8N_CALLBACK_SECRET manquant : declarez-le dans le docker-compose de n8n.');\nvar sorties = [];\nvar items = $input.all();\nfor (var k = 0; k < items.length; k++) {\n  var cfg = items[k].json || {};\n  var tenantId = String(cfg.tenantId || '');\n  var runId = String(cfg.runId || cfg.cleIdempotence || '');\n  var callbackUrl = String(cfg.callbackUrl || '');\n  var approvalUrl = String(cfg.approvalUrl || '');\n  if (!tenantId) throw new Error('tenantId manquant : l\\'appelant doit envoyer le contrat 12 champs.');\n  if (!runId) throw new Error('runId manquant : l\\'appelant doit envoyer runId (cle d\\'idempotence).');\n  if (!callbackUrl) throw new Error('callbackUrl manquante : l\\'appelant doit fournir callbackUrl (APP_URL + /api/n8n/retour).');\n  if (!approvalUrl || !/^https?:\\/\\//i.test(approvalUrl)) throw new Error('approvalUrl manquante : le node Wait doit exposer $execution.resumeUrl.');\n  var contenu = {\n    tenantId: tenantId,\n    cleIdempotence: runId,\n    statut: 'en_attente',\n    urlReprise: approvalUrl,\n    executionId: String($execution.id),\n    workflow: 'mikhmon-tickets',\n    resume: {\n      profil: String(cfg.profile || ''),\n      quantite: cfg.quantity,\n      routeur: String(cfg.routeurNom || cfg.routerBaseUrl || ''),\n      stockAvant: (cfg.stockAvailable !== undefined && cfg.stockAvailable !== null) ? cfg.stockAvailable : null,\n      seuil: cfg.threshold,\n      canal: String(cfg.deliveryChannel || '')\n    }\n  };\n  var texte = canon(contenu);\n  var horo = String(Date.now());\n  var signature = hmacHex(secret, texte);\n  var signalee = true;\n  var erreurSignal = '';\n  try {\n    await this.helpers.httpRequest({\n      method: 'POST', url: callbackUrl, body: texte,\n      headers: { 'Content-Type': 'application/json', 'X-Signature': signature, 'X-Timestamp': horo, 'X-Run-Id': runId },\n      timeout: 20000\n    });\n  } catch (e) { signalee = false; erreurSignal = String((e && e.message) || e).slice(0, 300); }\n  var copie = {};\n  for (var cle in cfg) copie[cle] = cfg[cle];\n  copie.attenteSignalee = signalee;\n  if (!signalee) copie.attenteErreur = erreurSignal;\n  sorties.push({ json: copie });\n}\nreturn sorties;\n"
+   },
+   "id": "055e521f-2eb7-41b4-a8f9-5602dc8da6c0",
+   "name": "Signaler l'attente",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    928,
+    672
+   ]
+  },
+  {
+   "parameters": {
+    "jsCode": "const env = (name, fallback = '') => String(($env && $env[name]) || fallback);\nconst mode = env('MIKHMON_WEEKLY_MODE', 'disabled').toLowerCase();\nif (mode !== 'weekly_prompt' && mode !== 'weekly_auto') return [];\nconst now = new Date();\nconst jours = env('MIKHMON_WEEKLY_DAYS', '1').split(',').map(v => Number(v.trim())).filter(v => Number.isInteger(v) && v >= 0 && v <= 6);\nconst heure = env('MIKHMON_WEEKLY_TIME', '09:00').match(/^(\\d{2}):(\\d{2})$/);\nif (!jours.length || !heure) throw new Error('Planification invalide : MIKHMON_WEEKLY_DAYS doit contenir 0..6 et MIKHMON_WEEKLY_TIME HH:mm.');\nconst minuteActuelle = now.getUTCHours() * 60 + now.getUTCMinutes();\nconst minuteCible = Number(heure[1]) * 60 + Number(heure[2]);\nif (jours.indexOf(now.getUTCDay()) === -1 || minuteActuelle < minuteCible || minuteActuelle >= minuteCible + 15) return [];\nconst jour = now.toISOString().slice(0, 10);\nconst profil = env('MIKHMON_WEEKLY_PROFILE', env('MIKHMON_PROFILE', 'default'));\nconst quantity = Math.max(1, Math.min(500, Number(env('MIKHMON_WEEKLY_QUANTITY', env('TICKET_QUANTITY', '50'))) || 50));\nconst deliveryChannel = env('MIKHMON_WEEKLY_CHANNEL', env('DELIVERY_CHANNEL', 'telegram')).toLowerCase();\nconst recipient = env('MIKHMON_WEEKLY_RECIPIENT', env('DELIVERY_RECIPIENT', ''));\nconst approvalRecipient = env('MIKHMON_WEEKLY_APPROVAL_RECIPIENT', recipient);\nconst appUrl = env('APP_URL', '').replace(/\\/$/, '');\nconst runId = 'weekly-' + jour + '-' + String(profil).replace(/[^a-zA-Z0-9_-]/g, '_');\nreturn [{ json: { route: mode === 'weekly_prompt' ? 'prompt' : 'auto', runId, cleIdempotence: runId, tenantId: env('TENANT_ID', 'defaut'), userId: env('WEEKLY_USER_ID', ''), routerBaseUrl: env('ROUTEROS_BASE_URL', ''), routerUser: env('ROUTEROS_USER', 'n8n-vouchers'), routerPassword: env('ROUTEROS_PASSWORD', ''), hotspotServer: env('MIKHMON_HOTSPOT_SERVER', 'all'), profile: profil, quantity, threshold: Number(env('TICKET_THRESHOLD', '50')) || 50, deliveryChannel, recipient, approvalRecipient, telegramBotToken: env('TELEGRAM_BOT_TOKEN', ''), pdfServiceUrl: env('PDF_SERVICE_URL', 'http://gotenberg:3000/forms/chromium/convert/html'), whatsappWebhookUrl: env('WHATSAPP_WEBHOOK_URL', ''), printNodeApiKey: env('PRINTNODE_API_KEY', ''), printNodePrinterId: Number(env('PRINTNODE_PRINTER_ID', '0')) || 0, callbackUrl: appUrl ? appUrl + '/api/internal/n8n/callback' : '', forcerGeneration: mode === 'weekly_auto', weeklyMode: mode, weeklyDays: jours, weeklyTime: env('MIKHMON_WEEKLY_TIME', '09:00'), scheduledAt: now.toISOString() } }];"
+   },
+   "id": "2bcf89e7-12cb-43f1-9c86-4a5dd02f6f7a",
+   "name": "Planification utilisateur",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    272,
+    512
+   ]
+  },
+  {
+   "parameters": {
+    "conditions": {
+     "string": [
+      {
+       "value1": "={{$json.route}}",
+       "operation": "equals",
+       "value2": "prompt"
+      }
+     ]
+    },
+    "options": {}
+   },
+   "id": "d3a1ab2f-4bf8-4c39-9d8f-4d5b4d2a3f61",
+   "name": "Demander avant génération ?",
+   "type": "n8n-nodes-base.if",
+   "typeVersion": 2.2,
+   "position": [
+    544,
+    512
+   ]
+  }
+ ],
+ "connections": {
+  "Demande manuelle (Webhook)": {
+   "main": [
+    [
+     {
+      "node": "Vérifier la signature",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Contrôle périodique (15 min)": {
+   "main": [
+    [
+     {
+      "node": "Signer l'appel jobs",
+      "type": "main",
+      "index": 0
+     },
+     {
+      "node": "Planification utilisateur",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Planification utilisateur": {
+   "main": [
+    [
+     {
+      "node": "Demander avant génération ?",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Demander avant génération ?": {
+   "main": [
+    [
+     {
+      "node": "Préparer le récapitulatif",
+      "type": "main",
+      "index": 0
+     }
+    ],
+    [
+     {
+      "node": "Générer les tickets dans RouterOS",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Paramètres Mikhmon": {
+   "main": [
+    [
+     {
+      "node": "Lire le stock du profil",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Lire le stock du profil": {
+   "main": [
+    [
+     {
+      "node": "Stock inférieur au seuil ?",
+      "type": "main",
+      "index": 0
+     }
+    ],
+    [
+     {
+      "node": "Préparer l'erreur signée",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Stock inférieur au seuil ?": {
+   "main": [
+    [
+     {
+      "node": "Mode simulation ?",
+      "type": "main",
+      "index": 0
+     }
+    ],
+    [
+     {
+      "node": "Aucun ticket à générer",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Générer les tickets dans RouterOS": {
+   "main": [
+    [
+     {
+      "node": "Préparer le HTML PDF",
+      "type": "main",
+      "index": 0
+     }
+    ],
+    [
+     {
+      "node": "Préparer l'erreur signée",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Préparer le HTML PDF": {
+   "main": [
+    [
+     {
+      "node": "Convertir en PDF (Gotenberg)",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Convertir en PDF (Gotenberg)": {
+   "main": [
+    [
+     {
+      "node": "Rattacher la config au PDF",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Choisir le canal": {
+   "main": [
+    [
+     {
+      "node": "Vérifier le bot Telegram",
+      "type": "main",
+      "index": 0
+     }
+    ],
+    [
+     {
+      "node": "Envoyer PDF WhatsApp (adaptateur)",
+      "type": "main",
+      "index": 0
+     }
+    ],
+    [
+     {
+      "node": "Imprimer via PrintNode",
+      "type": "main",
+      "index": 0
+     }
+    ],
+    [
+     {
+      "node": "Préparer le retour signé",
+      "type": "main",
+      "index": 0
+     }
+    ],
+    [
+     {
+      "node": "Préparer le retour signé",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Demande avec approbation": {
+   "main": [
+    [
+     {
+      "node": "Vérifier la signature",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Lire la demande (profil + quantité)": {
+   "main": [
+    [
+     {
+      "node": "Vérifier le stock avant approbation",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Vérifier le stock avant approbation": {
+   "main": [
+    [
+     {
+      "node": "Préparer le récapitulatif",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Préparer le récapitulatif": {
+   "main": [
+    [
+     {
+      "node": "Signaler l'attente",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Notifier le demandeur (Telegram)": {
+   "main": [
+    [
+     {
+      "node": "Attendre l'approbation",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Attendre l'approbation": {
+   "main": [
+    [
+     {
+      "node": "Valider la décision",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Valider la décision": {
+   "main": [
+    [
+     {
+      "node": "Génération approuvée ?",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Génération approuvée ?": {
+   "main": [
+    [
+     {
+      "node": "Générer les tickets dans RouterOS",
+      "type": "main",
+      "index": 0
+     }
+    ],
+    [
+     {
+      "node": "Génération refusée",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Rattacher la config au PDF": {
+   "main": [
+    [
+     {
+      "node": "Choisir le canal",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Vérifier la signature": {
+   "main": [
+    [
+     {
+      "node": "Paramètres Mikhmon",
+      "type": "main",
+      "index": 0
+     }
+    ],
+    [
+     {
+      "node": "Lire la demande (profil + quantité)",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Préparer le retour signé": {
+   "main": [
+    [
+     {
+      "node": "Rendre compte à l'application",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Préparer l'erreur signée": {
+   "main": [
+    [
+     {
+      "node": "Préparer le retour signé",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Signer l'appel jobs": {
+   "main": [
+    [
+     {
+      "node": "Récupérer les jobs signés",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Récupérer les jobs signés": {
+   "main": [
+    [
+     {
+      "node": "Fractionner les jobs",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Fractionner les jobs": {
+   "main": [
+    [
+     {
+      "node": "Signer la lecture config",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Signer la lecture config": {
+   "main": [
+    [
+     {
+      "node": "Lire la configuration du job",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Lire la configuration du job": {
+   "main": [
+    [
+     {
+      "node": "Accepter le job",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Accepter le job": {
+   "main": [
+    [
+     {
+      "node": "Paramètres Mikhmon",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Mode simulation ?": {
+   "main": [
+    [
+     {
+      "node": "Préparer le retour signé",
+      "type": "main",
+      "index": 0
+     }
+    ],
+    [
+     {
+      "node": "Générer les tickets dans RouterOS",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Aucun ticket à générer": {
+   "main": [
+    [
+     {
+      "node": "Préparer le retour signé",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Envoyer PDF Telegram": {
+   "main": [
+    [
+     {
+      "node": "Clôturer l'envoi",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Envoyer PDF WhatsApp (adaptateur)": {
+   "main": [
+    [
+     {
+      "node": "Clôturer l'envoi",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Imprimer via PrintNode": {
+   "main": [
+    [
+     {
+      "node": "Clôturer l'envoi",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Clôturer l'envoi": {
+   "main": [
+    [
+     {
+      "node": "Préparer le retour signé",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Vérifier le bot Telegram": {
+   "main": [
+    [
+     {
+      "node": "Envoyer PDF Telegram",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Signaler l'attente": {
+   "main": [
+    [
+     {
+      "node": "Notifier le demandeur (Telegram)",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  }
+ },
+ "nodeGroups": [],
+ "settings": {
+  "executionOrder": "v1",
+  "binaryMode": "separate",
+  "timezone": "Africa/Abidjan",
+  "callerPolicy": "workflowsFromSameOwner",
+  "timeSavedMode": "fixed",
+  "availableInMCP": false
+ },
+ "staticData": {
+  "node:Contrôle périodique (15 min)": {
+   "recurrenceRules": [
+    null
+   ],
+   "recurrenceRuleSignatures": [
+    null
+   ]
+  }
+ },
+ "pinData": {},
+ "meta": null,
+ "tags": [],
+ "shared": [
+  {
+   "role": "workflow:owner",
+   "workflowId": "PpsEaR517b9WGodZ",
+   "projectId": "aZrx4OAVIY1Xz9cW",
+   "project": {
+    "id": "aZrx4OAVIY1Xz9cW",
+    "name": "Aboulatif Bamba <bambaaboulatif@gmail.com>",
+    "type": "personal",
+    "icon": null,
+    "description": null,
+    "customTelemetryTags": [],
+    "creatorId": "21e86183-cf21-4496-8a50-1d3a05e6bf3a",
+    "createdAt": "2026-11-01T09:20:46.876Z",
+    "updatedAt": "2026-11-01T13:21:45.337Z"
+   },
+   "createdAt": "2026-11-01T13:26:06.236Z",
+   "updatedAt": "2026-11-01T13:26:06.236Z"
+  }
+ ],
+ "activeVersion": {
+  "versionId": "aabba0f1-69a3-4751-9f78-5a14b94aa4b9",
+  "workflowId": "PpsEaR517b9WGodZ",
+  "nodes": [
+   {
+    "parameters": {
+     "httpMethod": "POST",
+     "path": "mikhmon/tickets",
+     "responseMode": "lastNode",
+     "options": {}
+    },
+    "id": "86a54d7c-f72d-466b-9641-c926553f6060",
+    "name": "Demande manuelle (Webhook)",
+    "type": "n8n-nodes-base.webhook",
+    "typeVersion": 2,
+    "position": [
+     16,
+     128
+    ],
+    "webhookId": "mikhmon-ticket-generation"
+   },
+   {
+    "parameters": {
+     "rule": {
+      "interval": [
+       {
+        "field": "minutes",
+        "minutesInterval": 15
+       }
+      ]
+     }
+    },
+    "id": "8535758f-6016-4ab8-bcc7-a93f39445860",
+    "name": "Contrôle périodique (15 min)",
+    "type": "n8n-nodes-base.scheduleTrigger",
+    "typeVersion": 1.2,
+    "position": [
+     16,
+     384
+    ]
+   },
+   {
+    "parameters": {
+     "jsCode": "const input = $json.body ?? $json;\nconst env = (name, fallback = '') => $env[name] || fallback;\nconst asInt = (value, fallback) => { const n = Number(value); return Number.isFinite(n) ? Math.floor(n) : fallback; };\n\nreturn [{ json: {\n  routerBaseUrl: String(input.routerBaseUrl || env('ROUTEROS_BASE_URL', 'https://10.x.x.1')).replace(/\\/$/, ''),\n  routerUser: String(input.routerUser || env('ROUTEROS_USER', 'n8n-vouchers')),\n  routerPassword: String(input.routerPassword || env('ROUTEROS_PASSWORD', '')),\n  profile: String(input.profile || env('MIKHMON_PROFILE', 'default')),\n  hotspotServer: String(input.hotspotServer || env('MIKHMON_HOTSPOT_SERVER', 'all')),\n  threshold: Math.max(0, asInt(input.threshold ?? env('TICKET_THRESHOLD', 50), 50)),\n  quantity: Math.max(1, Math.min(500, asInt(input.quantity ?? env('TICKET_QUANTITY', 50), 50))),\n  usernameLength: Math.max(3, Math.min(12, asInt(input.usernameLength ?? 4, 4))),\n  passwordLength: Math.max(3, Math.min(16, asInt(input.passwordLength ?? 4, 4))),\n  prefix: String(input.prefix ?? env('TICKET_PREFIX', '')),\n  limitUptime: String(input.limitUptime ?? env('TICKET_LIMIT_UPTIME', '')),\n  limitBytesTotal: String(input.limitBytesTotal ?? env('TICKET_LIMIT_BYTES_TOTAL', '')),\n  deliveryChannel: String(input.deliveryChannel || env('DELIVERY_CHANNEL', 'telegram')).toLowerCase(),\n  recipient: String(input.recipient || env('DELIVERY_RECIPIENT', '')),\n  pdfServiceUrl: String(input.pdfServiceUrl || env('PDF_SERVICE_URL', 'http://gotenberg:3000/forms/chromium/convert/html')).replace(/\\/$/, ''),\n  whatsappWebhookUrl: String(input.whatsappWebhookUrl || env('WHATSAPP_WEBHOOK_URL', '')),\n  printNodePrinterId: asInt(input.printNodePrinterId ?? env('PRINTNODE_PRINTER_ID', 0), 0),\n  printNodeApiKey: String(input.printNodeApiKey || env('PRINTNODE_API_KEY', ''))\n} }];"
+    },
+    "id": "6bde7d9e-2742-4aef-86bd-7b9005bea272",
+    "name": "Paramètres Mikhmon",
+    "type": "n8n-nodes-base.code",
+    "typeVersion": 2,
+    "position": [
+     304,
+     272
+    ]
+   },
+   {
+    "parameters": {
+     "jsCode": "const cfg = $json;\nif (!cfg.routerPassword) throw new Error('ROUTEROS_PASSWORD est obligatoire. Utilisez un compte RouterOS dédié, pas le mot de passe Mikhmon par défaut.');\nconst auth = 'Basic ' + Buffer.from(cfg.routerUser + ':' + cfg.routerPassword).toString('base64');\nconst response = await this.helpers.httpRequest({\n  method: 'GET',\n  url: cfg.routerBaseUrl + '/rest/ip/hotspot/user',\n  headers: { Authorization: auth, Accept: 'application/json' },\n  json: true,\n  timeout: 30000,\n  skipSslCertificateValidation: true\n});\nconst users = Array.isArray(response) ? response : (response.data || response.results || []);\nconst sameProfile = users.filter(u => String(u.profile || '') === cfg.profile);\nconst available = sameProfile.filter(u => {\n  const disabled = String(u.disabled || '').toLowerCase() === 'true';\n  const uptime = String(u.uptime || '0s');\n  const used = uptime !== '0s' && uptime !== '0';\n  return !disabled && !used;\n});\nconst shouldGenerate = available.length < cfg.threshold;\nreturn [{ json: { ...cfg, stockTotal: sameProfile.length, stockAvailable: available.length, shouldGenerate, checkedAt: new Date().toISOString() } }];"
+    },
+    "id": "d0ae73dd-77d5-4da6-b256-6464fc533297",
+    "name": "Lire le stock du profil",
+    "type": "n8n-nodes-base.code",
+    "typeVersion": 2,
+    "position": [
+     576,
+     272
+    ]
+   },
+   {
+    "parameters": {
+     "conditions": {
+      "boolean": [
+       {
+        "value1": "={{$json.shouldGenerate}}",
+        "operation": "isTrue"
+       }
+      ],
+      "combinator": "and",
+      "options": {
+       "caseSensitive": true,
+       "leftValue": "",
+       "typeValidation": "strict",
+       "version": 1
+      }
+     },
+     "options": {}
+    },
+    "id": "9ee9fd30-057f-48e4-b9af-b16a1cc40133",
+    "name": "Stock inférieur au seuil ?",
+    "type": "n8n-nodes-base.if",
+    "typeVersion": 2.2,
+    "position": [
+     848,
+     272
+    ]
+   },
+   {
+    "parameters": {
+     "jsCode": "const cfg = $json;\nconst alphabet = '23456789abcdefghijkmnpqrstuvwxyz';\nconst make = len => Array.from({length: len}, () => alphabet[Math.floor(Math.random() * alphabet.length)]).join('');\nconst auth = 'Basic ' + Buffer.from(cfg.routerUser + ':' + cfg.routerPassword).toString('base64');\nconst tickets = [];\nfor (let i = 0; i < cfg.quantity; i++) {\n  const username = cfg.prefix + make(cfg.usernameLength);\n  const password = make(cfg.passwordLength);\n  const body = { name: username, password, profile: cfg.profile, server: cfg.hotspotServer, comment: 'n8n-mikhmon ' + new Date().toISOString() };\n  if (cfg.limitUptime) body['limit-uptime'] = cfg.limitUptime;\n  if (cfg.limitBytesTotal) body['limit-bytes-total'] = cfg.limitBytesTotal;\n  const result = await this.helpers.httpRequest({ method: 'PUT', url: cfg.routerBaseUrl + '/rest/ip/hotspot/user', headers: { Authorization: auth, 'Content-Type': 'application/json' }, body, json: true, timeout: 30000, skipSslCertificateValidation: true });\n  tickets.push({ username, password, profile: cfg.profile, routerResult: result });\n}\nconst generatedAt = new Date().toISOString();\nconst rows = tickets.map(t => `<tr><td>${t.username}</td><td>${t.password}</td><td>${t.profile}</td></tr>`).join('');\nconst html = `<!doctype html><html><head><meta charset='utf-8'><style>body{font-family:Arial,sans-serif;margin:24px}h1{font-size:20px}.meta{color:#555;margin-bottom:16px}table{width:100%;border-collapse:collapse}td,th{border:1px solid #bbb;padding:8px;text-align:left}th{background:#f0a500;color:#111}.ticket{page-break-inside:avoid}</style></head><body><h1>Tickets Wi-Fi</h1><div class='meta'>Profil: ${cfg.profile} · Générés: ${tickets.length} · ${generatedAt}</div><table><thead><tr><th>Utilisateur</th><th>Mot de passe</th><th>Profil</th></tr></thead><tbody>${rows}</tbody></table></body></html>`;\nreturn [{ json: { ...cfg, tickets: tickets.map(({routerResult, ...t}) => t), generatedAt, html, generatedCount: tickets.length } }];"
+    },
+    "id": "ba0a4392-fb1c-4585-96c2-969fc16085ee",
+    "name": "Générer les tickets dans RouterOS",
+    "type": "n8n-nodes-base.code",
+    "typeVersion": 2,
+    "position": [
+     1120,
+     160
+    ]
+   },
+   {
+    "parameters": {
+     "jsCode": "const html = $json.html;\nreturn [{ json: $json, binary: { data: await this.helpers.prepareBinaryData(Buffer.from(html, 'utf8'), 'tickets.html', 'text/html') } }];"
+    },
+    "id": "80c5d0b7-4a9a-45f3-b865-c78f94400988",
+    "name": "Préparer le HTML PDF",
+    "type": "n8n-nodes-base.code",
+    "typeVersion": 2,
+    "position": [
+     1376,
+     160
+    ]
+   },
+   {
+    "parameters": {
+     "method": "POST",
+     "url": "={{$json.pdfServiceUrl}}",
+     "sendBody": true,
+     "contentType": "multipart-form-data",
+     "bodyParameters": {
+      "parameters": [
+       {
+        "parameterType": "formBinaryData",
+        "name": "files",
+        "inputDataFieldName": "data"
+       }
+      ]
+     },
+     "options": {
+      "timeout": 60000
+     }
+    },
+    "id": "68256b93-e25b-4031-8f30-c90762d5deed",
+    "name": "Convertir en PDF (Gotenberg)",
+    "type": "n8n-nodes-base.httpRequest",
+    "typeVersion": 4.2,
+    "position": [
+     1648,
+     160
+    ]
+   },
+   {
+    "parameters": {
+     "rules": {
+      "values": [
+       {
+        "conditions": {
+         "options": {
+          "caseSensitive": false,
+          "leftValue": "",
+          "typeValidation": "strict",
+          "version": 1
+         },
+         "conditions": [
+          {
+           "leftValue": "={{$json.deliveryChannel}}",
+           "rightValue": "telegram",
+           "operator": {
+            "type": "string",
+            "operation": "equals"
+           }
+          }
+         ],
+         "combinator": "and"
+        },
+        "renameOutput": true,
+        "outputKey": "Telegram"
+       },
+       {
+        "conditions": {
+         "options": {
+          "caseSensitive": false,
+          "leftValue": "",
+          "typeValidation": "strict",
+          "version": 1
+         },
+         "conditions": [
+          {
+           "leftValue": "={{$json.deliveryChannel}}",
+           "rightValue": "whatsapp",
+           "operator": {
+            "type": "string",
+            "operation": "equals"
+           }
+          }
+         ],
+         "combinator": "and"
+        },
+        "renameOutput": true,
+        "outputKey": "WhatsApp"
+       },
+       {
+        "conditions": {
+         "options": {
+          "caseSensitive": false,
+          "leftValue": "",
+          "typeValidation": "strict",
+          "version": 1
+         },
+         "conditions": [
+          {
+           "leftValue": "={{$json.deliveryChannel}}",
+           "rightValue": "printnode",
+           "operator": {
+            "type": "string",
+            "operation": "equals"
+           }
+          }
+         ],
+         "combinator": "and"
+        },
+        "renameOutput": true,
+        "outputKey": "PrintNode"
+       }
+      ]
+     },
+     "options": {}
+    },
+    "id": "a4163f99-a6d0-4495-9f01-8a25b70ffdfd",
+    "name": "Choisir le canal",
+    "type": "n8n-nodes-base.switch",
+    "typeVersion": 3.2,
+    "position": [
+     1904,
+     160
+    ]
+   },
+   {
+    "parameters": {
+     "method": "POST",
+     "url": "=https://api.telegram.org/bot{{$env.TELEGRAM_BOT_TOKEN}}/sendDocument",
+     "sendBody": true,
+     "contentType": "multipart-form-data",
+     "bodyParameters": {
+      "parameters": [
+       {
+        "name": "chat_id",
+        "value": "={{$json.recipient}}"
+       },
+       {
+        "parameterType": "formBinaryData",
+        "name": "document",
+        "inputDataFieldName": "data"
+       }
+      ]
+     },
+     "options": {
+      "timeout": 60000
+     }
+    },
+    "id": "ee5a5263-0340-42c8-8b24-54fbe5a19184",
+    "name": "Envoyer PDF Telegram",
+    "type": "n8n-nodes-base.httpRequest",
+    "typeVersion": 4.2,
+    "position": [
+     2176,
+     0
+    ]
+   },
+   {
+    "parameters": {
+     "method": "POST",
+     "url": "={{$json.whatsappWebhookUrl}}",
+     "sendBody": true,
+     "contentType": "multipart-form-data",
+     "bodyParameters": {
+      "parameters": [
+       {
+        "name": "to",
+        "value": "={{$json.recipient}}"
+       },
+       {
+        "name": "filename",
+        "value": "tickets-mikhmon.pdf"
+       },
+       {
+        "parameterType": "formBinaryData",
+        "name": "file",
+        "inputDataFieldName": "data"
+       }
+      ]
+     },
+     "options": {
+      "timeout": 60000
+     }
+    },
+    "id": "225f489b-aa45-4d71-ad06-5ccc4d4d0274",
+    "name": "Envoyer PDF WhatsApp (adaptateur)",
+    "type": "n8n-nodes-base.httpRequest",
+    "typeVersion": 4.2,
+    "position": [
+     2176,
+     160
+    ]
+   },
+   {
+    "parameters": {
+     "jsCode": "const pdf = await this.helpers.getBinaryDataBuffer(0, 'data');\nconst cfg = $json;\nif (!cfg.printNodeApiKey || !cfg.printNodePrinterId) throw new Error('PRINTNODE_API_KEY et PRINTNODE_PRINTER_ID sont obligatoires.');\nconst auth = 'Basic ' + Buffer.from(cfg.printNodeApiKey + ':').toString('base64');\nconst result = await this.helpers.httpRequest({ method: 'POST', url: 'https://api.printnode.com/printjobs', headers: { Authorization: auth, 'Content-Type': 'application/json' }, body: { printerId: cfg.printNodePrinterId, title: 'Tickets Mikhmon ' + cfg.profile, contentType: 'pdf_base64', content: pdf.toString('base64'), source: 'n8n-mikhmon' }, json: true, timeout: 60000 });\nreturn [{ json: { status: 'printed', printNode: result, generatedCount: cfg.generatedCount, profile: cfg.profile } }];"
+    },
+    "id": "b39c66ec-1d2c-4ede-9a11-296591971b31",
+    "name": "Imprimer via PrintNode",
+    "type": "n8n-nodes-base.code",
+    "typeVersion": 2,
+    "position": [
+     2176,
+     320
+    ]
+   },
+   {
+    "parameters": {
+     "jsCode": "return [{ json: { status: 'no_generation', message: `Stock suffisant pour le profil ${$json.profile}.`, profile: $json.profile, stockAvailable: $json.stockAvailable, threshold: $json.threshold, checkedAt: $json.checkedAt } }];"
+    },
+    "id": "49baa036-6a80-485c-a678-0399c3630d61",
+    "name": "Aucun ticket à générer",
+    "type": "n8n-nodes-base.code",
+    "typeVersion": 2,
+    "position": [
+     1120,
+     400
+    ]
+   },
+   {
+    "parameters": {
+     "jsCode": "const input = $json;\nreturn [{ json: { ...input, mikhmonVariant: String(input.mikhmonVariant || $env.MIKHMON_VARIANT || 'v3').toLowerCase(), mikhmonBaseUrl: String(input.mikhmonBaseUrl || $env.MIKHMON_BASE_URL || 'http://10.x.x.1:8087').replace(/\\/$/, ''), routerTransport: String(input.routerTransport || $env.ROUTEROS_TRANSPORT || 'rest').toLowerCase() } }];"
+    },
+    "id": "d5925685-5df8-4f1e-9699-0a52dca1ce71",
+    "name": "Compatibilité Mikhmon V3 / SF v1",
+    "type": "n8n-nodes-base.code",
+    "typeVersion": 2,
+    "position": [
+     416,
+     272
+    ]
+   },
+   {
+    "parameters": {
+     "jsCode": "const input = $json;\nreturn [{ json: { ...input, mikhmonVariant: String(input.mikhmonVariant || $env.MIKHMON_VARIANT || 'v3').toLowerCase(), mikhmonBaseUrl: String(input.mikhmonBaseUrl || $env.MIKHMON_BASE_URL || 'http://10.x.x.1:8087').replace(/\\/$/, ''), routerTransport: String(input.routerTransport || $env.ROUTEROS_TRANSPORT || 'rest').toLowerCase() } }];"
+    },
+    "id": "92035549-bbd0-4cb9-83f4-6ff3ed8b8c0c",
+    "name": "Compatibilité Mikhmon pour approbation",
+    "type": "n8n-nodes-base.code",
+    "typeVersion": 2,
+    "position": [
+     416,
+     672
+    ]
+   },
+   {
+    "parameters": {
+     "httpMethod": "POST",
+     "path": "mikhmon/tickets/request",
+     "responseMode": "lastNode",
+     "options": {}
+    },
+    "id": "a36dc459-cd25-4910-82df-9d3d5e69285c",
+    "name": "Demande avec approbation",
+    "type": "n8n-nodes-base.webhook",
+    "typeVersion": 2,
+    "position": [
+     16,
+     672
+    ],
+    "webhookId": "mikhmon-ticket-approval-request"
+   },
+   {
+    "parameters": {
+     "jsCode": "const input = $json.body ?? $json;\nconst env = (name, fallback = '') => $env[name] || fallback;\nconst asInt = (value, fallback) => { const n = Number(value); return Number.isFinite(n) ? Math.floor(n) : fallback; };\nconst quantity = Math.max(1, Math.min(500, asInt(input.quantity, 50)));\nreturn [{ json: {\n  routerBaseUrl: String(input.routerBaseUrl || env('ROUTEROS_BASE_URL', 'https://10.x.x.1')).replace(/\\/$/, ''),\n  routerUser: String(input.routerUser || env('ROUTEROS_USER', 'n8n-vouchers')),\n  routerPassword: String(input.routerPassword || env('ROUTEROS_PASSWORD', '')),\n  profile: String(input.profile || env('MIKHMON_PROFILE', 'default')),\n  hotspotServer: String(input.hotspotServer || env('MIKHMON_HOTSPOT_SERVER', 'all')),\n  threshold: Math.max(0, asInt(input.threshold ?? env('TICKET_THRESHOLD', 50), 50)),\n  quantity, usernameLength: Math.max(3, Math.min(12, asInt(input.usernameLength ?? 4, 4))),\n  passwordLength: Math.max(3, Math.min(16, asInt(input.passwordLength ?? 4, 4))),\n  prefix: String(input.prefix ?? env('TICKET_PREFIX', '')),\n  limitUptime: String(input.limitUptime ?? env('TICKET_LIMIT_UPTIME', '')),\n  limitBytesTotal: String(input.limitBytesTotal ?? env('TICKET_LIMIT_BYTES_TOTAL', '')),\n  deliveryChannel: String(input.deliveryChannel || env('DELIVERY_CHANNEL', 'telegram')).toLowerCase(),\n  recipient: String(input.recipient || env('DELIVERY_RECIPIENT', '')),\n  pdfServiceUrl: String(input.pdfServiceUrl || env('PDF_SERVICE_URL', 'http://gotenberg:3000/forms/chromium/convert/html')).replace(/\\/$/, ''),\n  whatsappWebhookUrl: String(input.whatsappWebhookUrl || env('WHATSAPP_WEBHOOK_URL', '')),\n  printNodePrinterId: asInt(input.printNodePrinterId ?? env('PRINTNODE_PRINTER_ID', 0), 0),\n  printNodeApiKey: String(input.printNodeApiKey || env('PRINTNODE_API_KEY', '')),\n  approvalRecipient: String(input.approvalRecipient || input.recipient || env('APPROVAL_RECIPIENT', ''))\n} }];"
+    },
+    "id": "0723ef13-b462-4846-95f3-cb5fa2af9c8f",
+    "name": "Lire la demande (profil + quantité)",
+    "type": "n8n-nodes-base.code",
+    "typeVersion": 2,
+    "position": [
+     288,
+     672
+    ]
+   },
+   {
+    "parameters": {
+     "jsCode": "const cfg = $json;\nif (!cfg.routerPassword) throw new Error('ROUTEROS_PASSWORD est obligatoire.');\nconst auth = 'Basic ' + Buffer.from(cfg.routerUser + ':' + cfg.routerPassword).toString('base64');\nconst response = await this.helpers.httpRequest({ method: 'GET', url: cfg.routerBaseUrl + '/rest/ip/hotspot/user', headers: { Authorization: auth, Accept: 'application/json' }, json: true, timeout: 30000, skipSslCertificateValidation: true });\nconst users = Array.isArray(response) ? response : (response.data || response.results || []);\nconst available = users.filter(u => String(u.profile || '') === cfg.profile && String(u.disabled || '').toLowerCase() !== 'true' && ['0s', '0'].includes(String(u.uptime || '0s')));\nreturn [{ json: { ...cfg, stockAvailable: available.length, requestedAt: new Date().toISOString() } }];"
+    },
+    "id": "e84af43d-e18d-4499-9d3d-6d19427568f5",
+    "name": "Vérifier le stock avant approbation",
+    "type": "n8n-nodes-base.code",
+    "typeVersion": 2,
+    "position": [
+     544,
+     672
+    ]
+   },
+   {
+    "parameters": {
+     "jsCode": "const cfg = $json;\nconst approvalUrl = $execution.resumeUrl;\nconst approveUrl = approvalUrl + '?approved=true';\nconst rejectUrl = approvalUrl + '?approved=false';\nconst text = `🔐 DEMANDE D'APPROBATION\\n\\nProfil: ${cfg.profile}\\nQuantité demandée: ${cfg.quantity}\\nStock actuel: ${cfg.stockAvailable}\\nSeuil: ${cfg.threshold}\\nCanal: ${cfg.deliveryChannel}\\nDestinataire: ${cfg.recipient}\\n\\nUtilisez un bouton ci-dessous pour approuver ou refuser.`;\nreturn [{ json: { ...cfg, approvalUrl, approveUrl, rejectUrl, approvalMessage: text } }];"
+    },
+    "id": "ba7a2c66-f3b1-4236-a553-ee372069f21d",
+    "name": "Préparer le récapitulatif",
+    "type": "n8n-nodes-base.code",
+    "typeVersion": 2,
+    "position": [
+     800,
+     672
+    ]
+   },
+   {
+    "parameters": {
+     "jsCode": "const result = await this.helpers.httpRequest({ method: 'POST', url: 'https://api.telegram.org/bot' + $env.TELEGRAM_BOT_TOKEN + '/sendMessage', body: { chat_id: $json.approvalRecipient, text: $json.approvalMessage, reply_markup: { inline_keyboard: [[{ text: '✅ Approuver', url: $json.approveUrl }, { text: '❌ Refuser', url: $json.rejectUrl }]] } }, json: true, timeout: 30000 });\nreturn [{ json: { ...$json, approvalNotification: result, notificationSent: true } }];"
+    },
+    "id": "de162e5f-42ce-4860-ac9b-494ce30d3976",
+    "name": "Notifier le demandeur (Telegram)",
+    "type": "n8n-nodes-base.code",
+    "typeVersion": 2,
+    "position": [
+     1056,
+     672
+    ]
+   },
+   {
+    "parameters": {
+     "resume": "webhook",
+     "options": {
+      "webhookSuffix": "mikhmon-approval"
+     }
+    },
+    "id": "c5799461-434e-47ff-83c7-779cd8466f96",
+    "name": "Attendre l'approbation",
+    "type": "n8n-nodes-base.wait",
+    "typeVersion": 1.1,
+    "position": [
+     1328,
+     672
+    ],
+    "webhookId": "4fbdc254-7f4f-4aea-8020-7ea91c5ade9d"
+   },
+   {
+    "parameters": {
+     "jsCode": "const approval = $json.query ?? $json.body ?? $json;\nconst approved = approval.approved === true || String(approval.approved).toLowerCase() === 'true' || String(approval.action).toLowerCase() === 'approve';\nreturn [{ json: { ...$json, approved, approvalDecisionAt: new Date().toISOString(), approvalComment: String(approval.comment || '') } }];"
+    },
+    "id": "78e0d6d6-ecd0-4241-80b2-5a56b1f8e795",
+    "name": "Valider la décision",
+    "type": "n8n-nodes-base.code",
+    "typeVersion": 2,
+    "position": [
+     1584,
+     672
+    ]
+   },
+   {
+    "parameters": {
+     "conditions": {
+      "boolean": [
+       {
+        "value1": "={{$json.approved}}",
+        "operation": "isTrue"
+       }
+      ],
+      "combinator": "and",
+      "options": {
+       "caseSensitive": true,
+       "leftValue": "",
+       "typeValidation": "strict",
+       "version": 1
+      }
+     },
+     "options": {}
+    },
+    "id": "017312e1-01a9-40f1-bc80-92d848bdfba5",
+    "name": "Génération approuvée ?",
+    "type": "n8n-nodes-base.if",
+    "typeVersion": 2.2,
+    "position": [
+     1840,
+     672
+    ]
+   },
+   {
+    "parameters": {
+     "jsCode": "return [{ json: { status: 'rejected', message: 'Génération refusée par le demandeur.', profile: $json.profile, quantity: $json.quantity, approvalDecisionAt: $json.approvalDecisionAt } }];"
+    },
+    "id": "24b4f59e-4b57-4207-87db-40aa0085dc77",
+    "name": "Génération refusée",
+    "type": "n8n-nodes-base.code",
+    "typeVersion": 2,
+    "position": [
+     2128,
+     800
+    ]
+  },
+  {
+   "parameters": {
+    "jsCode": "const env = (name, fallback = '') => String(($env && $env[name]) || fallback);\nconst mode = env('MIKHMON_WEEKLY_MODE', 'disabled').toLowerCase();\nif (mode !== 'weekly_prompt' && mode !== 'weekly_auto') return [];\nconst now = new Date();\nconst jours = env('MIKHMON_WEEKLY_DAYS', '1').split(',').map(v => Number(v.trim())).filter(v => Number.isInteger(v) && v >= 0 && v <= 6);\nconst heure = env('MIKHMON_WEEKLY_TIME', '09:00').match(/^(\\d{2}):(\\d{2})$/);\nif (!jours.length || !heure) throw new Error('Planification invalide : MIKHMON_WEEKLY_DAYS doit contenir 0..6 et MIKHMON_WEEKLY_TIME HH:mm.');\nconst minuteActuelle = now.getUTCHours() * 60 + now.getUTCMinutes();\nconst minuteCible = Number(heure[1]) * 60 + Number(heure[2]);\nif (jours.indexOf(now.getUTCDay()) === -1 || minuteActuelle < minuteCible || minuteActuelle >= minuteCible + 15) return [];\nconst jour = now.toISOString().slice(0, 10);\nconst profil = env('MIKHMON_WEEKLY_PROFILE', env('MIKHMON_PROFILE', 'default'));\nconst quantity = Math.max(1, Math.min(500, Number(env('MIKHMON_WEEKLY_QUANTITY', env('TICKET_QUANTITY', '50'))) || 50));\nconst deliveryChannel = env('MIKHMON_WEEKLY_CHANNEL', env('DELIVERY_CHANNEL', 'telegram')).toLowerCase();\nconst recipient = env('MIKHMON_WEEKLY_RECIPIENT', env('DELIVERY_RECIPIENT', ''));\nconst approvalRecipient = env('MIKHMON_WEEKLY_APPROVAL_RECIPIENT', recipient);\nconst appUrl = env('APP_URL', '').replace(/\\/$/, '');\nconst runId = 'weekly-' + jour + '-' + String(profil).replace(/[^a-zA-Z0-9_-]/g, '_');\nreturn [{ json: {\n  route: mode === 'weekly_prompt' ? 'prompt' : 'auto',\n  runId, cleIdempotence: runId, tenantId: env('TENANT_ID', 'defaut'), userId: env('WEEKLY_USER_ID', ''),\n  routerBaseUrl: env('ROUTEROS_BASE_URL', ''), routerUser: env('ROUTEROS_USER', 'n8n-vouchers'), routerPassword: env('ROUTEROS_PASSWORD', ''),\n  hotspotServer: env('MIKHMON_HOTSPOT_SERVER', 'all'), profile: profil, quantity, threshold: Number(env('TICKET_THRESHOLD', '50')) || 50,\n  deliveryChannel, recipient, approvalRecipient, telegramBotToken: env('TELEGRAM_BOT_TOKEN', ''),\n  pdfServiceUrl: env('PDF_SERVICE_URL', 'http://gotenberg:3000/forms/chromium/convert/html'),\n  whatsappWebhookUrl: env('WHATSAPP_WEBHOOK_URL', ''), printNodeApiKey: env('PRINTNODE_API_KEY', ''), printNodePrinterId: Number(env('PRINTNODE_PRINTER_ID', '0')) || 0,\n  callbackUrl: appUrl ? appUrl + '/api/internal/n8n/callback' : '', forcerGeneration: mode === 'weekly_auto',\n  weeklyMode: mode, weeklyDays: jours, weeklyTime: env('MIKHMON_WEEKLY_TIME', '09:00'), scheduledAt: now.toISOString()\n} }];"
+   },
+   "id": "2bcf89e7-12cb-43f1-9c86-4a5dd02f6f7a",
+   "name": "Planification utilisateur",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    272,
+    512
+   ]
+  },
+  {
+   "parameters": {
+    "conditions": {
+     "string": [
+      {
+       "value1": "={{$json.route}}",
+       "operation": "equals",
+       "value2": "prompt"
+      }
+     ]
+    },
+    "options": {}
+   },
+   "id": "d3a1ab2f-4bf8-4c39-9d8f-4d5b4d2a3f61",
+   "name": "Demander avant génération ?",
+   "type": "n8n-nodes-base.if",
+   "typeVersion": 2.2,
+   "position": [
+    544,
+    512
+   ]
+   }
+  ],
+  "connections": {
+   "Demande manuelle (Webhook)": {
+    "main": [
+     [
+      {
+       "node": "Paramètres Mikhmon",
+       "type": "main",
+       "index": 0
+      }
+     ]
+    ]
+   },
+   "Contrôle périodique (15 min)": {
+    "main": [
+     [
+      {
+       "node": "Paramètres Mikhmon",
+       "type": "main",
+       "index": 0
+     },
+     {
+      "node": "Planification utilisateur",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Planification utilisateur": {
+   "main": [
+    [
+     {
+      "node": "Demander avant génération ?",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Demander avant génération ?": {
+   "main": [
+    [
+     {
+      "node": "Préparer le récapitulatif",
+      "type": "main",
+      "index": 0
+     }
+    ],
+    [
+     {
+      "node": "Générer les tickets dans RouterOS",
+      "type": "main",
+      "index": 0
+     }
+    ]
+    ]
+   },
+   "Paramètres Mikhmon": {
+    "main": [
+     [
+      {
+       "node": "Compatibilité Mikhmon V3 / SF v1",
+       "type": "main",
+       "index": 0
+      }
+     ]
+    ]
+   },
+   "Compatibilité Mikhmon V3 / SF v1": {
+    "main": [
+     [
+      {
+       "node": "Lire le stock du profil",
+       "type": "main",
+       "index": 0
+      }
+     ]
+    ]
+   },
+   "Lire le stock du profil": {
+    "main": [
+     [
+      {
+       "node": "Stock inférieur au seuil ?",
+       "type": "main",
+       "index": 0
+      }
+     ]
+    ]
+   },
+   "Stock inférieur au seuil ?": {
+    "main": [
+     [
+      {
+       "node": "Générer les tickets dans RouterOS",
+       "type": "main",
+       "index": 0
+      }
+     ],
+     [
+      {
+       "node": "Aucun ticket à générer",
+       "type": "main",
+       "index": 0
+      }
+     ]
+    ]
+   },
+   "Générer les tickets dans RouterOS": {
+    "main": [
+     [
+      {
+       "node": "Préparer le HTML PDF",
+       "type": "main",
+       "index": 0
+      }
+     ]
+    ]
+   },
+   "Préparer le HTML PDF": {
+    "main": [
+     [
+      {
+       "node": "Convertir en PDF (Gotenberg)",
+       "type": "main",
+       "index": 0
+      }
+     ]
+    ]
+   },
+   "Convertir en PDF (Gotenberg)": {
+    "main": [
+     [
+      {
+       "node": "Choisir le canal",
+       "type": "main",
+       "index": 0
+      }
+     ]
+    ]
+   },
+   "Choisir le canal": {
+    "main": [
+     [
+      {
+       "node": "Envoyer PDF Telegram",
+       "type": "main",
+       "index": 0
+      }
+     ],
+     [
+      {
+       "node": "Envoyer PDF WhatsApp (adaptateur)",
+       "type": "main",
+       "index": 0
+      }
+     ],
+     [
+      {
+       "node": "Imprimer via PrintNode",
+       "type": "main",
+       "index": 0
+      }
+     ]
+    ]
+   },
+   "Demande avec approbation": {
+    "main": [
+     [
+      {
+       "node": "Lire la demande (profil + quantité)",
+       "type": "main",
+       "index": 0
+      }
+     ]
+    ]
+   },
+   "Lire la demande (profil + quantité)": {
+    "main": [
+     [
+      {
+       "node": "Compatibilité Mikhmon pour approbation",
+       "type": "main",
+       "index": 0
+      }
+     ]
+    ]
+   },
+   "Compatibilité Mikhmon pour approbation": {
+    "main": [
+     [
+      {
+       "node": "Vérifier le stock avant approbation",
+       "type": "main",
+       "index": 0
+      }
+     ]
+    ]
+   },
+   "Vérifier le stock avant approbation": {
+    "main": [
+     [
+      {
+       "node": "Préparer le récapitulatif",
+       "type": "main",
+       "index": 0
+      }
+     ]
+    ]
+   },
+   "Préparer le récapitulatif": {
+    "main": [
+     [
+      {
+       "node": "Notifier le demandeur (Telegram)",
+       "type": "main",
+       "index": 0
+      }
+     ]
+    ]
+   },
+   "Notifier le demandeur (Telegram)": {
+    "main": [
+     [
+      {
+       "node": "Attendre l'approbation",
+       "type": "main",
+       "index": 0
+      }
+     ]
+    ]
+   },
+   "Attendre l'approbation": {
+    "main": [
+     [
+      {
+       "node": "Valider la décision",
+       "type": "main",
+       "index": 0
+      }
+     ]
+    ]
+   },
+   "Valider la décision": {
+    "main": [
+     [
+      {
+       "node": "Génération approuvée ?",
+       "type": "main",
+       "index": 0
+      }
+     ]
+    ]
+   },
+   "Génération approuvée ?": {
+    "main": [
+     [
+      {
+       "node": "Générer les tickets dans RouterOS",
+       "type": "main",
+       "index": 0
+      }
+     ],
+     [
+      {
+       "node": "Génération refusée",
+       "type": "main",
+       "index": 0
+      }
+     ]
+    ]
+   }
+  },
+  "nodeGroups": [],
+  "authors": "Aboulatif Bamba",
+  "name": "Version aabba0f1",
+  "description": "",
+  "autosaved": true,
+  "createdAt": "2026-11-01T13:26:40.339Z",
+  "updatedAt": "2026-11-01T13:27:52.000Z",
+  "workflowPublishHistory": [
+   {
+    "id": 1,
+    "workflowId": "PpsEaR517b9WGodZ",
+    "versionId": "aabba0f1-69a3-4751-9f78-5a14b94aa4b9",
+    "event": "activated",
+    "userId": "21e86183-cf21-4496-8a50-1d3a05e6bf3a",
+    "createdAt": "2026-11-01T13:27:52.136Z"
+   }
+  ]
+ },
+ "parentFolder": null
+}

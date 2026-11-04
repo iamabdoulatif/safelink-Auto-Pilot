@@ -1,0 +1,28 @@
+{
+  "mcpServers": {
+    "mikrotik": {
+      "command": "node",
+      "args": [
+        "/Users/VOTRE-NOM/mcp-mikrotik/build/index.js"
+      ],
+      "env": {
+        "MIKROTIK_HOST": "192.168.88.1",
+        "MIKROTIK_USER": "app-audit",
+        "MIKROTIK_PASSWORD": "",
+        "MIKROTIK_PORT": "8728"
+      }
+    },
+    "routeros-docs": {
+      "command": "npx",
+      "args": ["-y", "rosetta-mcp"]
+    },
+    "postgres": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-postgres", "postgresql://autopilot:motdepasse@localhost:5432/autopilot"]
+    },
+    "shadcn": {
+      "command": "npx",
+      "args": ["-y", "shadcn@latest", "mcp"]
+    }
+  }
+}

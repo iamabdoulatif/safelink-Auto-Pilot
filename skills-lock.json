@@ -1,0 +1,77 @@
+{
+  "version": 1,
+  "skills": {
+    "routeros-command-tree": {
+      "source": "tikoci/routeros-skills",
+      "sourceType": "github",
+      "skillPath": "routeros-command-tree/SKILL.md",
+      "computedHash": "645009b3d65179fc90781f05c234aceecda100268750d656ae424a2a84d0e280"
+    },
+    "routeros-diagnostics-monitoring": {
+      "source": "wiresage/routeros-skills",
+      "sourceType": "github",
+      "skillPath": "skills/routeros-diagnostics-monitoring/SKILL.md",
+      "computedHash": "2ae7dcfc679cfea527995067c1937459809474d92395489b7e56952007184232"
+    },
+    "routeros-firewall": {
+      "source": "tikoci/routeros-skills",
+      "sourceType": "github",
+      "skillPath": "routeros-firewall/SKILL.md",
+      "computedHash": "303f754679adbf272065b342c1e722008a4f2c5d6aebdd4726b3390386e583bd"
+    },
+    "routeros-fundamentals": {
+      "source": "tikoci/routeros-skills",
+      "sourceType": "github",
+      "skillPath": "routeros-fundamentals/SKILL.md",
+      "computedHash": "b11100e6828b98d69e592633fbe259817744b3f2f2f55d6bc51735428512f6f7"
+    },
+    "routeros-hotspot": {
+      "source": "tikoci/routeros-skills",
+      "sourceType": "github",
+      "skillPath": "routeros-hotspot/SKILL.md",
+      "computedHash": "9be84a13065daf407172527f739df4b9d4f0965361d2e7974a4cad8ee79146ca"
+    },
+    "routeros-qemu-chr": {
+      "source": "tikoci/routeros-skills",
+      "sourceType": "github",
+      "skillPath": "routeros-qemu-chr/SKILL.md",
+      "computedHash": "afaac1eea53d4317951fe26d7a2a28da94003492f690e91323e1addf541fb1fa"
+    },
+    "routeros-quickchr": {
+      "source": "tikoci/routeros-skills",
+      "sourceType": "github",
+      "skillPath": "routeros-quickchr/SKILL.md",
+      "computedHash": "f3d8499d0e1cfbb194e57b05742e504bb5247dd7bcf097b47793f33579959f94"
+    },
+    "routeros-quickchr-cli": {
+      "source": "tikoci/routeros-skills",
+      "sourceType": "github",
+      "skillPath": "routeros-quickchr-cli/SKILL.md",
+      "computedHash": "9ee58b100d562c5e8d9471847359965ff38907bbbb24cd4d6143afc344c416bb"
+    },
+    "routeros-scripting": {
+      "source": "tikoci/routeros-skills",
+      "sourceType": "github",
+      "skillPath": "routeros-scripting/SKILL.md",
+      "computedHash": "f57365d9360b22b1c750190fd25d16dea749439eaeeffa62426b697e7ef556a5"
+    },
+    "routeros-sniffer": {
+      "source": "tikoci/routeros-skills",
+      "sourceType": "github",
+      "skillPath": "routeros-sniffer/SKILL.md",
+      "computedHash": "5b571e0ddb4efd8112071e4b1a016bba93c27ad085aff82308a49a49fd54f345"
+    },
+    "routeros-syntax-inspection": {
+      "source": "tikoci/routeros-skills",
+      "sourceType": "github",
+      "skillPath": "routeros-syntax-inspection/SKILL.md",
+      "computedHash": "8faccb996ecd37d23631b5cdf5babb19ac1e1f35ec1e71b3bce5eed2ac5cd063"
+    },
+    "shadcn": {
+      "source": "shadcn-ui/ui",
+      "sourceType": "github",
+      "skillPath": "skills/shadcn/SKILL.md",
+      "computedHash": "b864a958765563321f485a96f4d59c0bb6539f4286ab6d8b8b66895b7ebd302d"
+    }
+  }
+}

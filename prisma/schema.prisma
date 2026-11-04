@@ -1,0 +1,32 @@
+// CONFIGURATION HERITEE, INUTILISEE : l'application parle a PostgreSQL
+// via le paquet pg et du SQL manuel versionne (db/schema.sql puis
+// db/migrations/*.sql). Aucun code n'importe @prisma/client. Ne pas
+// reactiver sans decision : les tables metier vivent dans db/.
+// Les modeles User/Device ci-dessous sont des exemples jamais mappes.
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  name      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Device {
+  id        String   @id @default(uuid())
+  name      String
+  ipAddress String
+  type      String
+  status    String   @default("offline")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

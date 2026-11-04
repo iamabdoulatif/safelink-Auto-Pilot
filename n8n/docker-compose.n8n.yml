@@ -1,0 +1,81 @@
+# n8n + Gotenberg pour SafeLink-Auto-Pilot.
+# Lancement (depuis la racine) : docker compose -f n8n/docker-compose.n8n.yml up -d
+# Variables : copier n8n/.env.n8n.example en n8n/.env (charge automatiquement),
+# ou exporter les variables avant. Puis ouvrir http://localhost:5678 ->
+# Workflows -> Import from File -> choisir n8n/workflows/workflow-mikhmon-patched.json,
+# et basculer sur Active.
+# L'URL de production est /webhook/mikhmon/tickets (pas /webhook-test/...).
+#
+# Les secrets viennent de VOS variables d'environnement, jamais en dur ici :
+#   export N8N_CALLBACK_SECRET=...   # identique a web/.env.local
+#   export N8N_WEBHOOK_SECRET=...   # identique a web/.env.local
+#   export N8N_BASIC_AUTH_PASSWORD=... (ou laissez le placeholder local)
+# Les valeurs par defaut ci-dessous sont LOCALES et non secretes.
+
+services:
+  n8n:
+    # Version epinglee (branche 1.x stable, compatible avec nos workflows).
+    # Ne pas repasser a :latest sans retester l'import des workflows.
+    image: n8nio/n8n:1.123.92
+    restart: unless-stopped
+    # Ecoute locale uniquement : pas d'exposition au reseau local.
+    ports: ["127.0.0.1:5678:5678"]
+    # Secrets et URL lus depuis n8n/.env (vides = repli local inchange).
+    env_file: [.env]
+    environment:
+      # --- n8n lui-meme ---
+      - N8N_HOST=localhost
+      - N8N_PORT=5678
+      # URL publique des webhooks. Une seule valeur projet (N8N_WEBHOOK_URL),
+      # convertie vers les deux noms : 1.x lit WEBHOOK_URL, 2.x lit N8N_WEBHOOK_URL.
+      - N8N_WEBHOOK_URL=${N8N_WEBHOOK_URL:-http://localhost:5678/}
+      - WEBHOOK_URL=${N8N_WEBHOOK_URL:-http://localhost:5678/}
+      # en prod : https://n8n.mondomaine.tld/
+      # Nombre de proxys inverses devant n8n (0 en local direct, 1 derriere nginx/Caddy).
+      - N8N_PROXY_HOPS=${N8N_PROXY_HOPS:-0}
+      - GENERIC_TIMEZONE=Africa/Abidjan
+      - N8N_BASIC_AUTH_ACTIVE=true
+      - N8N_BASIC_AUTH_USER=admin
+      - N8N_BASIC_AUTH_PASSWORD=${N8N_BASIC_AUTH_PASSWORD:-choisissez-un-mot-de-passe-long}
+      # --- lien avec NOTRE application (DOIT matcher web/.env.local) ---
+      # L'app signe ses appels (X-Signature) avec N8N_WEBHOOK_SECRET ;
+      # n8n signe ses comptes rendus vers /api/n8n/retour avec
+      # N8N_CALLBACK_SECRET. Vides = les appels sont refuses (401/503).
+      - N8N_WEBHOOK_SECRET=${N8N_WEBHOOK_SECRET:-}
+      - N8N_CALLBACK_SECRET=${N8N_CALLBACK_SECRET:-}
+      # --- le routeur (compte dedie aux vouchers, jamais admin) ---
+      # L'app envoie URL + identifiants par appel signe ; ces valeurs ne
+      # sont que des replis quand l'appel ne les fournit pas.
+      # Conversion explicite : l'app dit ROUTEROS_PASS, n8n lit ROUTEROS_PASSWORD.
+      - ROUTEROS_BASE_URL=${ROUTEROS_BASE_URL:-https://192.168.88.1}
+      - ROUTEROS_USER=${ROUTEROS_USER:-n8n-vouchers}
+      - ROUTEROS_PASSWORD=${ROUTEROS_PASS:-}
+      # --- les tickets ---
+      - MIKHMON_PROFILE=${MIKHMON_PROFILE:-03-JOURS}
+      - MIKHMON_HOTSPOT_SERVER=${MIKHMON_HOTSPOT_SERVER:-all}
+      - MIKHMON_VARIANT=${MIKHMON_VARIANT:-v3}
+      - MIKHMON_BASE_URL=${MIKHMON_BASE_URL:-http://host.docker.internal:8088}
+      - TICKET_THRESHOLD=${TICKET_THRESHOLD:-50}
+      - TICKET_QUANTITY=${TICKET_QUANTITY:-120}
+      - TICKET_PREFIX=${TICKET_PREFIX:-}
+      - TICKET_LIMIT_UPTIME=${TICKET_LIMIT_UPTIME:-}
+      - TICKET_LIMIT_BYTES_TOTAL=${TICKET_LIMIT_BYTES_TOTAL:-}
+      # --- la livraison ---
+      - DELIVERY_CHANNEL=${DELIVERY_CHANNEL:-interface}
+      - DELIVERY_RECIPIENT=${DELIVERY_RECIPIENT:-}
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN:-}
+      - WHATSAPP_WEBHOOK_URL=${WHATSAPP_WEBHOOK_URL:-}
+      - PRINTNODE_API_KEY=${PRINTNODE_API_KEY:-}
+      - PRINTNODE_PRINTER_ID=${PRINTNODE_PRINTER_ID:-0}
+      - PDF_SERVICE_URL=http://gotenberg:3000/forms/chromium/convert/html
+      # --- divers ---
+      - REAPPRO_SIMULATION=${REAPPRO_SIMULATION:-true}
+    volumes: ["n8n_data:/home/node/.n8n"]
+
+  gotenberg:
+    image: gotenberg/gotenberg:8
+    restart: unless-stopped
+    # pas de port public : seul n8n lui parle, par le reseau interne
+
+volumes:
+  n8n_data:

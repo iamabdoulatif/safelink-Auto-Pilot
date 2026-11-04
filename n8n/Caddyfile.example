@@ -1,0 +1,10 @@
+# Exemple Caddy (HTTPS automatique) : copie en n8n/Caddyfile SUR LE VPS.
+# Remplace n8n.exemple.tld et app.exemple.tld par TES domaines.
+# L'app Next.js tourne a part (npm run start, port 3000) sur le meme VPS.
+n8n.exemple.tld {
+  reverse_proxy n8n:5678
+}
+
+app.exemple.tld {
+  reverse_proxy host.docker.internal:3000
+}

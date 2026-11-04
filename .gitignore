@@ -1,0 +1,18 @@
+# Secrets — jamais sur GitHub (mots de passe routeur, clés API, base de données)
+.env
+.env.local
+.env.*.local
+n8n/.env
+.muse/mcp.json
+
+# Dépendances installées (à réinstaller avec npm install)
+node_modules/
+
+# Fichiers système et sauvegardes
+.DS_Store
+*.bak
+*.log
+
+# Archives de données et images VM (trop lourds pour GitHub, gardés en local)
+archives/*.tar.gz
+vm/*.img

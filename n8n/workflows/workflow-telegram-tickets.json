@@ -1,0 +1,969 @@
+{
+ "active": true,
+ "connections": {
+  "Aiguiller": {
+   "main": [
+    [
+     {
+      "node": "Router",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Generer les tickets": {
+   "main": [
+    [
+     {
+      "node": "Erreur de génération ?",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Preparer le HTML PDF": {
+   "main": [
+    [
+     {
+      "node": "Convertir en PDF (Gotenberg)",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Convertir en PDF (Gotenberg)": {
+   "main": [
+    [
+     {
+      "node": "Envoyer le PDF",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Envoyer le PDF": {
+   "main": [
+    [
+     {
+      "node": "Confirmer",
+      "type": "main",
+      "index": 0
+     }
+    ],
+    [
+     {
+      "node": "Signaler l'échec Telegram",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Demarrer": {
+   "main": [
+    [
+     {
+      "node": "Aiguiller",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Router": {
+   "main": [
+    [
+     {
+      "node": "Lister les routeurs",
+      "type": "main",
+      "index": 0
+     }
+    ],
+    [
+     {
+      "node": "Proposer les profils",
+      "type": "main",
+      "index": 0
+     }
+    ],
+    [
+     {
+      "node": "Accuser le profil",
+      "type": "main",
+      "index": 0
+     }
+    ],
+    [
+     {
+      "node": "Accuser la quantité",
+      "type": "main",
+      "index": 0
+     }
+    ],
+    [
+     {
+      "node": "Refuser",
+      "type": "main",
+      "index": 0
+     }
+    ],
+    [
+     {
+      "node": "Aide",
+      "type": "main",
+      "index": 0
+     }
+    ],
+    [
+     {
+      "node": "Accuser l'erreur",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Accuser le profil": {
+   "main": [
+    [
+     {
+      "node": "Proposer les quotas",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Accuser la quantité": {
+   "main": [
+    [
+     {
+      "node": "Vérifier l'utilisateur",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Vérifier l'utilisateur": {
+   "main": [
+    [
+     {
+      "node": "Accès vérifié ?",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Accès vérifié ?": {
+   "main": [
+    [
+     {
+      "node": "Generer les tickets",
+      "type": "main",
+      "index": 0
+     }
+    ],
+    [
+     {
+      "node": "Refuser",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Erreur de génération ?": {
+   "main": [
+    [
+     {
+      "node": "Signaler l'erreur",
+      "type": "main",
+      "index": 0
+     }
+    ],
+    [
+     {
+      "node": "Mode simulation ?",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Mode simulation ?": {
+   "main": [
+    [
+     {
+      "node": "Fin simulation",
+      "type": "main",
+      "index": 0
+     }
+    ],
+    [
+     {
+      "node": "Preparer le HTML PDF",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Proposer les profils": {
+   "main": [
+    [],
+    [
+     {
+      "node": "Signaler l'échec Telegram",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Proposer les quotas": {
+   "main": [
+    [],
+    [
+     {
+      "node": "Signaler l'échec Telegram",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Confirmer": {
+   "main": [
+    [
+     {
+      "node": "Notifier SafeLink",
+      "type": "main",
+      "index": 0
+     }
+    ],
+    [
+     {
+      "node": "Signaler l'échec Telegram",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Refuser": {
+   "main": [
+    [],
+    [
+     {
+      "node": "Signaler l'échec Telegram",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Aide": {
+   "main": [
+    [],
+    [
+     {
+      "node": "Signaler l'échec Telegram",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Signaler l'erreur": {
+   "main": [
+    [
+     {
+      "node": "Notifier SafeLink",
+      "type": "main",
+      "index": 0
+     }
+    ],
+    [
+     {
+      "node": "Signaler l'échec Telegram",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Accuser l'erreur": {
+   "main": [
+    [
+     {
+      "node": "Aide",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Fin simulation": {
+   "main": [
+    [
+     {
+      "node": "Annoncer la simulation",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Lister les routeurs": {
+   "main": [
+    [],
+    [
+     {
+      "node": "Signaler l'échec Telegram",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  }
+ },
+ "meta": null,
+ "name": "Tickets Telegram autonome (Mikhmon)",
+ "nodeGroups": [],
+ "nodes": [
+  {
+   "id": "b2c3d4e5-1111-4000-8000-0000000000aa",
+   "name": "Demarrer",
+   "parameters": {
+    "httpMethod": "POST",
+    "path": "tg-safelink-8f3k9d",
+    "responseMode": "onReceived",
+    "options": {}
+   },
+   "position": [
+    0,
+    256
+   ],
+   "type": "n8n-nodes-base.webhook",
+   "typeVersion": 2
+  },
+  {
+   "id": "b2c3d4e5-2222-4000-8000-0000000000aa",
+   "name": "Aiguiller",
+   "parameters": {
+    "jsCode": "// Routage Telegram multi-routeurs : catalogue dynamique via /api/telegram/catalogue.\n// /start ou /tickets -> askRouters (routeurs actifs du chatId).\n// Clic routeur:<id> -> askProfiles (profils RouterOS du routeur choisi).\n// Clic prof:<routerId>:<profil> -> askQty (quantites).\n// Clic qty:<routerId>:<profil>:<qty> -> generate (autorisation puis generation).\n// RouterOS (via le catalogue) est la seule source de profils : aucune liste\n// statique ici. Resout le jeton du bot via /api/telegram/contexte (repli\n// $env) sans jamais bloquer le routage.\nvar entree = $input.first().json || {};\nvar corps = (entree && typeof entree === 'object' && entree.body && typeof entree.body === 'object') ? entree.body : entree;\nvar msg = corps.message || corps.edited_message || null;\nif (!msg && corps.message_id !== undefined && corps.chat) msg = corps;\nvar cb = corps.callback_query || null;\nfunction idChatMessage(m) {\n  if (!m) return null;\n  if (m.chat && m.chat.id !== undefined && m.chat.id !== null) return String(m.chat.id);\n  if (m.from && m.from.id !== undefined && m.from.id !== null) return String(m.from.id);\n  return null;\n}\nvar chatId = null; var userId = null; var source = 'message';\nvar donneesCallback = null; var idRequeteCallback = null;\nif (cb && typeof cb === 'object') {\n  source = 'callback';\n  if (cb.message) chatId = idChatMessage(cb.message);\n  if (!chatId && cb.from && cb.from.id !== undefined && cb.from.id !== null) chatId = String(cb.from.id);\n  if (cb.from && cb.from.id !== undefined && cb.from.id !== null) userId = String(cb.from.id);\n  if (typeof cb.data === 'string') donneesCallback = cb.data;\n  if (typeof cb.id === 'string') idRequeteCallback = cb.id;\n}\nif (!chatId && msg) {\n  chatId = idChatMessage(msg);\n  if (msg.from && msg.from.id !== undefined && msg.from.id !== null) userId = String(msg.from.id);\n}\nif (!chatId) throw new Error('Mise à jour Telegram sans chat identifiable : ni callback_query.message.chat.id, ni from.id, ni message.chat.id.');\nvar texte = (msg && typeof msg.text === 'string') ? msg.text.trim() : '';\nfunction estCommande(t, nom) { return t === '/' + nom || t.indexOf('/' + nom + '@') === 0 || t.indexOf('/' + nom + ' ') === 0; }\nvar jetonBot = '';\nvar appliUrl = String(($env && $env.APP_URL) || '').replace(/\\/$/, '');\nvar secretPartage = String(($env && $env.N8N_WEBHOOK_SECRET) || '');\nif (appliUrl && secretPartage) {\n  try {\n    var ctx = await this.helpers.httpRequest({ method: 'POST', url: appliUrl + '/api/telegram/contexte', headers: { 'Content-Type': 'application/json', 'X-N8N-Secret': secretPartage }, body: { chatId: chatId }, json: true, timeout: 8000 });\n    var donnees = (ctx && ctx.data) || {};\n    if (donnees.telegramBotToken) jetonBot = String(donnees.telegramBotToken);\n  } catch (eCtx) { jetonBot = ''; }\n}\nvar QUANTITES = [120, 240, 480, 500];\nfunction routerIdValide(s) { var t = String(s == null ? '' : s); return /^\\d+$/.test(t) && parseInt(t, 10) > 0; }\nfunction profilValide(s) { var p = String(s == null ? '' : s); return p !== '' && p.length <= 64; }\nfunction quantiteValide(q) { return QUANTITES.indexOf(q) !== -1; }\nfunction base(extra) {\n  var o = { chatId: chatId, userId: userId, telegramBotToken: jetonBot, source: source };\n  if (extra) for (var k in extra) o[k] = extra[k];\n  return [{ json: o }];\n}\nfunction erreurSelection() { return base({ route: 'ackErreur', errorCode: 'ERREUR_SELECTION', errorText: 'Erreur de sélection.', callbackQueryId: idRequeteCallback }); }\nif (texte !== '' && (estCommande(texte, 'start') || estCommande(texte, 'tickets'))) return base({ route: 'askRouters' });\nif (donneesCallback && donneesCallback.indexOf('routeur:') === 0) {\n  var rid = donneesCallback.slice(8);\n  if (!routerIdValide(rid)) return erreurSelection();\n  return base({ route: 'askProfiles', routerId: parseInt(rid, 10), callbackQueryId: idRequeteCallback });\n}\nif (donneesCallback && donneesCallback.indexOf('prof:') === 0) {\n  var reste = donneesCallback.slice(5).split(':');\n  var rpid = reste[0]; var pnom = reste.slice(1).join(':');\n  if (!routerIdValide(rpid) || !profilValide(pnom)) return erreurSelection();\n  return base({ route: 'askQty', routerId: parseInt(rpid, 10), profile: pnom, callbackQueryId: idRequeteCallback });\n}\nif (donneesCallback && donneesCallback.indexOf('qty:') === 0) {\n  var morceaux = donneesCallback.slice(4).split(':');\n  var qrid = morceaux[0]; var qp = morceaux.slice(1, -1).join(':'); var qq = parseInt(morceaux[morceaux.length - 1], 10);\n  if (!routerIdValide(qrid) || !profilValide(qp) || !quantiteValide(qq)) return erreurSelection();\n  return base({ route: 'generate', routerId: parseInt(qrid, 10), profile: qp, qty: qq, callbackQueryId: idRequeteCallback });\n}\nif (texte !== '') {\n  var m = String(texte).trim().match(/(\\d+)/);\n  if (m && quantiteValide(parseInt(m[1], 10))) return base({ route: 'help', errorCode: 'QUANTITE_SANS_PROFIL', qty: parseInt(m[1], 10) });\n  if (texte.charAt(0) === '/') return base({ route: 'help' });\n  return base({ route: 'help', errorCode: 'INPUT_INVALIDE' });\n}\nif (idRequeteCallback) return erreurSelection();\nreturn base({ route: 'help' });"
+   },
+   "position": [
+    256,
+    256
+   ],
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2
+  },
+  {
+   "id": "b2c3d4e5-3333-4000-8000-0000000000aa",
+   "name": "Proposer les profils",
+   "parameters": {
+    "jsCode": "// Profils RouterOS du routeur choisi : rappelle /api/telegram/catalogue,\n// filtre le routerId, affiche UNIQUEMENT les profils réellement retournés\n// par RouterOS, boutons prof:<routerId>:<profil>. Aucune liste statique.\n// Routeur inactif, profil vide, catalogue injoignable ou chat inconnu ->\n// message de refus explicite (jamais de génération à l'aveugle).\nvar items = $input.all();\nvar out = [];\nvar appli = String(($env && $env.APP_URL) || '').replace(/\\/$/, '');\nvar secret = String(($env && $env.N8N_WEBHOOK_SECRET) || '');\nfor (var k = 0; k < items.length; k++) {\n  var e = items[k].json || {};\n  var chatId = String(e.chatId || '');\n  var routerId = parseInt(e.routerId, 10);\n  var jeton = String(e.telegramBotToken || (($env && $env.TELEGRAM_BOT_TOKEN) || ''));\n  var suivi = {};\n  for (var c in e) suivi[c] = e[c];\n  var texte = '';\n  var clavier = null;\n  var motif = '';\n  if (!chatId) {\n    motif = 'Discussion inconnue : envoyez /start depuis votre compte.';\n  } else if (!Number.isInteger(routerId) || routerId <= 0) {\n    motif = 'Routeur non choisi : touchez un routeur dans la liste.';\n  } else if (!appli || !secret) {\n    motif = 'Service indisponible : configuration SafeLink incomplète.';\n  } else {\n    try {\n      var rep = await this.helpers.httpRequest({ method: 'POST', url: appli + '/api/telegram/catalogue', headers: { 'Content-Type': 'application/json', 'X-N8N-Secret': secret }, body: { chatId: chatId }, json: true, timeout: 15000 });\n      var donnees = (rep && rep.data) || {};\n      var routeurs = Array.isArray(donnees.routeurs) ? donnees.routeurs : [];\n      var trouve = null;\n      for (var i = 0; i < routeurs.length; i++) {\n        if (Number(routeurs[i] && routeurs[i].id) === routerId) { trouve = routeurs[i]; break; }\n      }\n      if (!trouve) {\n        motif = 'Routeur indisponible ou inactif.';\n      } else if (trouve.disponible !== true) {\n        motif = String(trouve.erreur || 'Routeur injoignable ou compte de lecture non configuré.');\n      } else {\n        var profils = Array.isArray(trouve.profils) ? trouve.profils.filter(function (p) { return p && String(p.nom || '').trim() !== ''; }) : [];\n        if (profils.length === 0) {\n          motif = 'Aucun profil sur ce routeur.';\n        } else {\n          texte = '🎟️ ' + String(trouve.nom || ('Routeur ' + routerId)) + ' — quel profil ?';\n          clavier = { inline_keyboard: profils.map(function (p) { return [{ text: String(p.nom), callback_data: 'prof:' + routerId + ':' + String(p.nom) }]; }) };\n        }\n      }\n    } catch (err) {\n      motif = 'Catalogue indisponible : ' + String((err && err.message) || err).slice(0, 200);\n    }\n  }\n  if (!texte) texte = '⛔ Accès non autorisé.' + (motif ? ' ' + motif : '');\n  var cbid = (e.callbackQueryId === undefined || e.callbackQueryId === null) ? '' : String(e.callbackQueryId);\n  if (cbid && jeton && chatId) {\n    try {\n      await this.helpers.httpRequest({ method: 'POST', url: 'https://api.telegram.org/bot' + jeton + '/answerCallbackQuery', body: { callback_query_id: cbid, text: 'Routeur sélectionné', show_alert: false }, json: true, timeout: 15000 });\n    } catch (eAcc) { void eAcc; }\n  }\n  if (jeton && chatId) {\n    try {\n      await this.helpers.httpRequest({ method: 'POST', url: 'https://api.telegram.org/bot' + jeton + '/sendMessage', body: { chat_id: chatId, text: texte, ...(clavier ? { reply_markup: clavier } : {}) }, json: true, timeout: 15000 });\n      suivi.messageEnvoye = true;\n    } catch (err) {\n      var m = String((err && err.message) || err).replace(/bot\\d+:[A-Za-z0-9_-]{10,}/g, 'bot***');\n      suivi.erreurEnvoi = { code: 'TELEGRAM_SEND_FAILED', message: 'Impossible d\\u2019envoyer le message Telegram', chatIdPresent: !!chatId, runId: e.runId || null, detail: m.slice(0, 300) };\n    }\n  } else if (!suivi.erreurEnvoi) {\n    suivi.erreurEnvoi = { code: 'TELEGRAM_SEND_FAILED', message: 'Impossible d\\u2019envoyer le message Telegram', chatIdPresent: !!chatId, runId: e.runId || null, detail: 'jeton ou chatId manquant' };\n  }\n  if (motif) suivi.motif = motif;\n  out.push({ json: suivi });\n}\nreturn out;"
+   },
+   "position": [
+    512,
+    0
+   ],
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "onError": "continueErrorOutput"
+  },
+  {
+   "id": "b2c3d4e5-4444-4000-8000-0000000000aa",
+   "name": "Proposer les quotas",
+   "parameters": {
+    "jsCode": "// Quantités pour (routeur, profil) : boutons qty:<routerId>:<profil>:<qty>.\n// Les quantités autorisées sont celles de /api/telegram/autoriser.\nvar items = $input.all();\nvar out = [];\nvar QUANTITES = [120, 240, 480, 500];\nfor (var k = 0; k < items.length; k++) {\n  var e = items[k].json || {};\n  var chatId = String(e.chatId || '');\n  var routerId = parseInt(e.routerId, 10);\n  var profile = String(e.profile || '');\n  var jeton = String(e.telegramBotToken || (($env && $env.TELEGRAM_BOT_TOKEN) || ''));\n  var suivi = {};\n  for (var c in e) suivi[c] = e[c];\n  var texte = '';\n  var clavier = null;\n  var motif = '';\n  if (!chatId) {\n    motif = 'Discussion inconnue : envoyez /start depuis votre compte.';\n  } else if (!Number.isInteger(routerId) || routerId <= 0 || profile === '') {\n    motif = 'Choix incomplet : touchez d\\u2019abord un routeur puis un profil.';\n  } else {\n    texte = '🎟️ Profil ' + profile + ' — combien de tickets ?';\n    clavier = { inline_keyboard: [[{ text: '🎟️ 120', callback_data: 'qty:' + routerId + ':' + profile + ':120' }, { text: '🎟️ 240', callback_data: 'qty:' + routerId + ':' + profile + ':240' }], [{ text: '🎟️ 480', callback_data: 'qty:' + routerId + ':' + profile + ':480' }, { text: '🎟️ 500', callback_data: 'qty:' + routerId + ':' + profile + ':500' }]] };\n  }\n  if (!texte) texte = '⛔ Accès non autorisé.' + (motif ? ' ' + motif : '');\n  if (jeton && chatId) {\n    try {\n      await this.helpers.httpRequest({ method: 'POST', url: 'https://api.telegram.org/bot' + jeton + '/sendMessage', body: { chat_id: chatId, text: texte, ...(clavier ? { reply_markup: clavier } : {}) }, json: true, timeout: 15000 });\n      suivi.messageEnvoye = true;\n    } catch (err) {\n      var m = String((err && err.message) || err).replace(/bot\\d+:[A-Za-z0-9_-]{10,}/g, 'bot***');\n      suivi.erreurEnvoi = { code: 'TELEGRAM_SEND_FAILED', message: 'Impossible d\\u2019envoyer le message Telegram', chatIdPresent: !!chatId, runId: e.runId || null, detail: m.slice(0, 300) };\n    }\n  } else if (!suivi.erreurEnvoi) {\n    suivi.erreurEnvoi = { code: 'TELEGRAM_SEND_FAILED', message: 'Impossible d\\u2019envoyer le message Telegram', chatIdPresent: !!chatId, runId: e.runId || null, detail: 'jeton ou chatId manquant' };\n  }\n  if (motif) suivi.motif = motif;\n  out.push({ json: suivi });\n}\nreturn out;"
+   },
+   "position": [
+    512,
+    128
+   ],
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "onError": "continueErrorOutput"
+  },
+  {
+   "id": "b2c3d4e5-5555-4000-8000-0000000000aa",
+   "name": "Refuser",
+   "parameters": {
+    "chatId": "={{$json.chatId}}",
+    "text": "={{'⛔ Accès non autorisé.' + ($json.motif ? ' ' + $json.motif : '')}}",
+    "additionalFields": {}
+   },
+   "position": [
+    512,
+    384
+   ],
+   "type": "n8n-nodes-base.telegram",
+   "typeVersion": 1.2,
+   "credentials": {
+    "telegramApi": {
+     "id": "xIFTtV2jrFQ2G45I",
+     "name": "SafeLinkHub Bot"
+    }
+   },
+   "onError": "continueErrorOutput"
+  },
+  {
+   "id": "b2c3d4e5-6666-4000-8000-0000000000aa",
+   "name": "Aide",
+   "parameters": {
+    "chatId": "={{$json.chatId}}",
+    "text": "={{ $json.errorCode === 'QUANTITE_SANS_PROFIL' ? 'Sélectionnez d’abord un profil.' : 'Envoyez /tickets pour générer des tickets Wi-Fi. — Profils payants uniquement (default exclu), 120 / 240 / 480 / 500.' }}",
+    "additionalFields": {}
+   },
+   "position": [
+    512,
+    512
+   ],
+   "type": "n8n-nodes-base.telegram",
+   "typeVersion": 1.2,
+   "credentials": {
+    "telegramApi": {
+     "id": "xIFTtV2jrFQ2G45I",
+     "name": "SafeLinkHub Bot"
+    }
+   },
+   "onError": "continueErrorOutput"
+  },
+  {
+   "id": "b2c3d4e5-8888-4000-8000-0000000000aa",
+   "name": "Generer les tickets",
+   "parameters": {
+    "jsCode": "const items = $input.all();\nconst out = [];\nconst ALPH = '23456789abcdefghijkmnpqrstuvwxyz';\nconst prefixeDe = function (nom) { var b = String(nom || '').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 4); return b || 'tk'; };\nconst aleatoireCrypto = () => { try { var NC = require('crypto'); if (NC && NC.randomBytes) return NC.randomBytes(8); } catch (eCrypto) {} throw new Error('Génération aléatoire sécurisée indisponible : aucun ticket créé.'); }; const rand8 = () => { const o = aleatoireCrypto(); let s = ''; for (let i = 0; i < 8; i++) s += ALPH[o[i] % ALPH.length]; return s; }; const esc = s => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\"/g, '&quot;'); \nconst premier = (items[0] && items[0].json) || {};\nconst base = String(premier.routerBaseUrl || ($env && $env.ROUTEROS_BASE_URL) || '').replace(/\\/$/, '');\nconst user = String(premier.routerUser || ($env && $env.ROUTEROS_USER) || '');\nconst pass = String(premier.routerPassword || ($env && $env.ROUTEROS_PASSWORD) || '');\nif (!base) throw new Error('ROUTEROS_BASE_URL manquant (env n8n)');\nif (!pass) throw new Error('ROUTEROS_PASSWORD manquant (env n8n)');\nconst auth = 'Basic ' + Buffer.from(user + ':' + pass).toString('base64');\nconst existing = await this.helpers.httpRequest({ method: 'GET', url: base + '/rest/ip/hotspot/user', headers: { Authorization: auth, Accept: 'application/json' }, json: true, timeout: 30000 });\nconst used = new Set((Array.isArray(existing) ? existing : []).map(u => String(u.name)));\nconst profs = await this.helpers.httpRequest({ method: 'GET', url: base + '/rest/ip/hotspot/user/profile', headers: { Authorization: auth, Accept: 'application/json' }, json: true, timeout: 30000 });\nconst nomsProfils = new Set((Array.isArray(profs) ? profs : (profs.data || profs.results || [])).map(p => String(p && p.name)));\nfor (const item of items) {\n  const profile = String(item.json.profile || '');\n  const chatId = item.json.chatId;\n  const qtyBrut = parseInt(item.json.qty, 10);\n  const runIdItem = String(item.json.runId || '');\n  const limiteDuree = String(item.json.limitUptime || '');\n  const limiteVolume = String(item.json.limitBytesTotal || '');\n  const simulationItem = item.json.simulation === true || String(($env && $env.SIMULATION) || '').toLowerCase() === 'true';\n  if (!profile) throw new Error('Profil manquant : génération impossible' + (runIdItem ? ' (runId ' + runIdItem + ')' : ''));\n  if ([120, 240, 480, 500].indexOf(qtyBrut) === -1) throw new Error('Quantité invalide (' + item.json.qty + ') : autorisées 120, 240, 480, 500' + (runIdItem ? ' (runId ' + runIdItem + ')' : ''));\n  if (chatId === undefined || chatId === null || String(chatId) === '') throw new Error('chatId manquant : impossible de répondre' + (runIdItem ? ' (runId ' + runIdItem + ')' : ''));\n  if (!runIdItem) throw new Error('runId manquant : idempotence impossible.');\n  if (!nomsProfils.has(profile)) throw new Error('Profil hotspot \"' + profile + '\" introuvable sur le routeur (runId ' + runIdItem + ').');\n  const qty = qtyBrut;\n  const prefix = prefixeDe(profile);\n  \n  const tickets = [];\n  let erreurLot = null;\n  const listeExistants = Array.isArray(existing) ? existing : [];\n  const estNeuf = function (u) { return String((u && u.profile) || '') === profile && (u && u.disabled) !== true && String((u && u.disabled) || '').toLowerCase() !== 'true' && ['0s', '00:00:00'].indexOf(String((u && u.uptime) || '0s').trim()) !== -1; };\n  const neufsAvant = listeExistants.filter(estNeuf).length;\n  const marqueur = 'runId:' + runIdItem;\n  const dejaFait = listeExistants.some(function (u) { return String((u && u.comment) || '').indexOf(marqueur) !== -1; });\n  if (dejaFait) { out.push({ json: { chatId: chatId, profile: profile, qty: 0, demandees: qty, routeurNom: String(item.json.routeurNom || ''), generatedAt: new Date().toISOString(), html: '', tickets: [], runId: runIdItem, stockAvant: neufsAvant, stockApres: neufsAvant, tenantId: (item.json.tenantId || null), simulation: true, dejaVu: true, note: 'run déjà traité : tickets existants conservés, rien recréé' } }); continue; }\n  if (simulationItem) { out.push({ json: { chatId: chatId, profile: profile, qty: 0, demandees: qty, routeurNom: String(item.json.routeurNom || ''), generatedAt: new Date().toISOString(), html: 'simulation', tickets: [], runId: runIdItem, tenantId: (item.json.tenantId || null), stockAvant: neufsAvant, stockApres: neufsAvant, simulation: true } }); continue; }\n  for (let i = 0; i < qty; i++) {\n    let code = '';\n    for (let a = 0; a < 25; a++) { const c = prefix + rand8(); if (!used.has(c)) { used.add(c); code = c; break; } }\n    if (!code) throw new Error('Collision après 25 essais');\n    const body = { name: code, password: code, profile, server: 'all', comment: 'tg-bot runId:' + runIdItem + ' ' + new Date().toISOString(), ...(limiteDuree ? { 'limit-uptime': limiteDuree } : {}), ...(limiteVolume ? { 'limit-bytes-total': limiteVolume } : {}) };\n    try {\n      await this.helpers.httpRequest({ method: 'PUT', url: base + '/rest/ip/hotspot/user', headers: { Authorization: auth, 'Content-Type': 'application/json' }, body, json: true, timeout: 30000 });\n    } catch (ePut) {\n      erreurLot = 'Échec création ticket ' + code + ' (' + (tickets.length + 1) + '/' + qty + ') : ' + String((ePut && ePut.message) || ePut).slice(0, 200) + ' — ' + tickets.length + ' ticket(s) déjà créé(s) (runId ' + runIdItem + ')';\n      break;\n    }\n    tickets.push({ code });\n  }\n  let stockApres = null;\n  try {\n    const relu = await this.helpers.httpRequest({ method: 'GET', url: base + '/rest/ip/hotspot/user', headers: { Authorization: auth, Accept: 'application/json' }, json: true, timeout: 30000 });\n    const liste = Array.isArray(relu) ? relu : (relu.data || relu.results || []);\n    stockApres = liste.filter(estNeuf).length;\n  } catch (eApres) { stockApres = null; }\n  const generatedAt = new Date().toISOString();\n  const cards = tickets.map((t, i) => `<table class=\"voucher\"><tr><td><b>${esc(t.code)}</b><br><canvas class=\"qrc\" id=\"qr${i}\"></canvas></td></tr></table>`).join('');\n  const inits = tickets.map((t, i) => `new QRious({element:document.getElementById('qr${i}'),value:${JSON.stringify(t.code)},size:60});`).join('');\n  const html = `<!doctype html><html><head><meta charset='utf-8'><title>Tickets ${esc(profile)}</title><style>body{color:#000;background:#fff;font-size:14px;font-family:Helvetica,arial,sans-serif;margin:0}table.voucher{display:inline-block;border:2px solid black;margin:2px}table.voucher td{padding:6px;text-align:center}@page{size:auto;margin-left:7mm;margin-right:3mm;margin-top:9mm;margin-bottom:3mm}.qrc{width:60px;height:60px;margin-top:2px}h1{font-size:18px;margin:8px}.meta{color:#555;margin:0 8px 8px}</style></head><body><h1>Tickets Wi-Fi — ${esc(profile)}</h1><div class='meta'>${tickets.length} tickets · ${generatedAt} · identifiant = mot de passe</div>${cards}<script>/*! QRious v4.0.2 | (C) 2017 Alasdair Mercer | GPL v3 License\nBased on jsqrencode | (C) 2010 tz@execpc.com | GPL v3 License\n*/\n!function(t,e){\"object\"==typeof exports&&\"undefined\"!=typeof module?module.exports=e():\"function\"==typeof define&&define.amd?define(e):t.QRious=e()}(this,function(){\"use strict\";function t(t,e){var n;return\"function\"==typeof Object.create?n=Object.create(t):(s.prototype=t,n=new s,s.prototype=null),e&&i(!0,n,e),n}function e(e,n,s,r){var o=this;return\"string\"!=typeof e&&(r=s,s=n,n=e,e=null),\"function\"!=typeof n&&(r=s,s=n,n=function(){return o.apply(this,arguments)}),i(!1,n,o,r),n.prototype=t(o.prototype,s),n.prototype.constructor=n,n.class_=e||o.class_,n.super_=o,n}function i(t,e,i){for(var n,s,a=0,h=(i=o.call(arguments,2)).length;a<h;a++){s=i[a];for(n in s)t&&!r.call(s,n)||(e[n]=s[n])}}function n(){}var s=function(){},r=Object.prototype.hasOwnProperty,o=Array.prototype.slice,a=e;n.class_=\"Nevis\",n.super_=Object,n.extend=a;var h=n,f=h.extend(function(t,e,i){this.qrious=t,this.element=e,this.element.qrious=t,this.enabled=Boolean(i)},{draw:function(t){},getElement:function(){return this.enabled||(this.enabled=!0,this.render()),this.element},getModuleSize:function(t){var e=this.qrious,i=e.padding||0,n=Math.floor((e.size-2*i)/t.width);return Math.max(1,n)},getOffset:function(t){var e=this.qrious,i=e.padding;if(null!=i)return i;var n=this.getModuleSize(t),s=Math.floor((e.size-n*t.width)/2);return Math.max(0,s)},render:function(t){this.enabled&&(this.resize(),this.reset(),this.draw(t))},reset:function(){},resize:function(){}}),c=f.extend({draw:function(t){var e,i,n=this.qrious,s=this.getModuleSize(t),r=this.getOffset(t),o=this.element.getContext(\"2d\");for(o.fillStyle=n.foreground,o.globalAlpha=n.foregroundAlpha,e=0;e<t.width;e++)for(i=0;i<t.width;i++)t.buffer[i*t.width+e]&&o.fillRect(s*e+r,s*i+r,s,s)},reset:function(){var t=this.qrious,e=this.element.getContext(\"2d\"),i=t.size;e.lineWidth=1,e.clearRect(0,0,i,i),e.fillStyle=t.background,e.globalAlpha=t.backgroundAlpha,e.fillRect(0,0,i,i)},resize:function(){var t=this.element;t.width=t.height=this.qrious.size}}),u=h.extend(null,{BLOCK:[0,11,15,19,23,27,31,16,18,20,22,24,26,28,20,22,24,24,26,28,28,22,24,24,26,26,28,28,24,24,26,26,26,28,28,24,26,26,26,28,28]}),l=h.extend(null,{BLOCKS:[1,0,19,7,1,0,16,10,1,0,13,13,1,0,9,17,1,0,34,10,1,0,28,16,1,0,22,22,1,0,16,28,1,0,55,15,1,0,44,26,2,0,17,18,2,0,13,22,1,0,80,20,2,0,32,18,2,0,24,26,4,0,9,16,1,0,108,26,2,0,43,24,2,2,15,18,2,2,11,22,2,0,68,18,4,0,27,16,4,0,19,24,4,0,15,28,2,0,78,20,4,0,31,18,2,4,14,18,4,1,13,26,2,0,97,24,2,2,38,22,4,2,18,22,4,2,14,26,2,0,116,30,3,2,36,22,4,4,16,20,4,4,12,24,2,2,68,18,4,1,43,26,6,2,19,24,6,2,15,28,4,0,81,20,1,4,50,30,4,4,22,28,3,8,12,24,2,2,92,24,6,2,36,22,4,6,20,26,7,4,14,28,4,0,107,26,8,1,37,22,8,4,20,24,12,4,11,22,3,1,115,30,4,5,40,24,11,5,16,20,11,5,12,24,5,1,87,22,5,5,41,24,5,7,24,30,11,7,12,24,5,1,98,24,7,3,45,28,15,2,19,24,3,13,15,30,1,5,107,28,10,1,46,28,1,15,22,28,2,17,14,28,5,1,120,30,9,4,43,26,17,1,22,28,2,19,14,28,3,4,113,28,3,11,44,26,17,4,21,26,9,16,13,26,3,5,107,28,3,13,41,26,15,5,24,30,15,10,15,28,4,4,116,28,17,0,42,26,17,6,22,28,19,6,16,30,2,7,111,28,17,0,46,28,7,16,24,30,34,0,13,24,4,5,121,30,4,14,47,28,11,14,24,30,16,14,15,30,6,4,117,30,6,14,45,28,11,16,24,30,30,2,16,30,8,4,106,26,8,13,47,28,7,22,24,30,22,13,15,30,10,2,114,28,19,4,46,28,28,6,22,28,33,4,16,30,8,4,122,30,22,3,45,28,8,26,23,30,12,28,15,30,3,10,117,30,3,23,45,28,4,31,24,30,11,31,15,30,7,7,116,30,21,7,45,28,1,37,23,30,19,26,15,30,5,10,115,30,19,10,47,28,15,25,24,30,23,25,15,30,13,3,115,30,2,29,46,28,42,1,24,30,23,28,15,30,17,0,115,30,10,23,46,28,10,35,24,30,19,35,15,30,17,1,115,30,14,21,46,28,29,19,24,30,11,46,15,30,13,6,115,30,14,23,46,28,44,7,24,30,59,1,16,30,12,7,121,30,12,26,47,28,39,14,24,30,22,41,15,30,6,14,121,30,6,34,47,28,46,10,24,30,2,64,15,30,17,4,122,30,29,14,46,28,49,10,24,30,24,46,15,30,4,18,122,30,13,32,46,28,48,14,24,30,42,32,15,30,20,4,117,30,40,7,47,28,43,22,24,30,10,67,15,30,19,6,118,30,18,31,47,28,34,34,24,30,20,61,15,30],FINAL_FORMAT:[30660,29427,32170,30877,26159,25368,27713,26998,21522,20773,24188,23371,17913,16590,20375,19104,13663,12392,16177,14854,9396,8579,11994,11245,5769,5054,7399,6608,1890,597,3340,2107],LEVELS:{L:1,M:2,Q:3,H:4}}),_=h.extend(null,{EXPONENT:[1,2,4,8,16,32,64,128,29,58,116,232,205,135,19,38,76,152,45,90,180,117,234,201,143,3,6,12,24,48,96,192,157,39,78,156,37,74,148,53,106,212,181,119,238,193,159,35,70,140,5,10,20,40,80,160,93,186,105,210,185,111,222,161,95,190,97,194,153,47,94,188,101,202,137,15,30,60,120,240,253,231,211,187,107,214,177,127,254,225,223,163,91,182,113,226,217,175,67,134,17,34,68,136,13,26,52,104,208,189,103,206,129,31,62,124,248,237,199,147,59,118,236,197,151,51,102,204,133,23,46,92,184,109,218,169,79,158,33,66,132,21,42,84,168,77,154,41,82,164,85,170,73,146,57,114,228,213,183,115,230,209,191,99,198,145,63,126,252,229,215,179,123,246,241,255,227,219,171,75,150,49,98,196,149,55,110,220,165,87,174,65,130,25,50,100,200,141,7,14,28,56,112,224,221,167,83,166,81,162,89,178,121,242,249,239,195,155,43,86,172,69,138,9,18,36,72,144,61,122,244,245,247,243,251,235,203,139,11,22,44,88,176,125,250,233,207,131,27,54,108,216,173,71,142,0],LOG:[255,0,1,25,2,50,26,198,3,223,51,238,27,104,199,75,4,100,224,14,52,141,239,129,28,193,105,248,200,8,76,113,5,138,101,47,225,36,15,33,53,147,142,218,240,18,130,69,29,181,194,125,106,39,249,185,201,154,9,120,77,228,114,166,6,191,139,98,102,221,48,253,226,152,37,179,16,145,34,136,54,208,148,206,143,150,219,189,241,210,19,92,131,56,70,64,30,66,182,163,195,72,126,110,107,58,40,84,250,133,186,61,202,94,155,159,10,21,121,43,78,212,229,172,115,243,167,87,7,112,192,247,140,128,99,13,103,74,222,237,49,197,254,24,227,165,153,119,38,184,180,124,17,68,146,217,35,32,137,46,55,63,209,91,149,188,207,205,144,135,151,178,220,252,190,97,242,86,211,171,20,42,93,158,132,60,57,83,71,109,65,162,31,45,67,216,183,123,164,118,196,23,73,236,127,12,111,246,108,161,59,82,41,157,85,170,251,96,134,177,187,204,62,90,203,89,95,176,156,169,160,81,11,245,22,235,122,117,44,215,79,174,213,233,230,231,173,232,116,214,244,234,168,80,88,175]}),d=h.extend(null,{BLOCK:[3220,1468,2713,1235,3062,1890,2119,1549,2344,2936,1117,2583,1330,2470,1667,2249,2028,3780,481,4011,142,3098,831,3445,592,2517,1776,2234,1951,2827,1070,2660,1345,3177]}),v=h.extend(function(t){var e,i,n,s,r,o=t.value.length;for(this._badness=[],this._level=l.LEVELS[t.level],this._polynomial=[],this._value=t.value,this._version=0,this._stringBuffer=[];this._version<40&&(this._version++,n=4*(this._level-1)+16*(this._version-1),s=l.BLOCKS[n++],r=l.BLOCKS[n++],e=l.BLOCKS[n++],i=l.BLOCKS[n],n=e*(s+r)+r-3+(this._version<=9),!(o<=n)););this._dataBlock=e,this._eccBlock=i,this._neccBlock1=s,this._neccBlock2=r;var a=this.width=17+4*this._version;this.buffer=v._createArray(a*a),this._ecc=v._createArray(e+(e+i)*(s+r)+r),this._mask=v._createArray((a*(a+1)+1)/2),this._insertFinders(),this._insertAlignments(),this.buffer[8+a*(a-8)]=1,this._insertTimingGap(),this._reverseMask(),this._insertTimingRowAndColumn(),this._insertVersion(),this._syncMask(),this._convertBitStream(o),this._calculatePolynomial(),this._appendEccToData(),this._interleaveBlocks(),this._pack(),this._finish()},{_addAlignment:function(t,e){var i,n=this.buffer,s=this.width;for(n[t+s*e]=1,i=-2;i<2;i++)n[t+i+s*(e-2)]=1,n[t-2+s*(e+i+1)]=1,n[t+2+s*(e+i)]=1,n[t+i+1+s*(e+2)]=1;for(i=0;i<2;i++)this._setMask(t-1,e+i),this._setMask(t+1,e-i),this._setMask(t-i,e-1),this._setMask(t+i,e+1)},_appendData:function(t,e,i,n){var s,r,o,a=this._polynomial,h=this._stringBuffer;for(r=0;r<n;r++)h[i+r]=0;for(r=0;r<e;r++){if(255!==(s=_.LOG[h[t+r]^h[i]]))for(o=1;o<n;o++)h[i+o-1]=h[i+o]^_.EXPONENT[v._modN(s+a[n-o])];else for(o=i;o<i+n;o++)h[o]=h[o+1];h[i+n-1]=255===s?0:_.EXPONENT[v._modN(s+a[0])]}},_appendEccToData:function(){var t,e=0,i=this._dataBlock,n=this._calculateMaxLength(),s=this._eccBlock;for(t=0;t<this._neccBlock1;t++)this._appendData(e,i,n,s),e+=i,n+=s;for(t=0;t<this._neccBlock2;t++)this._appendData(e,i+1,n,s),e+=i+1,n+=s},_applyMask:function(t){var e,i,n,s,r=this.buffer,o=this.width;switch(t){case 0:for(s=0;s<o;s++)for(n=0;n<o;n++)n+s&1||this._isMasked(n,s)||(r[n+s*o]^=1);break;case 1:for(s=0;s<o;s++)for(n=0;n<o;n++)1&s||this._isMasked(n,s)||(r[n+s*o]^=1);break;case 2:for(s=0;s<o;s++)for(e=0,n=0;n<o;n++,e++)3===e&&(e=0),e||this._isMasked(n,s)||(r[n+s*o]^=1);break;case 3:for(i=0,s=0;s<o;s++,i++)for(3===i&&(i=0),e=i,n=0;n<o;n++,e++)3===e&&(e=0),e||this._isMasked(n,s)||(r[n+s*o]^=1);break;case 4:for(s=0;s<o;s++)for(e=0,i=s>>1&1,n=0;n<o;n++,e++)3===e&&(e=0,i=!i),i||this._isMasked(n,s)||(r[n+s*o]^=1);break;case 5:for(i=0,s=0;s<o;s++,i++)for(3===i&&(i=0),e=0,n=0;n<o;n++,e++)3===e&&(e=0),(n&s&1)+!(!e|!i)||this._isMasked(n,s)||(r[n+s*o]^=1);break;case 6:for(i=0,s=0;s<o;s++,i++)for(3===i&&(i=0),e=0,n=0;n<o;n++,e++)3===e&&(e=0),(n&s&1)+(e&&e===i)&1||this._isMasked(n,s)||(r[n+s*o]^=1);break;case 7:for(i=0,s=0;s<o;s++,i++)for(3===i&&(i=0),e=0,n=0;n<o;n++,e++)3===e&&(e=0),(e&&e===i)+(n+s&1)&1||this._isMasked(n,s)||(r[n+s*o]^=1)}},_calculateMaxLength:function(){return this._dataBlock*(this._neccBlock1+this._neccBlock2)+this._neccBlock2},_calculatePolynomial:function(){var t,e,i=this._eccBlock,n=this._polynomial;for(n[0]=1,t=0;t<i;t++){for(n[t+1]=1,e=t;e>0;e--)n[e]=n[e]?n[e-1]^_.EXPONENT[v._modN(_.LOG[n[e]]+t)]:n[e-1];n[0]=_.EXPONENT[v._modN(_.LOG[n[0]]+t)]}for(t=0;t<=i;t++)n[t]=_.LOG[n[t]]},_checkBadness:function(){var t,e,i,n,s,r=0,o=this._badness,a=this.buffer,h=this.width;for(s=0;s<h-1;s++)for(n=0;n<h-1;n++)(a[n+h*s]&&a[n+1+h*s]&&a[n+h*(s+1)]&&a[n+1+h*(s+1)]||!(a[n+h*s]||a[n+1+h*s]||a[n+h*(s+1)]||a[n+1+h*(s+1)]))&&(r+=v.N2);var f=0;for(s=0;s<h;s++){for(i=0,o[0]=0,t=0,n=0;n<h;n++)t===(e=a[n+h*s])?o[i]++:o[++i]=1,f+=(t=e)?1:-1;r+=this._getBadness(i)}f<0&&(f=-f);var c=0,u=f;for(u+=u<<2,u<<=1;u>h*h;)u-=h*h,c++;for(r+=c*v.N4,n=0;n<h;n++){for(i=0,o[0]=0,t=0,s=0;s<h;s++)t===(e=a[n+h*s])?o[i]++:o[++i]=1,t=e;r+=this._getBadness(i)}return r},_convertBitStream:function(t){var e,i,n=this._ecc,s=this._version;for(i=0;i<t;i++)n[i]=this._value.charCodeAt(i);var r=this._stringBuffer=n.slice(),o=this._calculateMaxLength();t>=o-2&&(t=o-2,s>9&&t--);var a=t;if(s>9){for(r[a+2]=0,r[a+3]=0;a--;)e=r[a],r[a+3]|=255&e<<4,r[a+2]=e>>4;r[2]|=255&t<<4,r[1]=t>>4,r[0]=64|t>>12}else{for(r[a+1]=0,r[a+2]=0;a--;)e=r[a],r[a+2]|=255&e<<4,r[a+1]=e>>4;r[1]|=255&t<<4,r[0]=64|t>>4}for(a=t+3-(s<10);a<o;)r[a++]=236,r[a++]=17},_getBadness:function(t){var e,i=0,n=this._badness;for(e=0;e<=t;e++)n[e]>=5&&(i+=v.N1+n[e]-5);for(e=3;e<t-1;e+=2)n[e-2]===n[e+2]&&n[e+2]===n[e-1]&&n[e-1]===n[e+1]&&3*n[e-1]===n[e]&&(0===n[e-3]||e+3>t||3*n[e-3]>=4*n[e]||3*n[e+3]>=4*n[e])&&(i+=v.N3);return i},_finish:function(){this._stringBuffer=this.buffer.slice();var t,e,i=0,n=3e4;for(e=0;e<8&&(this._applyMask(e),(t=this._checkBadness())<n&&(n=t,i=e),7!==i);e++)this.buffer=this._stringBuffer.slice();i!==e&&this._applyMask(i),n=l.FINAL_FORMAT[i+(this._level-1<<3)];var s=this.buffer,r=this.width;for(e=0;e<8;e++,n>>=1)1&n&&(s[r-1-e+8*r]=1,e<6?s[8+r*e]=1:s[8+r*(e+1)]=1);for(e=0;e<7;e++,n>>=1)1&n&&(s[8+r*(r-7+e)]=1,e?s[6-e+8*r]=1:s[7+8*r]=1)},_interleaveBlocks:function(){var t,e,i=this._dataBlock,n=this._ecc,s=this._eccBlock,r=0,o=this._calculateMaxLength(),a=this._neccBlock1,h=this._neccBlock2,f=this._stringBuffer;for(t=0;t<i;t++){for(e=0;e<a;e++)n[r++]=f[t+e*i];for(e=0;e<h;e++)n[r++]=f[a*i+t+e*(i+1)]}for(e=0;e<h;e++)n[r++]=f[a*i+t+e*(i+1)];for(t=0;t<s;t++)for(e=0;e<a+h;e++)n[r++]=f[o+t+e*s];this._stringBuffer=n},_insertAlignments:function(){var t,e,i,n=this._version,s=this.width;if(n>1)for(t=u.BLOCK[n],i=s-7;;){for(e=s-7;e>t-3&&(this._addAlignment(e,i),!(e<t));)e-=t;if(i<=t+9)break;i-=t,this._addAlignment(6,i),this._addAlignment(i,6)}},_insertFinders:function(){var t,e,i,n,s=this.buffer,r=this.width;for(t=0;t<3;t++){for(e=0,n=0,1===t&&(e=r-7),2===t&&(n=r-7),s[n+3+r*(e+3)]=1,i=0;i<6;i++)s[n+i+r*e]=1,s[n+r*(e+i+1)]=1,s[n+6+r*(e+i)]=1,s[n+i+1+r*(e+6)]=1;for(i=1;i<5;i++)this._setMask(n+i,e+1),this._setMask(n+1,e+i+1),this._setMask(n+5,e+i),this._setMask(n+i+1,e+5);for(i=2;i<4;i++)s[n+i+r*(e+2)]=1,s[n+2+r*(e+i+1)]=1,s[n+4+r*(e+i)]=1,s[n+i+1+r*(e+4)]=1}},_insertTimingGap:function(){var t,e,i=this.width;for(e=0;e<7;e++)this._setMask(7,e),this._setMask(i-8,e),this._setMask(7,e+i-7);for(t=0;t<8;t++)this._setMask(t,7),this._setMask(t+i-8,7),this._setMask(t,i-8)},_insertTimingRowAndColumn:function(){var t,e=this.buffer,i=this.width;for(t=0;t<i-14;t++)1&t?(this._setMask(8+t,6),this._setMask(6,8+t)):(e[8+t+6*i]=1,e[6+i*(8+t)]=1)},_insertVersion:function(){var t,e,i,n,s=this.buffer,r=this._version,o=this.width;if(r>6)for(t=d.BLOCK[r-7],e=17,i=0;i<6;i++)for(n=0;n<3;n++,e--)1&(e>11?r>>e-12:t>>e)?(s[5-i+o*(2-n+o-11)]=1,s[2-n+o-11+o*(5-i)]=1):(this._setMask(5-i,2-n+o-11),this._setMask(2-n+o-11,5-i))},_isMasked:function(t,e){var i=v._getMaskBit(t,e);return 1===this._mask[i]},_pack:function(){var t,e,i,n=1,s=1,r=this.width,o=r-1,a=r-1,h=(this._dataBlock+this._eccBlock)*(this._neccBlock1+this._neccBlock2)+this._neccBlock2;for(e=0;e<h;e++)for(t=this._stringBuffer[e],i=0;i<8;i++,t<<=1){128&t&&(this.buffer[o+r*a]=1);do{s?o--:(o++,n?0!==a?a--:(n=!n,6===(o-=2)&&(o--,a=9)):a!==r-1?a++:(n=!n,6===(o-=2)&&(o--,a-=8))),s=!s}while(this._isMasked(o,a))}},_reverseMask:function(){var t,e,i=this.width;for(t=0;t<9;t++)this._setMask(t,8);for(t=0;t<8;t++)this._setMask(t+i-8,8),this._setMask(8,t);for(e=0;e<7;e++)this._setMask(8,e+i-7)},_setMask:function(t,e){var i=v._getMaskBit(t,e);this._mask[i]=1},_syncMask:function(){var t,e,i=this.width;for(e=0;e<i;e++)for(t=0;t<=e;t++)this.buffer[t+i*e]&&this._setMask(t,e)}},{_createArray:function(t){var e,i=[];for(e=0;e<t;e++)i[e]=0;return i},_getMaskBit:function(t,e){var i;return t>e&&(i=t,t=e,e=i),i=e,i+=e*e,i>>=1,i+=t},_modN:function(t){for(;t>=255;)t=((t-=255)>>8)+(255&t);return t},N1:3,N2:3,N3:40,N4:10}),p=v,m=f.extend({draw:function(){this.element.src=this.qrious.toDataURL()},reset:function(){this.element.src=\"\"},resize:function(){var t=this.element;t.width=t.height=this.qrious.size}}),g=h.extend(function(t,e,i,n){this.name=t,this.modifiable=Boolean(e),this.defaultValue=i,this._valueTransformer=n},{transform:function(t){var e=this._valueTransformer;return\"function\"==typeof e?e(t,this):t}}),k=h.extend(null,{abs:function(t){return null!=t?Math.abs(t):null},hasOwn:function(t,e){return Object.prototype.hasOwnProperty.call(t,e)},noop:function(){},toUpperCase:function(t){return null!=t?t.toUpperCase():null}}),w=h.extend(function(t){this.options={},t.forEach(function(t){this.options[t.name]=t},this)},{exists:function(t){return null!=this.options[t]},get:function(t,e){return w._get(this.options[t],e)},getAll:function(t){var e,i=this.options,n={};for(e in i)k.hasOwn(i,e)&&(n[e]=w._get(i[e],t));return n},init:function(t,e,i){\"function\"!=typeof i&&(i=k.noop);var n,s;for(n in this.options)k.hasOwn(this.options,n)&&(s=this.options[n],w._set(s,s.defaultValue,e),w._createAccessor(s,e,i));this._setAll(t,e,!0)},set:function(t,e,i){return this._set(t,e,i)},setAll:function(t,e){return this._setAll(t,e)},_set:function(t,e,i,n){var s=this.options[t];if(!s)throw new Error(\"Invalid option: \"+t);if(!s.modifiable&&!n)throw new Error(\"Option cannot be modified: \"+t);return w._set(s,e,i)},_setAll:function(t,e,i){if(!t)return!1;var n,s=!1;for(n in t)k.hasOwn(t,n)&&this._set(n,t[n],e,i)&&(s=!0);return s}},{_createAccessor:function(t,e,i){var n={get:function(){return w._get(t,e)}};t.modifiable&&(n.set=function(n){w._set(t,n,e)&&i(n,t)}),Object.defineProperty(e,t.name,n)},_get:function(t,e){return e[\"_\"+t.name]},_set:function(t,e,i){var n=\"_\"+t.name,s=i[n],r=t.transform(null!=e?e:t.defaultValue);return i[n]=r,r!==s}}),M=w,b=h.extend(function(){this._services={}},{getService:function(t){var e=this._services[t];if(!e)throw new Error(\"Service is not being managed with name: \"+t);return e},setService:function(t,e){if(this._services[t])throw new Error(\"Service is already managed with name: \"+t);e&&(this._services[t]=e)}}),B=new M([new g(\"background\",!0,\"white\"),new g(\"backgroundAlpha\",!0,1,k.abs),new g(\"element\"),new g(\"foreground\",!0,\"black\"),new g(\"foregroundAlpha\",!0,1,k.abs),new g(\"level\",!0,\"L\",k.toUpperCase),new g(\"mime\",!0,\"image/png\"),new g(\"padding\",!0,null,k.abs),new g(\"size\",!0,100,k.abs),new g(\"value\",!0,\"\")]),y=new b,O=h.extend(function(t){B.init(t,this,this.update.bind(this));var e=B.get(\"element\",this),i=y.getService(\"element\"),n=e&&i.isCanvas(e)?e:i.createCanvas(),s=e&&i.isImage(e)?e:i.createImage();this._canvasRenderer=new c(this,n,!0),this._imageRenderer=new m(this,s,s===e),this.update()},{get:function(){return B.getAll(this)},set:function(t){B.setAll(t,this)&&this.update()},toDataURL:function(t){return this.canvas.toDataURL(t||this.mime)},update:function(){var t=new p({level:this.level,value:this.value});this._canvasRenderer.render(t),this._imageRenderer.render(t)}},{use:function(t){y.setService(t.getName(),t)}});Object.defineProperties(O.prototype,{canvas:{get:function(){return this._canvasRenderer.getElement()}},image:{get:function(){return this._imageRenderer.getElement()}}});var A=O,L=h.extend({getName:function(){}}).extend({createCanvas:function(){},createImage:function(){},getName:function(){return\"element\"},isCanvas:function(t){},isImage:function(t){}}).extend({createCanvas:function(){return document.createElement(\"canvas\")},createImage:function(){return document.createElement(\"img\")},isCanvas:function(t){return t instanceof HTMLCanvasElement},isImage:function(t){return t instanceof HTMLImageElement}});return A.use(new L),A});\n\n//# sourceMappingURL=qrious.min.js.map</scr` + `ipt><script>${inits}</scr` + `ipt></body></html>`;\n  out.push({ json: { chatId, profile, qty: tickets.length, demandees: qty, routeurNom: String(item.json.routeurNom || ''), generatedAt: generatedAt, html: html, tickets: tickets, runId: runIdItem, stockAvant: neufsAvant, stockApres: stockApres, simulation: simulationItem, tenantId: (item.json.tenantId || null), callbackQueryId: item.json.callbackQueryId || null, ...(erreurLot ? { erreur: erreurLot } : {}) } });\n}\nreturn out;"
+   },
+   "position": [
+    1024,
+    256
+   ],
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2
+  },
+  {
+   "id": "b2c3d4e5-9999-4000-8000-0000000000aa",
+   "name": "Preparer le HTML PDF",
+   "parameters": {
+    "jsCode": "const items = $input.all();\nconst out = [];\nfor (let i = 0; i < items.length; i++) {\n  const b = await this.helpers.prepareBinaryData(Buffer.from(items[i].json.html, 'utf8'), 'index.html', 'text/html');\n  b.pairedItem = { item: i };\n  out.push({ json: items[i].json, binary: { data: b } });\n}\nreturn out;"
+   },
+   "position": [
+    1280,
+    256
+   ],
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2
+  },
+  {
+   "id": "b2c3d4e5-aaaa-4000-8000-0000000000aa",
+   "name": "Convertir en PDF (Gotenberg)",
+   "parameters": {
+    "method": "POST",
+    "url": "http://gotenberg:3000/forms/chromium/convert/html",
+    "sendBody": true,
+    "contentType": "multipart-form-data",
+    "bodyParameters": {
+     "parameters": [
+      {
+       "parameterType": "formBinaryData",
+       "name": "files",
+       "inputDataFieldName": "data"
+      }
+     ]
+    },
+    "options": {
+     "timeout": 120000
+    }
+   },
+   "position": [
+    1536,
+    256
+   ],
+   "type": "n8n-nodes-base.httpRequest",
+   "typeVersion": 4.2
+  },
+  {
+   "id": "b2c3d4e5-bbbb-4000-8000-0000000000aa",
+   "name": "Envoyer le PDF",
+   "parameters": {
+    "resource": "message",
+    "operation": "sendDocument",
+    "chatId": "={{ $('Preparer le HTML PDF').first().json.chatId }}",
+    "binaryData": true,
+    "inputDataFieldName": "data",
+    "additionalFields": {
+     "caption": "={{ '🎟️ ' + $('Preparer le HTML PDF').first().json.qty + ' tickets (' + $('Preparer le HTML PDF').first().json.profile + ') — ' + $('Preparer le HTML PDF').first().json.generatedAt }}"
+    }
+   },
+   "position": [
+    1792,
+    256
+   ],
+   "type": "n8n-nodes-base.telegram",
+   "typeVersion": 1.2,
+   "credentials": {
+    "telegramApi": {
+     "id": "xIFTtV2jrFQ2G45I",
+     "name": "SafeLinkHub Bot"
+    }
+   },
+   "onError": "continueErrorOutput"
+  },
+  {
+   "id": "b2c3d4e5-cccc-4000-8000-0000000000aa",
+   "name": "Confirmer",
+   "parameters": {
+    "chatId": "={{ $('Preparer le HTML PDF').first().json.chatId }}",
+    "text": "={{ '✅ ' + $('Preparer le HTML PDF').first().json.qty + '/' + $('Preparer le HTML PDF').first().json.demandees + ' tickets (' + $('Preparer le HTML PDF').first().json.profile + ') générés sur ' + ($('Preparer le HTML PDF').first().json.routeurNom || 'le routeur') + ' le ' + $('Preparer le HTML PDF').first().json.generatedAt + '.' }}",
+    "additionalFields": {}
+   },
+   "position": [
+    2048,
+    256
+   ],
+   "type": "n8n-nodes-base.telegram",
+   "typeVersion": 1.2,
+   "credentials": {
+    "telegramApi": {
+     "id": "xIFTtV2jrFQ2G45I",
+     "name": "SafeLinkHub Bot"
+    }
+   },
+   "onError": "continueErrorOutput"
+  },
+  {
+   "id": "c3d4e5f6-1212-4000-8000-0000000000bb",
+   "name": "Router",
+   "parameters": {
+    "rules": {
+     "values": [
+      {
+       "conditions": {
+        "options": {
+         "caseSensitive": true,
+         "leftValue": "",
+         "typeValidation": "strict",
+         "version": 2
+        },
+        "conditions": [
+         {
+          "leftValue": "={{$json.route}}",
+          "rightValue": "askRouters",
+          "operator": {
+           "type": "string",
+           "operation": "equals"
+          },
+          "id": "c2caf5b3-591f-4cf4-a0b8-bbdd03e57d58"
+         }
+        ],
+        "combinator": "and"
+       },
+       "renameOutput": true,
+       "outputKey": "Routeurs"
+      },
+      {
+       "conditions": {
+        "options": {
+         "caseSensitive": true,
+         "leftValue": "",
+         "typeValidation": "strict",
+         "version": 2
+        },
+        "conditions": [
+         {
+          "leftValue": "={{$json.route}}",
+          "rightValue": "askProfiles",
+          "operator": {
+           "type": "string",
+           "operation": "equals"
+          },
+          "id": "9d70a193-fd01-4c2b-877e-282549d5baba"
+         }
+        ],
+        "combinator": "and"
+       },
+       "renameOutput": true,
+       "outputKey": "Profils"
+      },
+      {
+       "conditions": {
+        "options": {
+         "caseSensitive": true,
+         "leftValue": "",
+         "typeValidation": "strict",
+         "version": 2
+        },
+        "conditions": [
+         {
+          "leftValue": "={{$json.route}}",
+          "rightValue": "askQty",
+          "operator": {
+           "type": "string",
+           "operation": "equals"
+          },
+          "id": "b726014e-a9c2-453c-9284-065633bc1178"
+         }
+        ],
+        "combinator": "and"
+       },
+       "renameOutput": true,
+       "outputKey": "Quantites"
+      },
+      {
+       "conditions": {
+        "options": {
+         "caseSensitive": true,
+         "leftValue": "",
+         "typeValidation": "strict",
+         "version": 2
+        },
+        "conditions": [
+         {
+          "leftValue": "={{$json.route}}",
+          "rightValue": "generate",
+          "operator": {
+           "type": "string",
+           "operation": "equals"
+          },
+          "id": "0d3b9956-7c01-42ce-9e8b-70525c59fdea"
+         }
+        ],
+        "combinator": "and"
+       },
+       "renameOutput": true,
+       "outputKey": "Generer"
+      },
+      {
+       "conditions": {
+        "options": {
+         "caseSensitive": true,
+         "leftValue": "",
+         "typeValidation": "strict",
+         "version": 2
+        },
+        "conditions": [
+         {
+          "leftValue": "={{$json.route}}",
+          "rightValue": "denied",
+          "operator": {
+           "type": "string",
+           "operation": "equals"
+          },
+          "id": "1d19f0fa-a6ba-490f-b50e-06db57ad4d96"
+         }
+        ],
+        "combinator": "and"
+       },
+       "renameOutput": true,
+       "outputKey": "Refus"
+      },
+      {
+       "conditions": {
+        "options": {
+         "caseSensitive": true,
+         "leftValue": "",
+         "typeValidation": "strict",
+         "version": 2
+        },
+        "conditions": [
+         {
+          "leftValue": "={{$json.route}}",
+          "rightValue": "help",
+          "operator": {
+           "type": "string",
+           "operation": "equals"
+          },
+          "id": "27bbbb25-eb37-402e-bddc-ea4ef56fc29d"
+         }
+        ],
+        "combinator": "and"
+       },
+       "renameOutput": true,
+       "outputKey": "Aide"
+      },
+      {
+       "conditions": {
+        "options": {
+         "caseSensitive": true,
+         "leftValue": "",
+         "typeValidation": "strict",
+         "version": 2
+        },
+        "conditions": [
+         {
+          "leftValue": "={{$json.route}}",
+          "rightValue": "ackErreur",
+          "operator": {
+           "type": "string",
+           "operation": "equals"
+          },
+          "id": "961cb3ea-bcbd-4791-86e5-32748ddf32c9"
+         }
+        ],
+        "combinator": "and"
+       },
+       "renameOutput": true,
+       "outputKey": "Erreur de sélection"
+      }
+     ]
+    },
+    "options": {}
+   },
+   "position": [
+    512,
+    256
+   ],
+   "type": "n8n-nodes-base.switch",
+   "typeVersion": 3.2
+  },
+  {
+   "parameters": {
+    "jsCode": "// Accuse le clic (answerCallbackQuery) pour eteindre le\n// sablier Telegram. Ne bloque jamais : sans callbackQueryId\n// ou sans jeton, passe sans appeler. Erreur formatee sans\n// token : {code, message, chatIdPresent, runId}.\nvar items = $input.all();\nvar out = [];\nfor (var k = 0; k < items.length; k++) {\n  var e = items[k].json || {};\n  var accuse = false; var erreurEnvoi = null;\n  var cbid = (e.callbackQueryId === undefined || e.callbackQueryId === null) ? '' : String(e.callbackQueryId);\n  if (cbid) {\n    var jeton = String(e.telegramBotToken || (($env && $env.TELEGRAM_BOT_TOKEN) || ''));\n    if (jeton) {\n      try {\n        await this.helpers.httpRequest({ method: 'POST', url: 'https://api.telegram.org/bot' + jeton + '/answerCallbackQuery', body: { callback_query_id: cbid, text: 'Profil sélectionné', show_alert: false }, json: true, timeout: 15000 });\n        accuse = true;\n      } catch (err) {\n        try {\n          await this.helpers.httpRequest({ method: 'POST', url: 'https://api.telegram.org/bot' + jeton + '/answerCallbackQuery', body: { callback_query_id: cbid, text: 'Erreur de sélection.', show_alert: false }, json: true, timeout: 8000 });\n        } catch (e2) { void e2; }\n        var m = String((err && err.message) || err).replace(/bot\\d+:[A-Za-z0-9_-]{10,}/g, 'bot***');\n        erreurEnvoi = { code: 'TELEGRAM_SEND_FAILED', message: 'Impossible d\\u2019envoyer le message Telegram', chatIdPresent: !!e.chatId, runId: e.runId || null, detail: m.slice(0, 300) };\n      }\n    }\n  }\n  var suivi = {};\n  for (var c in e) suivi[c] = e[c];\n  suivi.accuseReception = accuse;\n  if (erreurEnvoi) suivi.erreurEnvoi = erreurEnvoi;\n  out.push({ json: suivi });\n}\nreturn out;"
+   },
+   "id": "c01350be-d397-483d-a095-bb605c77230e",
+   "name": "Accuser le profil",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    560,
+    320
+   ]
+  },
+  {
+   "parameters": {
+    "jsCode": "// Accuse le clic (answerCallbackQuery) pour eteindre le\n// sablier Telegram. Ne bloque jamais : sans callbackQueryId\n// ou sans jeton, passe sans appeler. Erreur formatee sans\n// token : {code, message, chatIdPresent, runId}.\nvar items = $input.all();\nvar out = [];\nfor (var k = 0; k < items.length; k++) {\n  var e = items[k].json || {};\n  var accuse = false; var erreurEnvoi = null;\n  var cbid = (e.callbackQueryId === undefined || e.callbackQueryId === null) ? '' : String(e.callbackQueryId);\n  if (cbid) {\n    var jeton = String(e.telegramBotToken || (($env && $env.TELEGRAM_BOT_TOKEN) || ''));\n    if (jeton) {\n      try {\n        await this.helpers.httpRequest({ method: 'POST', url: 'https://api.telegram.org/bot' + jeton + '/answerCallbackQuery', body: { callback_query_id: cbid, text: 'Quantité sélectionnée', show_alert: false }, json: true, timeout: 15000 });\n        accuse = true;\n      } catch (err) {\n        try {\n          await this.helpers.httpRequest({ method: 'POST', url: 'https://api.telegram.org/bot' + jeton + '/answerCallbackQuery', body: { callback_query_id: cbid, text: 'Erreur de sélection.', show_alert: false }, json: true, timeout: 8000 });\n        } catch (e2) { void e2; }\n        var m = String((err && err.message) || err).replace(/bot\\d+:[A-Za-z0-9_-]{10,}/g, 'bot***');\n        erreurEnvoi = { code: 'TELEGRAM_SEND_FAILED', message: 'Impossible d\\u2019envoyer le message Telegram', chatIdPresent: !!e.chatId, runId: e.runId || null, detail: m.slice(0, 300) };\n      }\n    }\n  }\n  var suivi = {};\n  for (var c in e) suivi[c] = e[c];\n  suivi.accuseReception = accuse;\n  if (erreurEnvoi) suivi.erreurEnvoi = erreurEnvoi;\n  out.push({ json: suivi });\n}\nreturn out;"
+   },
+   "id": "8e8c509a-e61c-41f6-8774-6efba23d9830",
+   "name": "Accuser la quantité",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    560,
+    560
+   ]
+  },
+  {
+   "parameters": {
+    "jsCode": "// Droits cote SafeLink : chatId -> tenant, bot + routeur CHOISI.\n// POST /api/telegram/autoriser {chatId, routerId, profile, qty, simulation}.\n// Sans reponse SafeLink valide : REFUS (jamais de generation a l'aveugle,\n// aucun repli : un ticket n'est cree que sur autorisation explicite).\nvar items = $input.all();\nvar out = [];\nvar secret = String(($env && $env.N8N_WEBHOOK_SECRET) || '');\nvar appli = String(($env && $env.APP_URL) || '').replace(/\\/$/, '');\nvar SIM = String(($env && $env.SIMULATION) || '').toLowerCase() === 'true';\nfor (var k = 0; k < items.length; k++) {\n  var e = items[k].json || {};\n  var acces = { autorise: false, motif: 'Vérification impossible.' };\n  if (appli && secret) {\n    try {\n      var rep = await this.helpers.httpRequest({ method: 'POST', url: appli + '/api/telegram/autoriser', headers: { 'Content-Type': 'application/json', 'X-N8N-Secret': secret }, body: { chatId: String(e.chatId || ''), routerId: Number(e.routerId), profile: String(e.profile || ''), qty: Number(e.qty), simulation: (e.simulation === true || SIM) }, json: true, timeout: 15000 });\n      var d = (rep && rep.data) || {};\n      if (d.autorise === true) acces = { autorise: true, tenantId: d.tenantId, userId: d.userId, routerConnectionId: d.routerConnectionId, routeurNom: d.routeurNom, routerBaseUrl: d.routerBaseUrl, routerUser: d.routerUser, routerPassword: d.routerPassword, telegramBotToken: d.telegramBotToken, telegramMode: d.telegramMode, runId: d.runId, profile: d.profile, qty: d.qty, limitUptime: (d.limitUptime || ''), limitBytesTotal: (d.limitBytesTotal || '') };\n      else acces = { autorise: false, motif: String(d.motif || (rep && rep.error) || 'Accès refusé.') };\n    } catch (err) {\n      acces = { autorise: false, motif: 'Vérification impossible : ' + String((err && err.message) || err).slice(0, 200) };\n    }\n  }\n  var mel = {};\n  for (var c in e) mel[c] = e[c];\n  for (var a in acces) mel[a] = acces[a];\n  mel.simulation = (e.simulation === true || SIM);\n  out.push({ json: mel });\n}\nreturn out;"
+   },
+   "id": "5a945d08-642b-4739-8e90-ac6d047286c3",
+   "name": "Vérifier l'utilisateur",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    800,
+    560
+   ]
+  },
+  {
+   "parameters": {
+    "conditions": {
+     "boolean": [
+      {
+       "value1": "={{ $json.autorise === true ? 'oui' : 'non' }}",
+       "operation": "equals",
+       "value2": "oui"
+      }
+     ],
+     "combinator": "and",
+     "options": {
+      "caseSensitive": true,
+      "leftValue": "",
+      "typeValidation": "strict",
+      "version": 1
+     }
+    },
+    "options": {}
+   },
+   "id": "d3802af6-bdbc-4316-88ca-ded9530142f8",
+   "name": "Accès vérifié ?",
+   "type": "n8n-nodes-base.if",
+   "typeVersion": 1,
+   "position": [
+    1020,
+    560
+   ]
+  },
+  {
+   "parameters": {
+    "conditions": {
+     "boolean": [
+      {
+       "value1": "={{ $json.erreur ? 'oui' : 'non' }}",
+       "operation": "equals",
+       "value2": "oui"
+      }
+     ],
+     "combinator": "and",
+     "options": {
+      "caseSensitive": true,
+      "leftValue": "",
+      "typeValidation": "strict",
+      "version": 1
+     }
+    },
+    "options": {}
+   },
+   "id": "2aa73e79-3142-4e8e-8d47-fb30d2188ee1",
+   "name": "Erreur de génération ?",
+   "type": "n8n-nodes-base.if",
+   "typeVersion": 1,
+   "position": [
+    1020,
+    800
+   ]
+  },
+  {
+   "parameters": {
+    "conditions": {
+     "boolean": [
+      {
+       "value1": "={{ $json.simulation ? 'oui' : 'non' }}",
+       "operation": "equals",
+       "value2": "oui"
+      }
+     ],
+     "combinator": "and",
+     "options": {
+      "caseSensitive": true,
+      "leftValue": "",
+      "typeValidation": "strict",
+      "version": 1
+     }
+    },
+    "options": {}
+   },
+   "id": "fb4f8376-de39-48cc-b71e-e93e3ee8531d",
+   "name": "Mode simulation ?",
+   "type": "n8n-nodes-base.if",
+   "typeVersion": 1,
+   "position": [
+    1240,
+    800
+   ]
+  },
+  {
+   "parameters": {
+    "chatId": "={{$json.chatId}}",
+    "text": "={{ '⚠️ Génération interrompue (run ' + $json.runId + ') : ' + $json.qty + ' créés sur ' + $json.demandees + ' demandés. Erreur : ' + $json.erreur }}",
+    "additionalFields": {}
+   },
+   "id": "ecc6be60-4336-431c-86bd-099681f568e4",
+   "name": "Signaler l'erreur",
+   "type": "n8n-nodes-base.telegram",
+   "typeVersion": 1.2,
+   "position": [
+    1240,
+    640
+   ],
+   "onError": "continueErrorOutput"
+  },
+  {
+   "parameters": {
+    "jsCode": "// Fin de simulation : aucun ecrit RouterOS, aucun PDF envoye,\n// aucune impression, aucun message final. Retourne uniquement\n// le resultat du routage et de la validation.\nreturn $input.all().map(function (entree) {\n  var c = entree.json || {};\n  return { json: { simulation: true, route: 'simulation', chatId: c.chatId || null, profile: c.profile || null, qty: c.qty ?? c.demandees ?? null, runId: c.runId || null, validation: 'ok - aucune écriture', date: new Date().toISOString() } };\n});"
+   },
+   "id": "d4d5885e-5e81-4a39-ad74-251a1d53ce0d",
+   "name": "Fin simulation",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    1460,
+    940
+   ]
+  },
+  {
+   "parameters": {
+    "jsCode": "// Echec d'un envoi Telegram natif (400/403/chat not found) :\n// formatte sans jamais exposer le token.\nreturn $input.all().map(function (entree) {\n  var j = entree.json || {};\n  var brut = String((j.error && j.error.message) || j.message || 'envoi impossible');\n  var propre = brut.replace(/bot\\d+:[A-Za-z0-9_-]{10,}/g, 'bot***');\n  return { json: { code: 'TELEGRAM_SEND_FAILED', message: 'Impossible d\\u2019envoyer le message Telegram', chatIdPresent: !!j.chatId, runId: j.runId || null, detail: propre.slice(0, 300) } };\n});"
+   },
+   "id": "d9339515-e2c7-4c98-8f6e-25506c622230",
+   "name": "Signaler l'échec Telegram",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    1900,
+    200
+   ]
+  },
+  {
+   "parameters": {
+    "jsCode": "// Notifie SafeLink (/api/n8n/retour) : statut + quantites + stocks,\n// sans mot de passe de ticket. Signature HMAC-SHA256 du corps brut\n// (en-tete x-signature), SHA-256 reimplemente ici sans module externe.\n// Simulation = aucun appel. Ne leve jamais : un echec est enregistre.\nfunction utf8(s) {\n  var b = [];\n  for (var i = 0; i < s.length; i++) {\n    var c = s.charCodeAt(i);\n    if (c < 128) b.push(c);\n    else if (c < 2048) b.push(192 | (c >> 6), 128 | (c & 63));\n    else if (c >= 55296 && c < 57344 && i + 1 < s.length) {\n      var d = s.charCodeAt(i + 1);\n      if (d >= 56320 && d < 57344) {\n        c = 65536 + ((c - 55296) << 10) + (d - 56320);\n        b.push(240 | (c >> 18), 128 | ((c >> 12) & 63), 128 | ((c >> 6) & 63), 128 | (c & 63));\n        i++;\n      } else b.push(224 | (c >> 12), 128 | ((c >> 6) & 63), 128 | (c & 63));\n    } else b.push(224 | (c >> 12), 128 | ((c >> 6) & 63), 128 | (c & 63));\n  }\n  return b;\n}\nvar K256 = [0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,0x983e5152,0xa831c66d,0xb00327c8,0xbf597fc7,0xc6e00bf3,0xd5a79147,0x06ca6351,0x14292967,0x27b70a85,0x2e1b2138,0x4d2c6dfc,0x53380d13,0x650a7354,0x766a0abb,0x81c2c92e,0x92722c85,0xa2bfe8a1,0xa81a664b,0xc24b8b70,0xc76c51a3,0xd192e819,0xd6990624,0xf40e3585,0x106aa070,0x19a4c116,0x1e376c08,0x2748774c,0x34b0bcb5,0x391c0cb3,0x4ed8aa4a,0x5b9cca4f,0x682e6ff3,0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2];\nfunction sha256octets(msg) {\n  var H = [0x6a09e667,0xbb67ae85,0x3c6ef372,0xa54ff53a,0x510e527f,0x9b05688c,0x1f83d9ab,0x5be0cd19];\n  var bitLen = msg.length * 8;\n  var bytes = msg.slice();\n  bytes.push(0x80);\n  while ((bytes.length % 64) !== 56) bytes.push(0);\n  var hi = Math.floor(bitLen / 4294967296);\n  bytes.push((hi >>> 24) & 255, (hi >>> 16) & 255, (hi >>> 8) & 255, hi & 255, (bitLen >>> 24) & 255, (bitLen >>> 16) & 255, (bitLen >>> 8) & 255, bitLen & 255);\n  function r(x, n) { return (x >>> n) | (x << (32 - n)); }\n  var W = new Array(64);\n  for (var off2 = 0; off2 < bytes.length; off2 += 64) {\n    for (var i = 0; i < 16; i++) W[i] = ((bytes[off2 + i * 4] << 24) | (bytes[off2 + i * 4 + 1] << 16) | (bytes[off2 + i * 4 + 2] << 8) | bytes[off2 + i * 4 + 3]) >>> 0;\n    for (var i = 16; i < 64; i++) {\n      var s0 = (r(W[i - 15], 7) ^ r(W[i - 15], 18) ^ (W[i - 15] >>> 3)) >>> 0;\n      var s1 = (r(W[i - 2], 17) ^ r(W[i - 2], 19) ^ (W[i - 2] >>> 10)) >>> 0;\n      W[i] = (W[i - 16] + s0 + W[i - 7] + s1) >>> 0;\n    }\n    var a = H[0], b = H[1], c = H[2], d = H[3], e = H[4], f = H[5], g = H[6], h = H[7];\n    for (var i = 0; i < 64; i++) {\n      var S1 = (r(e, 6) ^ r(e, 11) ^ r(e, 25)) >>> 0;\n      var ch = ((e & f) ^ ((~e) & g)) >>> 0;\n      var t1 = (h + S1 + ch + K256[i] + W[i]) >>> 0;\n      var S0 = (r(a, 2) ^ r(a, 13) ^ r(a, 22)) >>> 0;\n      var mj = ((a & b) ^ (a & c) ^ (b & c)) >>> 0;\n      var t2 = (S0 + mj) >>> 0;\n      h = g; g = f; f = e; e = (d + t1) >>> 0; d = c; c = b; b = a; a = (t1 + t2) >>> 0;\n    }\n    H[0] = (H[0] + a) >>> 0; H[1] = (H[1] + b) >>> 0; H[2] = (H[2] + c) >>> 0; H[3] = (H[3] + d) >>> 0;\n    H[4] = (H[4] + e) >>> 0; H[5] = (H[5] + f) >>> 0; H[6] = (H[6] + g) >>> 0; H[7] = (H[7] + h) >>> 0;\n  }\n  var o = [];\n  for (var k = 0; k < 8; k++) o.push((H[k] >>> 24) & 255, (H[k] >>> 16) & 255, (H[k] >>> 8) & 255, H[k] & 255);\n  return o;\n}\nfunction hex(oct) {\n  var s = '';\n  for (var i = 0; i < oct.length; i++) { var h = oct[i].toString(16); s += h.length < 2 ? '0' + h : h; }\n  return s;\n}\nfunction hmac256hex(cle, texte) {\n  var kb = utf8(cle);\n  if (kb.length > 64) kb = sha256octets(kb);\n  while (kb.length < 64) kb.push(0);\n  var ip = [], op = [];\n  for (var i = 0; i < 64; i++) { ip.push(kb[i] ^ 0x36); op.push(kb[i] ^ 0x5c); }\n  return hex(sha256octets(op.concat(sha256octets(ip.concat(utf8(texte))))));\n}\nvar items = $input.all();\nvar out = [];\nvar appli = String(($env && $env.APP_URL) || '').replace(/\\/$/, '');\nvar secret = String(($env && $env.N8N_CALLBACK_SECRET) || '');\nfor (var k = 0; k < items.length; k++) {\n  var e = items[k].json || {};\n  var suivi = {};\n  for (var c in e) suivi[c] = e[c];\n  suivi.notificationSafelik = 'ignoree';\n  var rapport = { tenantId: e.tenantId || null, runId: e.runId || null, statut: e.erreur ? 'echoue' : 'termine', quantiteCreee: (typeof e.qty === 'number' ? e.qty : 0), stockAvant: (typeof e.stockAvant === 'number' ? e.stockAvant : null), stockApres: (typeof e.stockApres === 'number' ? e.stockApres : null) };\n  if (e.erreur) rapport.erreur = String(e.erreur).slice(0, 500);\n  if (!e.simulation && appli && secret && rapport.tenantId && rapport.runId) {\n    try {\n      var brut = JSON.stringify(rapport);\n      var sig = hmac256hex(secret, brut);\n      await this.helpers.httpRequest({ method: 'POST', url: appli + '/api/n8n/retour', headers: { 'Content-Type': 'application/json', 'x-signature': sig }, body: JSON.parse(brut), json: true, timeout: 15000 });\n      suivi.notificationSafelik = 'envoyee';\n    } catch (err) {\n      suivi.notificationSafelik = 'echec';\n    }\n  }\n  out.push({ json: suivi });\n}\nreturn out;\n"
+   },
+   "id": "914926dd-50d4-4f5c-a973-cfc12d8b6d66",
+   "name": "Notifier SafeLink",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    1900,
+    400
+   ]
+  },
+  {
+   "parameters": {
+    "jsCode": "// Accuse le clic (answerCallbackQuery) pour eteindre le\n// sablier Telegram. Ne bloque jamais : sans callbackQueryId\n// ou sans jeton, passe sans appeler. Erreur formatee sans\n// token : {code, message, chatIdPresent, runId}.\nvar items = $input.all();\nvar out = [];\nfor (var k = 0; k < items.length; k++) {\n  var e = items[k].json || {};\n  var accuse = false; var erreurEnvoi = null;\n  var cbid = (e.callbackQueryId === undefined || e.callbackQueryId === null) ? '' : String(e.callbackQueryId);\n  if (cbid) {\n    var jeton = String(e.telegramBotToken || (($env && $env.TELEGRAM_BOT_TOKEN) || ''));\n    if (jeton) {\n      try {\n        await this.helpers.httpRequest({ method: 'POST', url: 'https://api.telegram.org/bot' + jeton + '/answerCallbackQuery', body: { callback_query_id: cbid, text: 'Erreur de sélection.', show_alert: false }, json: true, timeout: 15000 });\n        accuse = true;\n      } catch (err) {\n        try {\n          await this.helpers.httpRequest({ method: 'POST', url: 'https://api.telegram.org/bot' + jeton + '/answerCallbackQuery', body: { callback_query_id: cbid, text: 'Erreur de sélection.', show_alert: false }, json: true, timeout: 8000 });\n        } catch (e2) { void e2; }\n        var m = String((err && err.message) || err).replace(/bot\\d+:[A-Za-z0-9_-]{10,}/g, 'bot***');\n        erreurEnvoi = { code: 'TELEGRAM_SEND_FAILED', message: 'Impossible d\\u2019envoyer le message Telegram', chatIdPresent: !!e.chatId, runId: e.runId || null, detail: m.slice(0, 300) };\n      }\n    }\n  }\n  var suivi = {};\n  for (var c in e) suivi[c] = e[c];\n  suivi.accuseReception = accuse;\n  if (erreurEnvoi) suivi.erreurEnvoi = erreurEnvoi;\n  out.push({ json: suivi });\n}\nreturn out;"
+   },
+   "id": "114ef2fc-08a7-43bc-9470-b30c4ddda548",
+   "name": "Accuser l'erreur",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    560,
+    800
+   ]
+  },
+  {
+   "id": "c3d4e5f6-7777-4000-8000-0000000000bb",
+   "name": "Annoncer la simulation",
+   "parameters": {
+    "chatId": "={{$json.chatId}}",
+    "text": "={{ 'Simulation réussie : aucun ticket réel n’a été créé.' + ($json.profile ? ' (' + $json.profile + ' x ' + $json.qty + ')' : '') }}",
+    "additionalFields": {}
+   },
+   "position": [
+    1660,
+    940
+   ],
+   "type": "n8n-nodes-base.telegram",
+   "typeVersion": 1.2,
+   "credentials": {
+    "telegramApi": {
+     "id": "xIFTtV2jrFQ2G45I",
+     "name": "SafeLinkHub Bot"
+    }
+   },
+   "onError": "continueErrorOutput"
+  },
+  {
+   "parameters": {
+    "jsCode": "// Routeurs actifs du chat : POST /api/telegram/catalogue {chatId} (X-N8N-Secret).\n// Affiche UNIQUEMENT les routeurs actifs associes, boutons routeur:<id>.\n// Catalogue vide, chat inconnu ou erreur -> message de refus explicite.\n// Jamais de liste statique.\nvar items = $input.all();\nvar out = [];\nvar appli = String(($env && $env.APP_URL) || '').replace(/\\/$/, '');\nvar secret = String(($env && $env.N8N_WEBHOOK_SECRET) || '');\nfor (var k = 0; k < items.length; k++) {\n  var e = items[k].json || {};\n  var chatId = String(e.chatId || '');\n  var jeton = String(e.telegramBotToken || (($env && $env.TELEGRAM_BOT_TOKEN) || ''));\n  var suivi = {};\n  for (var c in e) suivi[c] = e[c];\n  var texte = '';\n  var clavier = null;\n  var motif = '';\n  if (!chatId) {\n    motif = 'Discussion inconnue : envoyez /start depuis votre compte.';\n  } else if (!appli || !secret) {\n    motif = 'Service indisponible : configuration SafeLink incomplète.';\n  } else {\n    try {\n      var rep = await this.helpers.httpRequest({ method: 'POST', url: appli + '/api/telegram/catalogue', headers: { 'Content-Type': 'application/json', 'X-N8N-Secret': secret }, body: { chatId: chatId }, json: true, timeout: 15000 });\n      var donnees = (rep && rep.data) || {};\n      var routeurs = Array.isArray(donnees.routeurs) ? donnees.routeurs : [];\n      var actifs = routeurs.filter(function (r) { return r && r.disponible === true; });\n      if (actifs.length === 0) {\n        motif = String(donnees.motif || 'Aucun routeur actif associé à cette discussion.');\n      } else {\n        texte = '🛰️ Choisissez un routeur :';\n        clavier = { inline_keyboard: actifs.map(function (r) { return [{ text: String(r.nom || ('Routeur ' + r.id)), callback_data: 'routeur:' + String(r.id) }]; }) };\n      }\n    } catch (err) {\n      motif = 'Catalogue indisponible : ' + String((err && err.message) || err).slice(0, 200);\n    }\n  }\n  if (!texte) texte = '⛔ Accès non autorisé.' + (motif ? ' ' + motif : '');\n  if (jeton && chatId) {\n    try {\n      await this.helpers.httpRequest({ method: 'POST', url: 'https://api.telegram.org/bot' + jeton + '/sendMessage', body: { chat_id: chatId, text: texte, ...(clavier ? { reply_markup: clavier } : {}) }, json: true, timeout: 15000 });\n      suivi.messageEnvoye = true;\n    } catch (err) {\n      var m = String((err && err.message) || err).replace(/bot\\d+:[A-Za-z0-9_-]{10,}/g, 'bot***');\n      suivi.erreurEnvoi = { code: 'TELEGRAM_SEND_FAILED', message: 'Impossible d\\u2019envoyer le message Telegram', chatIdPresent: !!chatId, runId: e.runId || null, detail: m.slice(0, 300) };\n    }\n  } else if (!suivi.erreurEnvoi) {\n    suivi.erreurEnvoi = { code: 'TELEGRAM_SEND_FAILED', message: 'Impossible d\\u2019envoyer le message Telegram', chatIdPresent: !!chatId, runId: e.runId || null, detail: 'jeton ou chatId manquant' };\n  }\n  if (motif) suivi.motif = motif;\n  out.push({ json: suivi });\n}\nreturn out;"
+   },
+   "id": "faf09f69-90dd-4578-a4ab-d352671356c9",
+   "name": "Lister les routeurs",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    256,
+    -128
+   ]
+  }
+ ],
+ "pinData": {},
+ "settings": {
+  "executionOrder": "v1",
+  "binaryMode": "separate",
+  "timezone": "Africa/Abidjan",
+  "callerPolicy": "workflowsFromSameOwner",
+  "timeSavedMode": "fixed"
+ },
+ "staticData": null,
+ "tags": []
+}
