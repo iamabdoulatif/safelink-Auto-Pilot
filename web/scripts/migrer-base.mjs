@@ -18,9 +18,13 @@ function lireEnv() {
 
 const brut = await lireEnv();
 const ligne = brut.split("\n").find((l) => l.startsWith("DATABASE_URL=")) ?? "";
-const chaine = ligne.slice("DATABASE_URL=".length).trim().replace(/^["']|["']$/g, "");
+const chaineFichier = ligne
+  .slice("DATABASE_URL=".length)
+  .trim()
+  .replace(/^["']|["']$/g, "");
+const chaine = (process.env.DATABASE_URL ?? "").trim() || chaineFichier;
 if (!chaine) {
-  console.error("DATABASE_URL absente de web/.env.local.");
+  console.error("DATABASE_URL absente de l'environnement et de web/.env.local.");
   process.exit(1);
 }
 const { default: pg } = await import("pg").catch(() => {
