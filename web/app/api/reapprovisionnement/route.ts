@@ -279,11 +279,16 @@ export async function PATCH(req: Request) {
     return Response.json({ error: "Corps JSON invalide." }, { status: 400 });
   }
   const b = (corps ?? {}) as Record<string, unknown>;
-  if (!Number.isInteger(b["regleId"])) {
+  const regleBrut = b["regleId"];
+  const regleId = typeof regleBrut === "number"
+    ? regleBrut
+    : typeof regleBrut === "string" && /^\d+$/.test(regleBrut.trim())
+      ? Number(regleBrut)
+      : NaN;
+  if (!Number.isSafeInteger(regleId) || regleId <= 0) {
     return Response.json({ error: "regleId doit être un entier." },
       { status: 400 });
   }
-  const regleId = b["regleId"] as number;
   const actif = b["actif"] === true;
   try {
     const { rows } = await db.query(
