@@ -95,11 +95,12 @@ export async function enregistrerBotCentral(
   const { rows } = await db.query(
     `INSERT INTO configurations_telegram
        (tenant_id, utilisateur_id, mode, chat_id, jeton_chiffre, nom_bot,
-        bot_verifie, statut_connexion, updated_at)
-     VALUES ($1,$2,'central',$3,NULL,NULL,false,'jamais-teste',now())
+        bot_verifie, statut_connexion, dernier_test_le, updated_at)
+     VALUES ($1,$2,'central',$3,NULL,NULL,true,'en-ligne',now(),now())
      ON CONFLICT (tenant_id) DO UPDATE
      SET utilisateur_id=$2, mode='central', chat_id=$3, jeton_chiffre=NULL,
-         nom_bot=NULL, bot_verifie=false, updated_at=now()
+         nom_bot=NULL, bot_verifie=true, statut_connexion='en-ligne',
+         dernier_test_le=now(), updated_at=now()
      RETURNING mode, nom, chat_id, jeton_chiffre, nom_bot, bot_verifie,
        statut_connexion, dernier_test_le`,
     [ctx.tenantId, ctx.utilisateurId, chatId.trim()],
