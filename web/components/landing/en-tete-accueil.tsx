@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ArrowRight, Menu, Wifi } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -36,8 +37,31 @@ function Marque() {
 }
 
 export function EnTeteAccueil() {
+  // Barre fine en bas de l'en-tête : elle se remplit quand on fait
+  // défiler la page, pour montrer où on en est dans la lecture.
+  const [progression, setProgression] = useState(0);
+
+  useEffect(() => {
+    const maj = () => {
+      const max = document.documentElement.scrollHeight - window.innerHeight;
+      setProgression(max > 0 ? Math.min(window.scrollY / max, 1) : 0);
+    };
+    maj();
+    window.addEventListener("scroll", maj, { passive: true });
+    window.addEventListener("resize", maj);
+    return () => {
+      window.removeEventListener("scroll", maj);
+      window.removeEventListener("resize", maj);
+    };
+  }, []);
+
   return (
     <header className="sticky top-0 z-40 border-b border-sidebar-border bg-sidebar/95 text-sidebar-foreground backdrop-blur">
+      <div
+        aria-hidden="true"
+        className="absolute bottom-0 left-0 h-0.5 bg-status-ok transition-[width] duration-150 ease-out"
+        style={{ width: `${progression * 100}%` }}
+      />
       <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-3 px-4 sm:px-6">
         <Marque />
         <nav aria-label="Navigation de la page" className="hidden items-center gap-1 lg:flex">

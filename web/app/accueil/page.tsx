@@ -31,6 +31,8 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { EnTeteAccueil } from "@/components/landing/en-tete-accueil";
 import { ApercuProduit } from "@/components/landing/apercu-produit";
 import { RouteurMikrotik3D } from "@/components/landing/routeur-mikrotik-3d";
+import { Illustration3D } from "@/components/landing/illustration-3d";
+import { Revelation } from "@/components/landing/revelation";
 import {
   CanauxTabs,
   FaqAccueil,
@@ -100,7 +102,7 @@ export default function PageAccueil() {
         <svg
           aria-hidden="true"
           viewBox="0 0 800 800"
-          className="pointer-events-none absolute -top-40 -right-48 size-[52rem] opacity-[0.13]"
+          className="hero-ondes pointer-events-none absolute -top-40 -right-48 size-[52rem] opacity-[0.13]"
           fill="none"
           stroke="currentColor"
         >
@@ -108,6 +110,14 @@ export default function PageAccueil() {
             <circle key={r} cx="400" cy="400" r={r} strokeWidth="1.5" />
           ))}
         </svg>
+        <span
+          aria-hidden="true"
+          className="halo-wifi pointer-events-none absolute top-28 right-[16%] hidden size-24 rounded-full border-2 border-status-ok/40 lg:block"
+        />
+        <span
+          aria-hidden="true"
+          className="halo-wifi halo-wifi-retard pointer-events-none absolute top-28 right-[16%] hidden size-24 rounded-full border-2 border-status-ok/40 lg:block"
+        />
         <div className="relative mx-auto grid max-w-6xl items-start gap-12 px-4 pt-14 pb-16 sm:px-6 lg:grid-cols-[1.1fr_0.9fr] lg:pt-20 lg:pb-24">
           <div>
             <Badge variant="secondary" className="font-mono text-[11px] tracking-[0.14em] uppercase">
@@ -154,16 +164,16 @@ export default function PageAccueil() {
       {/* Bandeau garanties */}
       <section aria-label="Garanties de sécurité" className="border-b">
         <div className="mx-auto grid max-w-6xl gap-px px-4 py-10 sm:grid-cols-2 sm:px-6 lg:grid-cols-4">
-          {GARANTIES_BANDEAU.map((g) => {
+          {GARANTIES_BANDEAU.map((g, i) => {
             const Icone = g.icone;
             return (
-              <div key={g.titre} className="flex flex-col gap-2 px-2 py-3 sm:px-5">
+              <Revelation key={g.titre} delai={i * 90} classe="flex flex-col gap-2 px-2 py-3 transition-colors duration-300 hover:bg-secondary/60 sm:px-5">
                 <span className="flex items-center gap-2 font-medium">
                   <Icone aria-hidden="true" className="text-muted-foreground" />
                   {g.titre}
                 </span>
                 <span className="text-sm leading-relaxed text-muted-foreground">{g.texte}</span>
-              </div>
+              </Revelation>
             );
           })}
         </div>
@@ -172,13 +182,22 @@ export default function PageAccueil() {
       {/* Fonctionnement */}
       <section id="fonctionnement" aria-labelledby="titre-fonctionnement" className="scroll-mt-20">
         <div className="mx-auto flex max-w-6xl flex-col gap-10 px-4 py-16 sm:px-6 lg:py-24">
-          <TitreSection
-            id="titre-fonctionnement"
-            surtitre="Réapprovisionnement automatique"
-            titre="Le stock baisse, le lot suivant est déjà en route."
-            texte="Choisissez un seuil et une fréquence par profil. SafeLink surveille, génère, met en page et livre — vous ne touchez à rien tant que le stock est sain."
-          />
-          <FonctionnementTabs />
+          <div className="grid items-center gap-8 lg:grid-cols-[1fr_360px]">
+            <TitreSection
+              id="titre-fonctionnement"
+              surtitre="Réapprovisionnement automatique"
+              titre="Le stock baisse, le lot suivant est déjà en route."
+              texte="Choisissez un seuil et une fréquence par profil. SafeLink surveille, génère, met en page et livre — vous ne touchez à rien tant que le stock est sain."
+            />
+            <Illustration3D
+              variante="stock"
+              titre="Illustration 3D du stock de tickets en réapprovisionnement"
+              legende="Stock de tickets surveillé en continu"
+            />
+          </div>
+          <Revelation>
+            <FonctionnementTabs />
+          </Revelation>
         </div>
       </section>
 
@@ -187,14 +206,22 @@ export default function PageAccueil() {
       {/* Fonctions */}
       <section id="fonctions" aria-labelledby="titre-fonctions" className="scroll-mt-20 bg-secondary/40">
         <div className="mx-auto flex max-w-6xl flex-col gap-10 px-4 py-16 sm:px-6 lg:py-24">
-          <TitreSection
-            id="titre-fonctions"
-            surtitre="Fonctions"
-            titre="Tout le parc, au même endroit."
-            texte="Un seul écran pour l'état de vos routeurs et vos tickets. Les constats sont classés par gravité, et la date du dernier relevé réussi reste toujours visible."
-          />
+          <div className="grid items-center gap-8 lg:grid-cols-[1fr_360px]">
+            <TitreSection
+              id="titre-fonctions"
+              surtitre="Fonctions"
+              titre="Tout le parc, au même endroit."
+              texte="Un seul écran pour l'état de vos routeurs et vos tickets. Les constats sont classés par gravité, et la date du dernier relevé réussi reste toujours visible."
+            />
+            <Illustration3D
+              variante="diagnostic"
+              titre="Illustration 3D du diagnostic des routeurs"
+              legende="Signal, CPU, RAM et ports suivis en direct"
+            />
+          </div>
+          <Revelation>
           <div className="grid gap-4 lg:grid-cols-6">
-            <Card className="bg-sidebar text-sidebar-foreground lg:col-span-4">
+            <Card className="bg-sidebar text-sidebar-foreground transition-shadow duration-300 hover:shadow-lg lg:col-span-4">
               <CardHeader>
                 <Activity aria-hidden="true" className="opacity-80" />
                 <CardTitle className="font-[family-name:var(--font-titres)] text-3xl font-medium">Diagnostic du routeur</CardTitle>
@@ -218,7 +245,7 @@ export default function PageAccueil() {
               </CardFooter>
             </Card>
 
-            <Card className="lg:col-span-2">
+            <Card className="transition-shadow duration-300 hover:shadow-md lg:col-span-2">
               <CardHeader>
                 <Wrench aria-hidden="true" className="text-muted-foreground" />
                 <CardTitle className="font-[family-name:var(--font-titres)] text-2xl font-medium">Correctifs validés</CardTitle>
@@ -229,7 +256,7 @@ export default function PageAccueil() {
               <CardFooter>Compte d&apos;écriture séparé du compte de lecture.</CardFooter>
             </Card>
 
-            <Card className="lg:col-span-2">
+            <Card className="transition-shadow duration-300 hover:shadow-md lg:col-span-2">
               <CardHeader>
                 <Ticket aria-hidden="true" className="text-muted-foreground" />
                 <CardTitle className="font-[family-name:var(--font-titres)] text-2xl font-medium">Tickets compatibles Mikhmon</CardTitle>
@@ -257,19 +284,29 @@ export default function PageAccueil() {
               </CardContent>
             </Card>
           </div>
+          </Revelation>
         </div>
       </section>
 
       {/* Canaux */}
       <section id="canaux" aria-labelledby="titre-canaux" className="scroll-mt-20">
         <div className="mx-auto flex max-w-6xl flex-col gap-10 px-4 py-16 sm:px-6 lg:py-24">
-          <TitreSection
-            id="titre-canaux"
-            surtitre="Livraison"
-            titre="Le PDF part là où vous en avez besoin."
-            texte="Le même lot peut partir sur plusieurs canaux à la fois, et chez d'autres destinataires que vous. Choisissez par règle, changez quand vous voulez."
-          />
-          <CanauxTabs />
+          <div className="grid items-center gap-8 lg:grid-cols-[1fr_360px]">
+            <TitreSection
+              id="titre-canaux"
+              surtitre="Livraison"
+              titre="Le PDF part là où vous en avez besoin."
+              texte="Le même lot peut partir sur plusieurs canaux à la fois, et chez d'autres destinataires que vous. Choisissez par règle, changez quand vous voulez."
+            />
+            <Illustration3D
+              variante="canaux"
+              titre="Illustration 3D de la livraison du PDF vers Telegram, WhatsApp et l'impression"
+              legende="Un PDF, plusieurs destinations"
+            />
+          </div>
+          <Revelation>
+            <CanauxTabs />
+          </Revelation>
         </div>
       </section>
 
@@ -278,12 +315,20 @@ export default function PageAccueil() {
       {/* Sécurité */}
       <section id="securite" aria-labelledby="titre-securite" className="scroll-mt-20">
         <div className="mx-auto flex max-w-6xl flex-col gap-10 px-4 py-16 sm:px-6 lg:py-24">
-          <TitreSection
-            id="titre-securite"
-            surtitre="Sécurité"
-            titre="Ce qui est automatisé, et ce qui ne le sera jamais."
-            texte="La frontière est écrite dans le produit, pas seulement promise. Voici exactement où elle passe."
-          />
+          <div className="grid items-center gap-8 lg:grid-cols-[1fr_360px]">
+            <TitreSection
+              id="titre-securite"
+              surtitre="Sécurité"
+              titre="Ce qui est automatisé, et ce qui ne le sera jamais."
+              texte="La frontière est écrite dans le produit, pas seulement promise. Voici exactement où elle passe."
+            />
+            <Illustration3D
+              variante="securite"
+              titre="Illustration 3D de la sécurité : bouclier et cadenas"
+              legende="Lecture seule, écriture seulement validée"
+            />
+          </div>
+          <Revelation>
           <div className="grid gap-4 lg:grid-cols-2">
             <Card>
               <CardHeader>
@@ -334,6 +379,7 @@ export default function PageAccueil() {
               </CardContent>
             </Card>
           </div>
+          </Revelation>
           <Alert>
             <Router aria-hidden="true" />
             <AlertTitle>Une sauvegarde précède chaque écriture</AlertTitle>
@@ -349,11 +395,19 @@ export default function PageAccueil() {
       {/* Pour qui */}
       <section aria-labelledby="titre-profils" className="bg-secondary/40">
         <div className="mx-auto flex max-w-6xl flex-col gap-10 px-4 py-16 sm:px-6 lg:py-24">
-          <TitreSection
-            id="titre-profils"
-            surtitre="Pour qui"
-            titre="Pensé pour ceux qui vendent du Wi-Fi au quotidien."
-          />
+          <div className="grid items-center gap-8 lg:grid-cols-[1fr_360px]">
+            <TitreSection
+              id="titre-profils"
+              surtitre="Pour qui"
+              titre="Pensé pour ceux qui vendent du Wi-Fi au quotidien."
+            />
+            <Illustration3D
+              variante="publics"
+              titre="Illustration 3D des utilisateurs : gérant, revendeur et technicien"
+              legende="Gérant, revendeur et technicien connectés"
+            />
+          </div>
+          <Revelation>
           <div className="grid gap-4 md:grid-cols-3">
             <Card>
               <CardHeader>
@@ -407,6 +461,7 @@ export default function PageAccueil() {
               </CardContent>
             </Card>
           </div>
+          </Revelation>
         </div>
       </section>
 
@@ -419,7 +474,9 @@ export default function PageAccueil() {
             titre="Ce qu'on nous demande avant de commencer."
             texte="Une autre question ? Connectez-vous et posez-la depuis votre espace, ou reparcourez les fonctions ci-dessus."
           />
-          <FaqAccueil />
+          <Revelation>
+            <FaqAccueil />
+          </Revelation>
         </div>
       </section>
 

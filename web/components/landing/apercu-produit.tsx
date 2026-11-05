@@ -133,8 +133,8 @@ export function ApercuProduit() {
       </Card>
 
       <div aria-label="Exemple de tickets Hotspot, codes fictifs" role="img" className="relative hidden h-44 sm:block">
-        <TicketExemple code="10j48372" duree="10 jours" classe="absolute top-0 left-2 -rotate-3" />
-        <TicketExemple code="1j638291" duree="1 jour" classe="absolute top-14 right-2 rotate-2" />
+        <TicketExemple code="10j48372" duree="10 jours" classe="flottement-ticket absolute top-0 left-2 -rotate-3" />
+        <TicketExemple code="1j638291" duree="1 jour" classe="flottement-ticket flottement-ticket-retard absolute top-14 right-2 rotate-2" />
       </div>
       <Separator className="sm:hidden" />
       <p className="text-center text-xs text-muted-foreground sm:hidden">Tickets fictifs — identifiant identique au mot de passe, format Mikhmon.</p>

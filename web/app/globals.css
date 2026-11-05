@@ -206,3 +206,89 @@
     font-size: 0.875em;
   }
 }
+
+/* Effets de la page publique : révélation au défilement, ondes du hero,
+   halos Wi-Fi et flottement des tickets. Mouvements coupés si
+   l'utilisateur préfère les animations réduites. */
+[data-revelation="cache"] {
+  opacity: 0;
+  transform: translateY(16px);
+  transition:
+    opacity 0.7s ease,
+    transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+  transition-delay: var(--delai-revelation, 0ms);
+}
+
+[data-revelation="visible"] {
+  opacity: 1;
+  transform: none;
+  transition:
+    opacity 0.7s ease,
+    transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+  transition-delay: var(--delai-revelation, 0ms);
+}
+
+@keyframes ondes-hero {
+  from {
+    transform: rotate(0deg) scale(1);
+  }
+  to {
+    transform: rotate(10deg) scale(1.05);
+  }
+}
+
+.hero-ondes {
+  animation: ondes-hero 22s ease-in-out infinite alternate;
+  transform-origin: center;
+}
+
+@keyframes halo-wifi {
+  0% {
+    transform: scale(0.55);
+    opacity: 0.55;
+  }
+  100% {
+    transform: scale(1.9);
+    opacity: 0;
+  }
+}
+
+.halo-wifi {
+  animation: halo-wifi 3.2s ease-out infinite;
+}
+
+.halo-wifi-retard {
+  animation-delay: 1.6s;
+}
+
+@keyframes flottement-ticket {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-7px);
+  }
+}
+
+.flottement-ticket {
+  animation: flottement-ticket 6s ease-in-out infinite;
+}
+
+.flottement-ticket-retard {
+  animation-delay: 1.8s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-revelation="cache"],
+  [data-revelation="visible"] {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+  .hero-ondes,
+  .halo-wifi,
+  .flottement-ticket {
+    animation: none;
+  }
+}
