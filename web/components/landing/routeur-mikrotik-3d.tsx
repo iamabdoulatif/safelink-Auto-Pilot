@@ -3,9 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 
-// Animation Three.js du hero : routeur MikroTik stylisé construit en code.
-// Aucune image externe : boîtier, ports Ethernet, antennes, LED et ondes
-// Wi-Fi sont des formes 3D, donc l'animation reste légère et nette.
+// Animation Three.js du hero : routeur MikroTik, tickets Hotspot,
+// interface Mikhmon et câble RJ45 construits en code, sans image externe.
 type ModuleThree = typeof import("three");
 
 export function RouteurMikrotik3D() {
@@ -38,8 +37,8 @@ export function RouteurMikrotik3D() {
       <div
         ref={conteneurRef}
         role="img"
-        aria-label="Animation 3D d'un routeur MikroTik avec antennes, ports Ethernet et LED réseau"
-        className="h-72 w-full cursor-grab active:cursor-grabbing sm:h-80"
+        aria-label="Animation 3D d'un routeur MikroTik branché en RJ45, avec tickets Hotspot et interface Mikhmon"
+        className="h-80 w-full cursor-grab active:cursor-grabbing sm:h-96"
       />
       {!pret && !erreur ? (
         <p className="pointer-events-none absolute inset-0 flex items-center justify-center text-sm text-sidebar-foreground/70">
@@ -51,14 +50,20 @@ export function RouteurMikrotik3D() {
           Le modèle 3D n’a pas pu démarrer sur ce navigateur.
         </p>
       ) : null}
-      <div className="pointer-events-none absolute top-3 left-3 flex gap-2">
+      <div className="pointer-events-none absolute top-3 left-3 flex max-w-full flex-wrap gap-2 pr-3">
         <Badge variant="secondary">MikroTik 3D</Badge>
         <Badge variant="outline" className="border-sidebar-border text-sidebar-foreground">
-          LED réseau
+          Tickets 3D
+        </Badge>
+        <Badge variant="outline" className="border-sidebar-border text-sidebar-foreground">
+          Mikhmon 3D
+        </Badge>
+        <Badge variant="outline" className="border-sidebar-border text-sidebar-foreground">
+          RJ45 branché
         </Badge>
       </div>
       <p className="pointer-events-none absolute right-3 bottom-3 left-3 text-xs text-sidebar-foreground/70">
-        Routeur stylisé : boîtier, 5 ports Ethernet, antennes et signal Wi-Fi animés.
+        Routeur, tickets Hotspot, interface Mikhmon et câble RJ45 animés en 3D.
       </p>
     </div>
   );
@@ -80,8 +85,8 @@ function initialiserScene(
 
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 100);
-  camera.position.set(5.4, 3.6, 6.4);
-  camera.lookAt(0, 0.55, 0);
+  camera.position.set(6.1, 4.0, 7.3);
+  camera.lookAt(0, 0.65, 0);
 
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -181,6 +186,28 @@ function initialiserScene(
       const material = anneau.material as InstanceType<ModuleThree["MeshBasicMaterial"]>;
       material.opacity = 0.2 * (1 - progression);
     });
+    routeur.tickets.forEach((ticket) => {
+      ticket.groupe.position.y =
+        ticket.baseY + Math.sin(temps * 1.35 + ticket.phase) * 0.085 * vitesse;
+      ticket.groupe.rotation.y =
+        ticket.baseRotationY + Math.sin(temps * 0.75 + ticket.phase) * 0.16 * vitesse;
+      ticket.groupe.rotation.z =
+        ticket.baseRotationZ + Math.sin(temps * 0.9 + ticket.phase) * 0.045 * vitesse;
+    });
+    if (routeur.panneau) {
+      routeur.panneau.groupe.position.y =
+        routeur.panneau.baseY + Math.sin(temps * 0.85 + 1.2) * 0.045 * vitesse;
+      routeur.panneau.groupe.rotation.y =
+        routeur.panneau.baseRotationY + Math.sin(temps * 0.5) * 0.035 * vitesse;
+    }
+    if (routeur.courbeRJ45 && routeur.impulsionRJ45) {
+      const progression = mouvementReduit ? 0.45 : (temps * 0.22) % 1;
+      routeur.impulsionRJ45.position.copy(routeur.courbeRJ45.getPointAt(progression));
+      const matiere = routeur.impulsionRJ45.material as InstanceType<
+        ModuleThree["MeshStandardMaterial"]
+      >;
+      matiere.emissiveIntensity = 1.4 + Math.sin(temps * 5) * 0.45 * vitesse;
+    }
 
     renderer?.render(scene, camera);
     if (premierRendu) {
@@ -306,7 +333,15 @@ function creerRouteur(THREE: ModuleThree) {
 
   groupe.add(creerAntenne(THREE, -2.05, -1.05, 0.12));
   groupe.add(creerAntenne(THREE, 2.05, -1.05, -0.12));
-  groupe.add(creerCable(THREE, matiereSombre));
+
+  const cableRJ45 = creerCableRJ45(THREE, matiereSombre, metal);
+  groupe.add(cableRJ45.groupe);
+
+  const panneau = creerPanneauMikhmon(THREE);
+  groupe.add(panneau.groupe);
+
+  const tickets = creerTickets(THREE);
+  tickets.forEach((ticket) => groupe.add(ticket.groupe));
 
   const ondes = creerOndes(THREE);
   ondes.position.set(0, 1.05, 0.68);
@@ -316,7 +351,16 @@ function creerRouteur(THREE: ModuleThree) {
   groupe.add(anneaux.groupe);
 
   groupe.rotation.y = -0.18;
-  return { groupe, leds, ondes, anneaux: anneaux.elements };
+  return {
+    groupe,
+    leds,
+    ondes,
+    anneaux: anneaux.elements,
+    tickets,
+    panneau,
+    courbeRJ45: cableRJ45.courbe,
+    impulsionRJ45: cableRJ45.impulsion,
+  };
 }
 
 function creerAntenne(THREE: ModuleThree, x: number, z: number, inclinaison: number) {
@@ -347,19 +391,162 @@ function creerAntenne(THREE: ModuleThree, x: number, z: number, inclinaison: num
   return groupe;
 }
 
-function creerCable(
+function creerCableRJ45(
   THREE: ModuleThree,
-  material: InstanceType<ModuleThree["MeshStandardMaterial"]>,
+  matiereSombre: InstanceType<ModuleThree["MeshStandardMaterial"]>,
+  metal: InstanceType<ModuleThree["MeshStandardMaterial"]>,
 ) {
+  const groupe = new THREE.Group();
+  const portX = 1.16;
+
+  // Fiche RJ45 réellement enfoncée dans le 5e port du routeur.
+  const fiche = new THREE.Mesh(
+    new THREE.BoxGeometry(0.34, 0.26, 0.52),
+    new THREE.MeshStandardMaterial({
+      color: 0xf4efe3,
+      roughness: 0.22,
+      metalness: 0.02,
+      transparent: true,
+      opacity: 0.82,
+    }),
+  );
+  fiche.position.set(portX, -0.03, 1.82);
+  fiche.castShadow = true;
+  groupe.add(fiche);
+
+  const clip = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.07, 0.34), matiereSombre);
+  clip.position.set(portX, 0.13, 1.86);
+  clip.rotation.x = -0.18;
+  groupe.add(clip);
+
+  [-0.09, -0.03, 0.03, 0.09].forEach((decalage, index) => {
+    const couleur = [0x1e9e6a, 0xf4efe3, 0x24304a, 0xc24e2d][index] ?? 0x1e9e6a;
+    const fil = new THREE.Mesh(
+      new THREE.BoxGeometry(0.035, 0.16, 0.03),
+      new THREE.MeshStandardMaterial({ color: couleur, roughness: 0.45 }),
+    );
+    fil.position.set(portX + decalage, -0.03, 1.6);
+    groupe.add(fil);
+  });
+
+  const contacts = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.035, 0.05), metal);
+  contacts.position.set(portX, 0.07, 1.58);
+  groupe.add(contacts);
+
+  const manchon = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.085, 0.14, 0.42, 20),
+    matiereSombre,
+  );
+  manchon.rotation.x = Math.PI / 2;
+  manchon.position.set(portX, -0.03, 2.24);
+  manchon.castShadow = true;
+  groupe.add(manchon);
+
   const courbe = new THREE.CatmullRomCurve3([
-    new THREE.Vector3(1.62, -0.05, 1.58),
-    new THREE.Vector3(2.35, -0.28, 2.05),
-    new THREE.Vector3(3.05, -0.58, 1.55),
-    new THREE.Vector3(3.85, -0.62, 2.1),
+    new THREE.Vector3(portX, -0.03, 2.42),
+    new THREE.Vector3(1.85, -0.3, 2.75),
+    new THREE.Vector3(2.85, -0.58, 2.15),
+    new THREE.Vector3(3.9, -0.62, 2.65),
   ]);
-  const cable = new THREE.Mesh(new THREE.TubeGeometry(courbe, 36, 0.038, 10), material);
+  const cable = new THREE.Mesh(new THREE.TubeGeometry(courbe, 42, 0.048, 12), matiereSombre);
   cable.castShadow = true;
-  return cable;
+  groupe.add(cable);
+
+  const impulsion = new THREE.Mesh(
+    new THREE.SphereGeometry(0.075, 18, 18),
+    new THREE.MeshStandardMaterial({
+      color: 0x1e9e6a,
+      emissive: 0x1e9e6a,
+      emissiveIntensity: 1.6,
+      roughness: 0.2,
+    }),
+  );
+  groupe.add(impulsion);
+
+  return { groupe, courbe, impulsion };
+}
+
+function creerPanneauMikhmon(THREE: ModuleThree) {
+  const groupe = new THREE.Group();
+  const cadre = new THREE.Mesh(
+    new THREE.BoxGeometry(2.75, 1.72, 0.09),
+    new THREE.MeshStandardMaterial({
+      color: 0x24304a,
+      roughness: 0.38,
+      metalness: 0.12,
+    }),
+  );
+  cadre.castShadow = true;
+  groupe.add(cadre);
+
+  const ecran = new THREE.Mesh(
+    new THREE.PlaneGeometry(2.56, 1.54),
+    new THREE.MeshStandardMaterial({
+      map: creerTextureMikhmon(THREE),
+      roughness: 0.32,
+      metalness: 0,
+    }),
+  );
+  ecran.position.z = 0.052;
+  groupe.add(ecran);
+
+  const voyant = new THREE.Mesh(
+    new THREE.SphereGeometry(0.045, 16, 16),
+    new THREE.MeshStandardMaterial({
+      color: 0x1e9e6a,
+      emissive: 0x1e9e6a,
+      emissiveIntensity: 1.5,
+    }),
+  );
+  voyant.position.set(1.22, 0.72, 0.08);
+  groupe.add(voyant);
+
+  groupe.position.set(2.05, 1.52, -1.18);
+  groupe.rotation.set(-0.06, -0.28, 0.02);
+  return { groupe, baseY: 1.52, baseRotationY: -0.28 };
+}
+
+function creerTickets(THREE: ModuleThree) {
+  const definitions = [
+    { code: "10j48372", duree: "10 JOURS", x: -2.78, y: 0.72, z: 1.05, rotY: 0.52, rotZ: -0.1, phase: 0.4 },
+    { code: "1j638291", duree: "1 JOUR", x: 2.82, y: 0.48, z: 1.18, rotY: -0.5, rotZ: 0.09, phase: 1.7 },
+    { code: "7j205914", duree: "7 JOURS", x: -2.28, y: 1.86, z: -0.35, rotY: 0.34, rotZ: 0.06, phase: 2.8 },
+  ];
+
+  return definitions.map((definition) => {
+    const groupe = new THREE.Group();
+    const corps = new THREE.Mesh(
+      geometrieTicket(THREE),
+      new THREE.MeshStandardMaterial({
+        color: 0xfbf8f0,
+        roughness: 0.48,
+        metalness: 0.01,
+      }),
+    );
+    corps.castShadow = true;
+    groupe.add(corps);
+
+    const face = new THREE.Mesh(
+      new THREE.PlaneGeometry(1.22, 0.74),
+      new THREE.MeshStandardMaterial({
+        map: creerTextureTicket(THREE, definition.code, definition.duree),
+        roughness: 0.5,
+        transparent: true,
+      }),
+    );
+    face.position.z = 0.037;
+    groupe.add(face);
+
+    groupe.position.set(definition.x, definition.y, definition.z);
+    groupe.rotation.set(-0.08, definition.rotY, definition.rotZ);
+    return {
+      groupe,
+      baseY: definition.y,
+      baseRotationY: definition.rotY,
+      baseRotationZ: definition.rotZ,
+      phase: definition.phase,
+    };
+  });
 }
 
 function creerOndes(THREE: ModuleThree) {
@@ -497,6 +684,172 @@ function creerTextureEtiquette(THREE: ModuleThree) {
   contexte.font = "700 48px Arial, sans-serif";
   contexte.textAlign = "center";
   contexte.fillText("5G", 900, 130);
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.anisotropy = 8;
+  return texture;
+}
+
+function geometrieTicket(THREE: ModuleThree) {
+  const largeur = 1.3;
+  const hauteur = 0.82;
+  const x = -largeur / 2;
+  const y = -hauteur / 2;
+  const rayon = 0.09;
+  const forme = new THREE.Shape();
+  forme.moveTo(x + rayon, y);
+  forme.lineTo(x + largeur - rayon, y);
+  forme.quadraticCurveTo(x + largeur, y, x + largeur, y + rayon);
+  forme.lineTo(x + largeur, y + hauteur - rayon);
+  forme.quadraticCurveTo(x + largeur, y + hauteur, x + largeur - rayon, y + hauteur);
+  forme.lineTo(x + rayon, y + hauteur);
+  forme.quadraticCurveTo(x, y + hauteur, x, y + hauteur - rayon);
+  forme.lineTo(x, y + rayon);
+  forme.quadraticCurveTo(x, y, x + rayon, y);
+
+  const geometrie = new THREE.ExtrudeGeometry(forme, {
+    depth: 0.045,
+    steps: 1,
+    bevelEnabled: true,
+    bevelThickness: 0.012,
+    bevelSize: 0.012,
+    bevelSegments: 2,
+  });
+  geometrie.center();
+  return geometrie;
+}
+
+function creerTextureTicket(THREE: ModuleThree, code: string, duree: string) {
+  const canvas = document.createElement("canvas");
+  canvas.width = 640;
+  canvas.height = 400;
+  const contexte = canvas.getContext("2d");
+  if (!contexte) return new THREE.CanvasTexture(canvas);
+
+  contexte.fillStyle = "#fbf8f0";
+  contexte.fillRect(0, 0, canvas.width, canvas.height);
+  contexte.fillStyle = "#24304a";
+  contexte.font = "700 34px Arial, sans-serif";
+  contexte.textAlign = "left";
+  contexte.fillText("WI-FI HOTSPOT", 34, 58);
+  contexte.textAlign = "right";
+  contexte.fillStyle = "#1e9e6a";
+  contexte.fillText(duree, 606, 58);
+
+  contexte.fillStyle = "#24304a";
+  contexte.font = "700 82px 'Courier New', monospace";
+  contexte.textAlign = "left";
+  contexte.fillText(code, 34, 178);
+
+  contexte.strokeStyle = "#24304a";
+  contexte.setLineDash([12, 10]);
+  contexte.lineWidth = 3;
+  contexte.beginPath();
+  contexte.moveTo(28, 248);
+  contexte.lineTo(612, 248);
+  contexte.stroke();
+  contexte.setLineDash([]);
+
+  contexte.fillStyle = "#5a657d";
+  contexte.font = "500 30px Arial, sans-serif";
+  contexte.fillText("Identifiant = mot de passe", 34, 312);
+  contexte.fillStyle = "#1e9e6a";
+  contexte.beginPath();
+  contexte.arc(574, 318, 18, 0, Math.PI * 2);
+  contexte.fill();
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.anisotropy = 8;
+  return texture;
+}
+
+function creerTextureMikhmon(THREE: ModuleThree) {
+  const canvas = document.createElement("canvas");
+  canvas.width = 1024;
+  canvas.height = 640;
+  const contexte = canvas.getContext("2d");
+  if (!contexte) return new THREE.CanvasTexture(canvas);
+
+  contexte.fillStyle = "#f4efe3";
+  contexte.fillRect(0, 0, canvas.width, canvas.height);
+  contexte.fillStyle = "#24304a";
+  contexte.fillRect(0, 0, canvas.width, 86);
+  contexte.fillStyle = "#f4efe3";
+  contexte.font = "700 42px Arial, sans-serif";
+  contexte.fillText("Mikhmon", 30, 56);
+  contexte.font = "500 24px Arial, sans-serif";
+  contexte.fillText("Hotspot Manager", 245, 55);
+  contexte.fillStyle = "#1e9e6a";
+  contexte.beginPath();
+  contexte.arc(958, 43, 17, 0, Math.PI * 2);
+  contexte.fill();
+
+  contexte.fillStyle = "#24304a";
+  contexte.fillRect(0, 86, 218, 554);
+  contexte.fillStyle = "#f4efe3";
+  contexte.font = "600 26px Arial, sans-serif";
+  ["Dashboard", "Hotspot", "Users", "Vouchers", "Generate", "Log"].forEach((item, index) => {
+    if (index === 3) {
+      contexte.fillStyle = "#1e9e6a";
+      contexte.fillRect(14, 122 + index * 62, 190, 44);
+      contexte.fillStyle = "#f4efe3";
+    }
+    contexte.fillText(item, 30, 152 + index * 62);
+    contexte.fillStyle = "#f4efe3";
+  });
+
+  const cartes = [
+    { titre: "Actifs", valeur: "128", couleur: "#1e9e6a" },
+    { titre: "Tickets 1J", valeur: "342", couleur: "#24304a" },
+    { titre: "Tickets 10J", valeur: "96", couleur: "#c24e2d" },
+  ];
+  cartes.forEach((carte, index) => {
+    const x = 246 + index * 252;
+    contexte.fillStyle = "#fbf8f0";
+    contexte.fillRect(x, 116, 228, 118);
+    contexte.strokeStyle = "#ddd4bc";
+    contexte.strokeRect(x, 116, 228, 118);
+    contexte.fillStyle = carte.couleur;
+    contexte.beginPath();
+    contexte.arc(x + 28, 148, 10, 0, Math.PI * 2);
+    contexte.fill();
+    contexte.fillStyle = "#5a657d";
+    contexte.font = "600 22px Arial, sans-serif";
+    contexte.fillText(carte.titre, x + 48, 156);
+    contexte.fillStyle = "#24304a";
+    contexte.font = "700 46px Arial, sans-serif";
+    contexte.fillText(carte.valeur, x + 24, 212);
+  });
+
+  contexte.fillStyle = "#24304a";
+  contexte.font = "700 27px Arial, sans-serif";
+  contexte.fillText("Derniers vouchers générés", 246, 292);
+  const lignes = [
+    ["10j48372", "10 jours", "#1e9e6a"],
+    ["1j638291", "1 jour", "#1e9e6a"],
+    ["7j205914", "7 jours", "#c24e2d"],
+    ["1j771204", "1 jour", "#24304a"],
+  ] as const;
+  lignes.forEach(([code, duree, couleur], index) => {
+    const y = 326 + index * 68;
+    contexte.fillStyle = "#fbf8f0";
+    contexte.fillRect(246, y, 724, 52);
+    contexte.strokeStyle = "#ddd4bc";
+    contexte.strokeRect(246, y, 724, 52);
+    contexte.fillStyle = couleur;
+    contexte.beginPath();
+    contexte.arc(274, y + 26, 9, 0, Math.PI * 2);
+    contexte.fill();
+    contexte.fillStyle = "#24304a";
+    contexte.font = "700 27px 'Courier New', monospace";
+    contexte.fillText(code, 302, y + 35);
+    contexte.font = "500 24px Arial, sans-serif";
+    contexte.fillStyle = "#5a657d";
+    contexte.fillText(duree, 520, y + 35);
+    contexte.fillText("Mikhmon", 760, y + 35);
+  });
 
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
