@@ -182,8 +182,6 @@ function ListeLiens({ chemin, fermer }: { chemin: string; fermer?: boolean }) {
 
 export function NavPrincipale() {
   const chemin = usePathname();
-  // La page publique a sa propre en-tete, sans menu de l'application.
-  if (chemin === "/accueil") return null;
   return (
     <>
       {/* Barre mobile : marque + tiroir. */}
