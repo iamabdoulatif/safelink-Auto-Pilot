@@ -79,6 +79,14 @@ async function cookieValide(secret: string, valeur: string): Promise<boolean> {
 
 export async function middleware(req: NextRequest): Promise<NextResponse> {
   const chemin = req.nextUrl.pathname;
+  // Visiteur sans session : la racine montre la page de presentation.
+  if (chemin === "/") {
+    const secretRacine = process.env.SESSION_SECRET ?? "";
+    const cookieRacine = req.cookies.get(NOM_COOKIE)?.value ?? null;
+    return secretRacine && cookieRacine && (await cookieValide(secretRacine, cookieRacine))
+      ? NextResponse.next()
+      : NextResponse.redirect(new URL("/accueil", req.url));
+  }
   if (PUBLIC.some((p) => chemin === p || chemin.startsWith(p))) {
     return NextResponse.next();
   }
@@ -90,4 +98,4 @@ export async function middleware(req: NextRequest): Promise<NextResponse> {
   return NextResponse.next();
 }
 
-export const config = { matcher: ["/api/:path*"] };
+export const config = { matcher: ["/", "/api/:path*"] };
