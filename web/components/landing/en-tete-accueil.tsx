@@ -26,7 +26,7 @@ const LIENS = [
 function Marque() {
   return (
     <Link href="/accueil" className="flex items-center gap-2" aria-label="SafeLink Auto-Pilot — accueil">
-      <span className="flex size-8 items-center justify-center rounded-md bg-sidebar-foreground text-sidebar">
+      <span className="flex size-8 items-center justify-center rounded-md bg-accent text-accent-foreground">
         <Wifi aria-hidden="true" />
       </span>
       <span className="text-sm font-semibold tracking-tight">
@@ -37,6 +37,25 @@ function Marque() {
 }
 
 export function EnTeteAccueil() {
+  // « Se connecter » ne s'affiche que pour un visiteur anonyme :
+  // une fois connecté, seul « Accéder à mon espace » reste visible.
+  const [connecte, setConnecte] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    let annule = false;
+    fetch("/api/auth/etat")
+      .then((reponse) => reponse.json() as Promise<{ data?: { connecte?: boolean } }>)
+      .then((corps) => {
+        if (!annule) setConnecte(corps.data?.connecte === true);
+      })
+      .catch(() => {
+        if (!annule) setConnecte(false);
+      });
+    return () => {
+      annule = true;
+    };
+  }, []);
+
   // Barre fine en bas de l'en-tête : elle se remplit quand on fait
   // défiler la page, pour montrer où on en est dans la lecture.
   const [progression, setProgression] = useState(0);
@@ -78,14 +97,16 @@ export function EnTeteAccueil() {
           ))}
         </nav>
         <div className="flex items-center gap-2">
-          <Button
-            asChild
-            variant="ghost"
-            size="sm"
-            className="hidden text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground sm:inline-flex"
-          >
-            <Link href="/connexion">Se connecter</Link>
-          </Button>
+          {connecte === false ? (
+            <Button
+              asChild
+              variant="ghost"
+              size="sm"
+              className="hidden text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground sm:inline-flex"
+            >
+              <Link href="/connexion">Se connecter</Link>
+            </Button>
+          ) : null}
           <Button asChild size="sm" className="bg-accent text-accent-foreground hover:bg-accent/85">
             <Link href="/connexion">
               Accéder à mon espace

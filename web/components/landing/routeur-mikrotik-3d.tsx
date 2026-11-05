@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 
 // Animation Three.js du hero : routeur MikroTik, tickets Hotspot,
 // interface Mikhmon et câble RJ45 construits en code, sans image externe.
@@ -41,9 +42,14 @@ export function RouteurMikrotik3D() {
         className="h-80 w-full cursor-grab active:cursor-grabbing sm:h-96"
       />
       {!pret && !erreur ? (
-        <p className="pointer-events-none absolute inset-0 flex items-center justify-center text-sm text-sidebar-foreground/70">
-          Chargement du routeur 3D…
-        </p>
+        <div aria-hidden="true" className="pointer-events-none absolute inset-0 flex flex-col justify-end gap-3 p-4">
+          <Skeleton className="h-3 w-2/5 bg-sidebar-accent" />
+          <Skeleton className="h-3 w-3/5 bg-sidebar-accent" />
+          <div className="relative mt-1 h-1 overflow-hidden rounded-full bg-sidebar-accent">
+            <div className="barre-chargement absolute inset-y-0 w-2/5 rounded-full bg-accent" />
+          </div>
+          <p className="text-xs text-sidebar-foreground/70">Chargement du routeur 3D…</p>
+        </div>
       ) : null}
       {erreur ? (
         <p className="absolute inset-0 flex items-center justify-center px-6 text-center text-sm text-sidebar-foreground/80">
@@ -62,9 +68,6 @@ export function RouteurMikrotik3D() {
           RJ45 branché
         </Badge>
       </div>
-      <p className="pointer-events-none absolute right-3 bottom-3 left-3 text-xs text-sidebar-foreground/70">
-        Routeur, tickets Hotspot, interface Mikhmon et câble RJ45 animés en 3D.
-      </p>
     </div>
   );
 }

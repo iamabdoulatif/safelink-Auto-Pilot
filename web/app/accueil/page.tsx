@@ -69,20 +69,24 @@ const GARANTIES_BANDEAU = [
 
 function TitreSection({
   id,
+  numero,
   surtitre,
   titre,
   texte,
 }: {
   id: string;
+  numero: string;
   surtitre: string;
   titre: string;
   texte?: string;
 }) {
   return (
     <div className="flex max-w-2xl flex-col gap-3">
-      <Badge className="w-fit border-transparent bg-accent font-mono text-[11px] tracking-[0.14em] text-accent-foreground uppercase">
+      <p className="flex items-center gap-2.5 text-sm font-medium text-muted-foreground">
+        <span aria-hidden="true" className="size-2 rounded-[2px] bg-accent ring-1 ring-foreground/20" />
+        <span className="font-semibold text-foreground">{numero}</span>
         {surtitre}
-      </Badge>
+      </p>
       <h2 id={id} className="text-balance font-[family-name:var(--font-titres)] text-4xl font-medium tracking-tight">
         {titre}
       </h2>
@@ -94,7 +98,14 @@ function TitreSection({
 export default function PageAccueil() {
   return (
     <div className={`${codes.variable} bg-background`}>
+      <a
+        href="#contenu"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:rounded-md focus:bg-accent focus:px-3 focus:py-2 focus:text-sm focus:font-medium focus:text-accent-foreground"
+      >
+        Aller au contenu
+      </a>
       <EnTeteAccueil />
+      <main id="contenu">
 
       {/* Hero */}
       <section className="relative overflow-hidden bg-sidebar text-sidebar-foreground">
@@ -118,17 +129,17 @@ export default function PageAccueil() {
           className="halo-wifi halo-wifi-retard pointer-events-none absolute top-28 right-[16%] hidden size-24 rounded-full border-2 border-status-ok/40 lg:block"
         />
         <div className="relative mx-auto grid max-w-6xl items-start gap-12 px-4 pt-14 pb-16 sm:px-6 lg:grid-cols-[1.1fr_0.9fr] lg:pt-20 lg:pb-24">
-          <div>
-            <Badge className="border-transparent bg-accent font-mono text-[11px] tracking-[0.14em] text-accent-foreground uppercase">
+          <div className="hero-entree">
+            <Badge className="border-transparent bg-accent text-xs font-medium text-accent-foreground">
               Routeurs MikroTik · Tickets Hotspot
             </Badge>
-            <h1 className="mt-5 text-balance font-[family-name:var(--font-titres)] text-5xl leading-[1.02] font-medium tracking-tight sm:text-6xl">
+            <h1 className="hero-entree mt-5 text-balance font-[family-name:var(--font-titres)] text-5xl leading-[1.02] font-medium tracking-tight sm:text-6xl" style={{ animationDelay: "90ms" }}>
               Votre réseau tourne. Vos tickets ne manquent plus.
             </h1>
-            <p className="mt-5 max-w-xl text-lg leading-relaxed opacity-80">
+            <p className="hero-entree mt-5 max-w-xl text-lg leading-relaxed opacity-80" style={{ animationDelay: "180ms" }}>
               SafeLink surveille vos routeurs, signale ce qui ne va pas et recrée vos tickets Wi-Fi avant la rupture de stock — sans jamais écrire sur le routeur sans votre accord.
             </p>
-            <div className="mt-8 flex flex-wrap items-center gap-3">
+            <div className="hero-entree mt-8 flex flex-wrap items-center gap-3" style={{ animationDelay: "270ms" }}>
               <Button asChild size="lg" className="bg-accent text-accent-foreground hover:bg-accent/85">
                 <Link href="/connexion">
                   Accéder à mon espace
@@ -144,7 +155,7 @@ export default function PageAccueil() {
                 <a href="#fonctionnement">Voir comment ça marche</a>
               </Button>
             </div>
-            <ul className="mt-8 flex flex-col gap-2.5">
+            <ul className="hero-entree mt-8 flex flex-col gap-2.5" style={{ animationDelay: "360ms" }}>
               {GARANTIES_HERO.map((g) => (
                 <li key={g} className="flex items-start gap-2.5 text-sm opacity-85">
                   <Check aria-hidden="true" className="mt-0.5 shrink-0 text-status-ok" />
@@ -153,16 +164,46 @@ export default function PageAccueil() {
               ))}
             </ul>
           </div>
-          <div className="flex flex-col gap-5">
+          <div className="hero-entree flex flex-col gap-5" style={{ animationDelay: "220ms" }}>
             <RouteurMikrotik3D />
             <ApercuProduit />
           </div>
         </div>
       </section>
 
+      {/* Bandeau défilant : les métiers du produit, en mouvement */}
+      <div className="overflow-hidden bg-accent py-3 text-accent-foreground" role="marquee" aria-label="Diagnostic MikroTik, tickets Mikhmon, réapprovisionnement automatique, livraison du PDF, correctifs validés">
+        <div className="bande-defilante flex w-max items-center gap-8 pr-8">
+          {[0, 1].map((copie) => (
+            <ul key={copie} aria-hidden={copie === 1} className="flex items-center gap-8">
+              {[
+                "Diagnostic MikroTik",
+                "Tickets compatibles Mikhmon",
+                "Réapprovisionnement automatique",
+                "PDF sur Telegram, WhatsApp et à l'impression",
+                "Correctifs seulement après validation",
+                "Mots de passe jamais stockés",
+              ].map((item) => (
+                <li key={item} className="flex items-center gap-8 text-sm font-semibold whitespace-nowrap">
+                  {item}
+                  <span aria-hidden="true" className="size-2 rounded-[2px] bg-accent-foreground/70" />
+                </li>
+              ))}
+            </ul>
+          ))}
+        </div>
+      </div>
+
       {/* Bandeau garanties */}
       <section aria-label="Garanties de sécurité" className="border-b">
-        <div className="mx-auto grid max-w-6xl gap-px px-4 py-10 sm:grid-cols-2 sm:px-6 lg:grid-cols-4">
+        <div className="mx-auto flex max-w-6xl flex-col gap-8 px-4 py-10 sm:px-6">
+          <p className="max-w-xl text-base leading-relaxed">
+            <strong className="font-semibold">Quatre règles qui ne changent pas.</strong>{" "}
+            <span className="text-muted-foreground">
+              Elles sont écrites dans le produit, pas seulement promises ici.
+            </span>
+          </p>
+          <div className="grid gap-px sm:grid-cols-2 lg:grid-cols-4">
           {GARANTIES_BANDEAU.map((g, i) => {
             const Icone = g.icone;
             return (
@@ -175,6 +216,7 @@ export default function PageAccueil() {
               </Revelation>
             );
           })}
+          </div>
         </div>
       </section>
 
@@ -184,6 +226,7 @@ export default function PageAccueil() {
           <div className="grid items-center gap-8 lg:grid-cols-[1fr_360px]">
             <TitreSection
               id="titre-fonctionnement"
+              numero="01"
               surtitre="Réapprovisionnement automatique"
               titre="Le stock baisse, le lot suivant est déjà en route."
               texte="Choisissez un seuil et une fréquence par profil. SafeLink surveille, génère, met en page et livre — vous ne touchez à rien tant que le stock est sain."
@@ -208,6 +251,7 @@ export default function PageAccueil() {
           <div className="grid items-center gap-8 lg:grid-cols-[1fr_360px]">
             <TitreSection
               id="titre-fonctions"
+              numero="02"
               surtitre="Fonctions"
               titre="Tout le parc, au même endroit."
               texte="Un seul écran pour l'état de vos routeurs et vos tickets. Les constats sont classés par gravité, et la date du dernier relevé réussi reste toujours visible."
@@ -293,6 +337,7 @@ export default function PageAccueil() {
           <div className="grid items-center gap-8 lg:grid-cols-[1fr_360px]">
             <TitreSection
               id="titre-canaux"
+              numero="03"
               surtitre="Livraison"
               titre="Le PDF part là où vous en avez besoin."
               texte="Le même lot peut partir sur plusieurs canaux à la fois, et chez d'autres destinataires que vous. Choisissez par règle, changez quand vous voulez."
@@ -317,6 +362,7 @@ export default function PageAccueil() {
           <div className="grid items-center gap-8 lg:grid-cols-[1fr_360px]">
             <TitreSection
               id="titre-securite"
+              numero="04"
               surtitre="Sécurité"
               titre="Ce qui est automatisé, et ce qui ne le sera jamais."
               texte="La frontière est écrite dans le produit, pas seulement promise. Voici exactement où elle passe."
@@ -397,6 +443,7 @@ export default function PageAccueil() {
           <div className="grid items-center gap-8 lg:grid-cols-[1fr_360px]">
             <TitreSection
               id="titre-profils"
+              numero="05"
               surtitre="Pour qui"
               titre="Pensé pour ceux qui vendent du Wi-Fi au quotidien."
             />
@@ -469,7 +516,8 @@ export default function PageAccueil() {
         <div className="mx-auto grid max-w-6xl gap-10 px-4 py-16 sm:px-6 lg:grid-cols-[0.8fr_1.2fr] lg:py-24">
           <TitreSection
             id="titre-faq"
-            surtitre="Questions fréquentes"
+            numero="06"
+              surtitre="Questions fréquentes"
             titre="Ce qu'on nous demande avant de commencer."
             texte="Une autre question ? Connectez-vous et posez-la depuis votre espace, ou reparcourez les fonctions ci-dessus."
           />
@@ -483,7 +531,7 @@ export default function PageAccueil() {
       <section className="bg-sidebar text-sidebar-foreground">
         <div className="mx-auto flex max-w-6xl flex-col gap-8 px-4 py-16 sm:px-6 lg:flex-row lg:items-end lg:justify-between lg:py-20">
           <div className="flex max-w-2xl flex-col gap-4">
-            <Badge variant="secondary" className="w-fit font-mono text-[11px] tracking-[0.14em] uppercase">
+            <Badge variant="secondary" className="w-fit text-xs font-medium">
               <FileCheck2 data-icon="inline-start" aria-hidden="true" />
               Simulation avant génération
             </Badge>
@@ -494,44 +542,55 @@ export default function PageAccueil() {
               Ajoutez votre premier routeur en lecture seule, lancez un diagnostic, puis décidez. Rien ne sera écrit sans votre validation.
             </p>
           </div>
-          <Button asChild size="lg" variant="secondary" className="w-fit shrink-0">
-            <Link href="/connexion">
-              Accéder à mon espace
-              <ArrowRight data-icon="inline-end" aria-hidden="true" />
-            </Link>
-          </Button>
+          <div className="flex flex-col items-start gap-3">
+            <Button asChild size="lg" variant="secondary" className="w-fit shrink-0">
+              <Link href="/connexion">
+                Accéder à mon espace
+                <ArrowRight data-icon="inline-end" aria-hidden="true" />
+              </Link>
+            </Button>
+            <a href="#fonctionnement" className="text-sm underline-offset-4 opacity-75 hover:underline">
+              Ou revoir comment ça marche
+            </a>
+          </div>
         </div>
       </section>
+
+      </main>
 
       {/* Pied de page */}
       <footer className="bg-sidebar text-sidebar-foreground">
         <Separator className="bg-sidebar-border" />
-        <div className="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-10 sm:px-6">
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <span className="flex items-center gap-2 text-sm font-semibold tracking-tight">
-              SafeLink <span className="font-normal opacity-65">Auto-Pilot</span>
-            </span>
-            <nav aria-label="Liens de pied de page" className="flex flex-wrap gap-2">
-              {[
-                { href: "#fonctionnement", titre: "Fonctionnement" },
-                { href: "#fonctions", titre: "Fonctions" },
-                { href: "#securite", titre: "Sécurité" },
-                { href: "/connexion", titre: "Se connecter" },
-              ].map((l) => (
-                <Button
-                  key={l.titre}
-                  asChild
-                  variant="ghost"
-                  size="sm"
-                  className="text-sidebar-foreground/75 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                >
-                  {l.href.startsWith("#") ? <a href={l.href}>{l.titre}</a> : <Link href={l.href}>{l.titre}</Link>}
-                </Button>
-              ))}
+        <div className="mx-auto flex max-w-6xl flex-col gap-10 px-4 py-12 sm:px-6">
+          <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1fr]">
+            <div className="flex flex-col gap-3">
+              <span className="flex items-center gap-2 text-sm font-semibold tracking-tight">
+                SafeLink <span className="font-normal opacity-65">Auto-Pilot</span>
+              </span>
+              <p className="max-w-xs text-sm leading-relaxed opacity-65">
+                Surveillance MikroTik, correctifs après validation et tickets Hotspot compatibles Mikhmon, pour les opérateurs qui vendent du Wi-Fi au quotidien.
+              </p>
+            </div>
+            <nav aria-label="Produit" className="flex flex-col gap-2.5 text-sm">
+              <span className="font-semibold">Produit</span>
+              <a href="#fonctionnement" className="opacity-70 hover:opacity-100">Fonctionnement</a>
+              <a href="#fonctions" className="opacity-70 hover:opacity-100">Fonctions</a>
+              <a href="#canaux" className="opacity-70 hover:opacity-100">Canaux de livraison</a>
+            </nav>
+            <nav aria-label="Sécurité et aide" className="flex flex-col gap-2.5 text-sm">
+              <span className="font-semibold">Sécurité et aide</span>
+              <a href="#securite" className="opacity-70 hover:opacity-100">Ce qui n&apos;est jamais automatisé</a>
+              <a href="#faq" className="opacity-70 hover:opacity-100">Questions fréquentes</a>
+            </nav>
+            <nav aria-label="Accès" className="flex flex-col gap-2.5 text-sm">
+              <span className="font-semibold">Accès</span>
+              <Link href="/connexion" className="opacity-70 hover:opacity-100">Se connecter</Link>
+              <Link href="/connexion" className="opacity-70 hover:opacity-100">Accéder à mon espace</Link>
             </nav>
           </div>
-          <p className="max-w-3xl text-sm leading-relaxed opacity-65">
-            Surveillance MikroTik (matériel, Wi-Fi, ports, audit de configuration), correctifs de configuration après validation humaine, et génération de tickets Hotspot compatibles Mikhmon. Les mots de passe des tickets restent dans le routeur.
+          <Separator className="bg-sidebar-border" />
+          <p className="text-sm opacity-55">
+            Les mots de passe des tickets restent dans le routeur. Aucun objet RouterOS n&apos;est jamais supprimé : il est désactivé.
           </p>
         </div>
       </footer>

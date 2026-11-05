@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { Wifi } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -44,6 +45,17 @@ export default function PageConnexion() {
 
   return (
     <main className="mx-auto max-w-sm p-6">
+      <div className="mb-6 flex items-center justify-between">
+        <span className="flex items-center gap-2 text-sm font-semibold tracking-tight">
+          <span aria-hidden="true" className="flex size-8 items-center justify-center rounded-md bg-accent text-accent-foreground">
+            <Wifi />
+          </span>
+          SafeLink <span className="-ml-1 font-normal text-muted-foreground">Auto-Pilot</span>
+        </span>
+        <Link href="/accueil" className="text-sm text-muted-foreground underline-offset-4 hover:underline">
+          Retour à l&apos;accueil
+        </Link>
+      </div>
       <Card>
         <CardHeader>
           <CardTitle>{mode === "connexion" ? "Connexion" : "Inscription"}</CardTitle>

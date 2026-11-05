@@ -291,3 +291,87 @@
     animation: none;
   }
 }
+/* Motion design de la page publique : entrée du hero, bandeau défilant,
+   barres de chargement et de progression, points du déroulé. */
+@keyframes apparition {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.hero-entree {
+  animation: apparition 0.85s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes defilement {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.bande-defilante {
+  animation: defilement 30s linear infinite;
+}
+
+.bande-defilante:hover {
+  animation-play-state: paused;
+}
+
+@keyframes barre-chargement {
+  0% {
+    transform: translateX(-110%);
+  }
+  100% {
+    transform: translateX(280%);
+  }
+}
+
+.barre-chargement {
+  animation: barre-chargement 1.3s ease-in-out infinite;
+}
+
+@keyframes progression-etape {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+.barre-progression {
+  transform-origin: left;
+  animation: progression-etape 4.5s linear forwards;
+}
+
+@keyframes point-deroule {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgb(185 255 102 / 55%);
+  }
+  55% {
+    box-shadow: 0 0 0 7px rgb(185 255 102 / 0%);
+  }
+}
+
+.point-deroule {
+  animation: point-deroule 2.6s ease-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-entree,
+  .bande-defilante,
+  .barre-chargement,
+  .barre-progression,
+  .point-deroule {
+    animation: none;
+  }
+}

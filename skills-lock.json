@@ -1,6 +1,18 @@
 {
   "version": 1,
   "skills": {
+    "connect-domain": {
+      "source": "hostinger/api-mcp-server",
+      "sourceType": "github",
+      "skillPath": "skills/connect-domain/SKILL.md",
+      "computedHash": "d7da0d0fda961015e020077ebb92dfd34bf198df73b3ae1727c9110f45601bcc"
+    },
+    "deploy-to-hosting": {
+      "source": "hostinger/api-mcp-server",
+      "sourceType": "github",
+      "skillPath": "skills/deploy-to-hosting/SKILL.md",
+      "computedHash": "6f027003c993f49e61e7046e0b5f47d0b235ce74e2e6285af3294fde0281f647"
+    },
     "routeros-command-tree": {
       "source": "tikoci/routeros-skills",
       "sourceType": "github",
@@ -72,6 +84,12 @@
       "sourceType": "github",
       "skillPath": "skills/shadcn/SKILL.md",
       "computedHash": "b864a958765563321f485a96f4d59c0bb6539f4286ab6d8b8b66895b7ebd302d"
+    },
+    "vps": {
+      "source": "hostinger/hostinger-agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/vps/SKILL.md",
+      "computedHash": "e778d1966568d59839e0c0ac72b682bda17e927f68120a94b07cc712b3583e31"
     }
   }
 }

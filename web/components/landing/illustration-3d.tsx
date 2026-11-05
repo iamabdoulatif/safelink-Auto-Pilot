@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 
 // Petites illustrations Three.js des sections de la page publique.
 // Chaque visuel est construit en code et ne démarre que lorsqu'il
@@ -30,6 +30,7 @@ export function Illustration3D({
   legende: string;
 }) {
   const conteneurRef = useRef<HTMLDivElement | null>(null);
+  const [pret, setPret] = useState(false);
   const [erreur, setErreur] = useState(false);
 
   useEffect(() => {
@@ -46,9 +47,10 @@ export function Illustration3D({
       import("three")
         .then((THREE) => {
           if (annule) return;
-          nettoyer = initialiserIllustration(THREE, conteneur, variante, () =>
-            setErreur(true),
-          );
+          nettoyer = initialiserIllustration(THREE, conteneur, variante, {
+            onErreur: () => setErreur(true),
+            onPret: () => setPret(true),
+          });
         })
         .catch(() => setErreur(true));
     };
@@ -70,15 +72,27 @@ export function Illustration3D({
 
   return (
     <figure className="overflow-hidden rounded-xl border bg-card text-card-foreground shadow-sm">
-      <div
-        ref={conteneurRef}
-        role="img"
-        aria-label={titre}
-        className="h-52 w-full sm:h-60"
-      />
-      <figcaption className="flex items-center justify-between gap-3 border-t px-4 py-3">
-        <span className="text-sm font-medium">{legende}</span>
-        <Badge variant="secondary">3D</Badge>
+      <div className="relative">
+        <div
+          ref={conteneurRef}
+          role="img"
+          aria-label={titre}
+          className="h-52 w-full sm:h-60"
+        />
+        {!pret && !erreur ? (
+          <div aria-hidden="true" className="absolute inset-0 flex flex-col justify-end gap-3 p-4">
+            <Skeleton className="h-3 w-2/5" />
+            <Skeleton className="h-3 w-3/5" />
+            <div className="relative mt-1 h-1 overflow-hidden rounded-full bg-secondary">
+              <div className="barre-chargement absolute inset-y-0 w-2/5 rounded-full bg-accent" />
+            </div>
+            <p className="text-xs text-muted-foreground">Chargement de l&apos;illustration…</p>
+          </div>
+        ) : null}
+      </div>
+      <figcaption className="flex items-center gap-2.5 border-t px-4 py-3">
+        <span aria-hidden="true" className="size-1.5 shrink-0 rounded-full bg-accent ring-1 ring-foreground/20" />
+        <span className="text-sm text-muted-foreground">{legende}</span>
       </figcaption>
       {erreur ? (
         <p className="border-t px-4 py-2 text-xs text-muted-foreground">
@@ -93,13 +107,13 @@ function initialiserIllustration(
   THREE: ModuleThree,
   conteneur: HTMLDivElement,
   variante: VarianteIllustration,
-  onErreur: () => void,
+  callbacks: { onErreur: () => void; onPret: () => void },
 ) {
   let renderer: InstanceType<ModuleThree["WebGLRenderer"]> | null = null;
   try {
     renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
   } catch {
-    onErreur();
+    callbacks.onErreur();
     return () => undefined;
   }
 
@@ -168,6 +182,7 @@ function initialiserIllustration(
   observateurVisibilite.observe(conteneur);
 
   const horloge = new THREE.Clock();
+  let premierRendu = true;
   renderer.setAnimationLoop(() => {
     if (!visible) return;
     const temps = horloge.getElapsedTime();
@@ -178,6 +193,10 @@ function initialiserIllustration(
     illustration.groupe.rotation.x = -souris.y * 0.07;
     illustration.maj(temps, vitesse);
     renderer?.render(scene, camera);
+    if (premierRendu) {
+      premierRendu = false;
+      callbacks.onPret();
+    }
   });
 
   return () => {
