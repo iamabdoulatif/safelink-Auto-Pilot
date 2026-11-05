@@ -1,6 +1,8 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import {
+  DUREE_SESSION_SECONDES,
+  emissionSession,
   resoudreContexte,
   signerSession,
   verifierSession,
@@ -67,5 +69,16 @@ describe("resoudreContexte", () => {
     assert.equal(verifierSession(SECRET, ""), null);
     assert.equal(verifierSession(SECRET, "nimporte-quoi"), null);
     assert.equal(verifierSession(SECRET, "a.b.c"), null);
+  });
+});
+
+describe("emissionSession", () => {
+  it("retrouve la date d'emission depuis l'echeance", () => {
+    const valeur = signerSession(
+      SECRET,
+      { utilisateurId: "a@b.fr", tenantId: "a@b.fr" },
+      { maintenantSec: 1000, dureeSecondes: DUREE_SESSION_SECONDES },
+    );
+    assert.equal(emissionSession(valeur), 1000);
   });
 });

@@ -8,6 +8,7 @@ import {
   History,
   LayoutDashboard,
   LayoutGrid,
+  LogOut,
   Menu,
   MessageCircle,
   Printer,
@@ -17,6 +18,7 @@ import {
   Send,
   Settings,
   Ticket,
+  UserRound,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -94,7 +96,9 @@ const GROUPES: Groupe[] = [
   {
     nom: "Compte",
     liens: [
+      { href: "/profil", titre: "Mon profil", icone: UserRound },
       { href: "/parametres", titre: "Paramètres du compte", icone: Settings },
+      { href: "/deconnexion", titre: "Déconnexion", icone: LogOut },
     ],
   },
 ];

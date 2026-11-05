@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -72,6 +73,11 @@ export default function PageConnexion() {
                 minLength={12}
               />
             </div>
+            {mode === "connexion" ? (
+              <Link href="/mot-de-passe-oublie" className="text-sm underline">
+                Mot de passe oublié ?
+              </Link>
+            ) : null}
             {erreur ? <p role="alert">{erreur}</p> : null}
             <Button type="submit" disabled={envoi}>
               {envoi ? "…" : mode === "connexion" ? "Se connecter" : "Créer le compte"}

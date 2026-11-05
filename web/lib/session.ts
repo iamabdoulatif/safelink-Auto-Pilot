@@ -1,6 +1,8 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { db } from "@/lib/db";
 import {
+  emissionSession,
   NOM_COOKIE_SESSION,
   resoudreContexte,
   type Session,
@@ -30,6 +32,16 @@ export async function session(): Promise<Session> {
   const valeur = (await cookies()).get(NOM_COOKIE_SESSION)?.value ?? null;
   const ctx = secret ? resoudreContexte(valeur, secret) : null;
   if (!ctx) throw new ErreurAuthentification();
+  // Une session ouverte avant le dernier changement de mot de passe est
+  // revoquee. ponytail: le portier Edge ne lit pas la base, certaines routes
+  // repondent donc 500 au lieu de 401 ; l'acces reste refuse.
+  const { rows } = await db.query(
+    `SELECT 1 FROM utilisateurs
+     WHERE courriel = $1
+       AND date_trunc('second', mot_de_passe_change_le) > to_timestamp($2)`,
+    [ctx.utilisateurId, emissionSession(valeur as string)],
+  );
+  if (rows.length > 0) throw new ErreurAuthentification();
   return ctx;
 }
 

@@ -75,3 +75,28 @@ export async function verifierChatId(
     .find((v): v is string => typeof v === "string" && v.length > 0);
   return { titre: titre ?? chatId.trim() };
 }
+
+// Envoie un message texte. L'erreur ne contient ni le jeton du bot ni le
+// contenu du message : elle peut etre journalisee sans risque.
+export async function envoyerMessageTelegram(
+  jeton: string,
+  chatId: string,
+  texte: string,
+): Promise<void> {
+  const reponse = await fetch(
+    `https://api.telegram.org/bot${jeton}/sendMessage`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        chat_id: chatId,
+        text: texte,
+        link_preview_options: { is_disabled: true },
+      }),
+      signal: AbortSignal.timeout(15000),
+    },
+  );
+  if (!reponse.ok) {
+    throw new Error("Telegram a refusé le message (HTTP " + reponse.status + ").");
+  }
+}

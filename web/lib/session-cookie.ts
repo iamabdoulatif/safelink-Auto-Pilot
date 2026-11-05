@@ -73,6 +73,14 @@ export function verifierSession(
   return { utilisateurId: charge.uid, tenantId: charge.tenant };
 }
 
+// Date d'emission (secondes) d'un cookie deja verifie, deduite de l'echeance.
+export function emissionSession(valeur: string): number {
+  const charge = JSON.parse(
+    Buffer.from(valeur.split(".")[0], "base64url").toString("utf8"),
+  ) as { exp: number };
+  return charge.exp - DUREE_SESSION_SECONDES;
+}
+
 // Point d'entree unique : l'identite vient du cookie signe, jamais des
 // en-tetes. Sans cookie valide : null (la route repond 401).
 export function resoudreContexte(
