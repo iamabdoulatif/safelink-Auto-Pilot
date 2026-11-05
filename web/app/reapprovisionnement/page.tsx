@@ -255,8 +255,9 @@ function Contenu({
         <CardHeader>
           <CardTitle>Mes règles</CardTitle>
           <CardDescription>
-            Une règle par routeur et profil. Seules les règles actives sont
-            lues par n8n toutes les 15 minutes.
+            Une règle par routeur et profil. Seules les règles actives génèrent
+            des tickets. Une règle en pause est d&apos;abord simulée
+            automatiquement, sans créer de ticket.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -448,7 +449,7 @@ function Contenu({
           <DialogFooter>
             <Button onClick={() => setCible(null)}>Annuler</Button>
             <Button
-              disabled={occupe}
+              disabled={occupe || (cible?.blocages.length ?? 0) > 0}
               onClick={() => cible && void changerActivation(cible, true)}
             >
               Je confirme l&apos;activation

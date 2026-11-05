@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { db } from "@/lib/db";
 import { verifierAppelInterne } from "@/lib/n8n-interne";
+import { modeJobReappro } from "@/lib/reappro-jobs";
 
 // Distribue les jobs de reapprovisionnement a n8n (Schedule Trigger 15 min).
 // 1. Signature HMAC + horodatage + anti-rejeu (voir lib/n8n-interne).
@@ -12,6 +13,8 @@ import { verifierAppelInterne } from "@/lib/n8n-interne";
 // 5. Un runId unique par job, sans aucun mot de passe en retour.
 // 6. Regles desarmees (hysteresis) : job de SURVEILLANCE (quantite nulle,
 //    sans creation) pour observer le repassage au-dessus du seuil.
+// 7. Regles en pause jamais simulees : job de SIMULATION (lecture seule),
+//    sinon la condition d'activation ne pourrait jamais etre remplie.
 type Regle = {
   regle_id: number;
   tenant_id: string;
@@ -27,6 +30,8 @@ type Regle = {
   quantite_cible: number;
   canal: string;
   stock_rearme: boolean;
+  actif: boolean;
+  simulation_reussie: boolean;
 };
 
 const VERROU_SQL = `SELECT id FROM ticket_generation_runs
@@ -37,25 +42,38 @@ const VERROU_SQL = `SELECT id FROM ticket_generation_runs
       AND demarre_le > now() - interval '2 hours'))
   LIMIT 1`;
 
+const SELECT_REGLES = `SELECT s.id AS regle_id, s.tenant_id, s.utilisateur_id,
+       s.router_connection_id, s.mikhmon_connection_id, s.profile_id,
+       s.profil, p.valide AS profil_valide, r.actif AS routeur_actif,
+       s.seuil, s.quantite_generation, s.quantite_cible, s.canal,
+       s.stock_rearme, s.actif, s.simulation_reussie
+     FROM auto_replenishment_settings s
+     JOIN configurations_routeurs r
+       ON r.id = s.router_connection_id AND r.actif = true
+     LEFT JOIN hotspot_profiles p ON p.id = s.profile_id`;
+
+const FREQUENCE_ECOULEE = `(s.derniere_verif_le IS NULL
+         OR s.derniere_verif_le <
+           now() - (s.frequence_minutes || ' minutes')::interval)`;
+
 async function reglesActives(
   surveillance: boolean,
   simulation: boolean,
 ): Promise<Regle[]> {
   const { rows } = await db.query(
-    `SELECT s.id AS regle_id, s.tenant_id, s.utilisateur_id,
-       s.router_connection_id, s.mikhmon_connection_id, s.profile_id,
-       s.profil, p.valide AS profil_valide, r.actif AS routeur_actif,
-       s.seuil, s.quantite_generation, s.quantite_cible, s.canal,
-       s.stock_rearme
-     FROM auto_replenishment_settings s
-     JOIN configurations_routeurs r
-       ON r.id = s.router_connection_id AND r.actif = true
-     LEFT JOIN hotspot_profiles p ON p.id = s.profile_id
+    `${SELECT_REGLES}
        WHERE ${simulation ? "true" : "s.actif = true"}
        AND s.stock_rearme = ${surveillance ? "false" : "true"}
-       AND (${simulation ? "true" : `(s.derniere_verif_le IS NULL
-         OR s.derniere_verif_le <
-           now() - (s.frequence_minutes || ' minutes')::interval)`})`,
+       AND (${simulation ? "true" : FREQUENCE_ECOULEE})`,
+  );
+  return rows as Regle[];
+}
+
+async function reglesASimuler(): Promise<Regle[]> {
+  const { rows } = await db.query(
+    `${SELECT_REGLES}
+       WHERE s.actif = false AND s.simulation_reussie = false
+       AND ${FREQUENCE_ECOULEE}`,
   );
   return rows as Regle[];
 }
@@ -70,6 +88,7 @@ export async function POST(req: Request) {
     regles = [
       ...(await reglesActives(false, simulation)),
       ...(simulation ? [] : await reglesActives(true, false)),
+      ...(simulation ? [] : await reglesASimuler()),
     ];
   } catch {
     return Response.json({ error: "Lecture des règles impossible." },
@@ -92,7 +111,12 @@ export async function POST(req: Request) {
       ignores.push({ ...base, motif: "profil non validé" });
       continue;
     }
-    const enSurveillance = !regle.stock_rearme;
+    const mode = modeJobReappro({
+      actif: regle.actif,
+      simulationReussie: regle.simulation_reussie,
+      stockRearme: regle.stock_rearme,
+    }, simulation);
+    const enSurveillance = mode.surveillance;
     try {
       if (!simulation) {
         const { rows: verrous } = await db.query(VERROU_SQL,
@@ -113,8 +137,8 @@ export async function POST(req: Request) {
         [runId, regle.tenant_id, regle.utilisateur_id,
           regle.mikhmon_connection_id, regle.router_connection_id,
           regle.profil, enSurveillance ? 1 : regle.quantite_generation,
-          regle.seuil, regle.quantite_cible, regle.canal, simulation,
-          simulation ? "simulation" : "demande"],
+          regle.seuil, regle.quantite_cible, regle.canal, mode.simulation,
+          mode.simulation ? "simulation" : "demande"],
       );
       await db.query(
         `UPDATE auto_replenishment_settings
@@ -132,7 +156,7 @@ export async function POST(req: Request) {
         threshold: regle.seuil,
         targetQuantity: enSurveillance ? 0 : regle.quantite_generation,
         deliveryChannel: regle.canal,
-        statut: simulation ? "simulation" : "demande",
+        statut: mode.simulation ? "simulation" : "demande",
         surveillance: enSurveillance,
         dateCreation: creeLe,
       });

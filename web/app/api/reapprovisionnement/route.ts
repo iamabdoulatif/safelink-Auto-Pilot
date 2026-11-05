@@ -50,7 +50,7 @@ async function blocagesActivation(regleId: number, tenantId: string,
   const { rows } = await db.query(
     `SELECT s.router_connection_id, s.profile_id, s.canal,
        r.actif AS routeur_actif, r.statut_connexion AS routeur_statut,
-       p.valide AS profil_valide, s.simulation_reussie
+       p.valide AS profil_valide, s.simulation_reussie, s.derniere_erreur
      FROM auto_replenishment_settings s
      JOIN configurations_routeurs r ON r.id = s.router_connection_id
      LEFT JOIN hotspot_profiles p ON p.id = s.profile_id
@@ -61,6 +61,7 @@ async function blocagesActivation(regleId: number, tenantId: string,
     router_connection_id: number; profile_id: number | null; canal: string;
     routeur_actif: boolean; routeur_statut: string;
     profil_valide: boolean | null; simulation_reussie: boolean;
+    derniere_erreur: string | null;
   }[];
   if (lignes.length === 0) return ["Règle introuvable."];
   const l = lignes[0];
@@ -105,7 +106,11 @@ async function blocagesActivation(regleId: number, tenantId: string,
     }
   }
   if (!l.simulation_reussie) {
-    motifs.push("Mode simulation non réussi.");
+    motifs.push(l.derniere_erreur
+      ? "Dernière simulation échouée : " + l.derniere_erreur +
+        " Nouvel essai au prochain contrôle (15 minutes maximum)."
+      : "Simulation en attente : elle se lance automatiquement au prochain " +
+        "contrôle (15 minutes maximum).");
   }
   return motifs;
 }
