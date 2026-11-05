@@ -40,6 +40,7 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
+  --color-signal: var(--signal);
   --color-status-critique: var(--status-critique);
   --color-status-majeur: var(--status-majeur);
   --color-status-ok: var(--status-ok);
@@ -76,6 +77,7 @@
   --border: #d6d6d6;
   --input: #d6d6d6;
   --ring: #191a23;
+  --signal: #e8620c;
   --status-critique: #c24e2d;
   --status-majeur: #191a23;
   --status-ok: #4d7c0f;
@@ -112,6 +114,7 @@
   --accent: #b9ff66;
   --accent-foreground: #191a23;
   --destructive: #d96a49;
+  --signal: #ff8a3d;
   --border: rgb(243 243 243 / 12%);
   --input: rgb(243 243 243 / 16%);
   --ring: #b9ff66;

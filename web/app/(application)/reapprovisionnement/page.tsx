@@ -16,6 +16,16 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SelecteurProfilsHotspot } from "@/components/selecteur-profils-hotspot";
 import {
+  Download,
+  MessageCircle,
+  Pause,
+  Pencil,
+  Play,
+  Printer,
+  RefreshCw,
+  Send,
+} from "lucide-react";
+import {
   Table,
   TableBody,
   TableCell,
@@ -233,10 +243,40 @@ function Contenu({
     }
   }
 
+  const nbActives = regles.filter((x) => x.actif).length;
+  const nbPause = regles.length - nbActives;
+
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="text-2xl font-bold">Réapprovisionnement automatique</h1>
-      <Alert>
+      <div className="hero-entree flex flex-col gap-3">
+        <h1 className="text-2xl font-semibold tracking-tight">Réapprovisionnement automatique</h1>
+        <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground">
+          Vos règles de réassort par routeur et par profil. Une règle active
+          génère ses tickets toute seule dès que le stock passe sous son seuil.
+        </p>
+        <ul className="flex flex-wrap gap-2" aria-label="Résumé des règles">
+          <li>
+            <Badge variant="secondary">
+              <span aria-hidden="true" className="size-2 rounded-full bg-foreground" />
+              {regles.length} règle{regles.length > 1 ? "s" : ""}
+            </Badge>
+          </li>
+          <li>
+            <Badge className="bg-accent text-accent-foreground">
+              <span aria-hidden="true" className="size-2 animate-pulse rounded-full bg-accent-foreground" />
+              {nbActives} active{nbActives > 1 ? "s" : ""}
+            </Badge>
+          </li>
+          <li>
+            <Badge className="bg-signal text-white">
+              <span aria-hidden="true" className="size-2 rounded-full bg-white" />
+              {nbPause} en pause
+            </Badge>
+          </li>
+        </ul>
+      </div>
+      <Alert className="hero-entree border-signal/40 bg-signal/5" style={{ animationDelay: "60ms" }}>
+        <RefreshCw aria-hidden="true" className="text-signal" />
         <AlertTitle>Tickets créés sur RouterOS</AlertTitle>
         <AlertDescription>
           Les tickets sont créés sur RouterOS et deviennent visibles
@@ -247,21 +287,24 @@ function Contenu({
         </AlertDescription>
       </Alert>
       {erreur && (
-        <Alert>
+        <Alert variant="destructive">
           <AlertTitle>Erreur</AlertTitle>
           <AlertDescription>{erreur}</AlertDescription>
         </Alert>
       )}
       {message && (
-        <Alert>
-          <AlertTitle>Information</AlertTitle>
+        <Alert className="border-status-ok/40 bg-status-ok/5">
+          <AlertTitle>C&apos;est fait</AlertTitle>
           <AlertDescription>{message}</AlertDescription>
         </Alert>
       )}
 
-      <Card>
+      <Card className="hero-entree" style={{ animationDelay: "120ms" }}>
         <CardHeader>
-          <CardTitle>Mes règles</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            Mes règles
+            <Badge className="bg-accent text-accent-foreground">{regles.length}</Badge>
+          </CardTitle>
           <CardDescription>
             Une règle par routeur et profil. Seules les règles actives génèrent
             des tickets. Une règle en pause est d&apos;abord simulée
@@ -272,68 +315,161 @@ function Contenu({
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Routeur</TableHead>
-                <TableHead>Profil</TableHead>
-                <TableHead>Seuil</TableHead>
-                <TableHead>Quantité</TableHead>
+                <TableHead>Routeur · Profil</TableHead>
+                <TableHead>Stock</TableHead>
+                <TableHead>Génération</TableHead>
                 <TableHead>Canal</TableHead>
                 <TableHead>État</TableHead>
-                <TableHead>Action</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {regles.map((regle) => (
-                <TableRow key={regle.id}>
-                  <TableCell>{regle.routeur_nom}</TableCell>
-                  <TableCell>{regle.profil}</TableCell>
-                  <TableCell>{regle.seuil}</TableCell>
-                  <TableCell>{regle.quantite_generation}</TableCell>
-                  <TableCell>{regle.canal}</TableCell>
-                  <TableCell>
-                    <Badge>{regle.actif ? "actif" : "en pause"}</Badge>
-                    {regle.simulation_reussie && (
-                      <Badge> simulation ok</Badge>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex flex-wrap gap-2">
-                      <Button
-                        disabled={occupe}
-                        variant="outline"
-                        onClick={() => modifier(regle)}
-                      >
-                        Modifier
-                      </Button>
-                      {regle.actif ? (
-                        <Button
-                          disabled={occupe}
-                          onClick={() => void changerActivation(regle, false)}
-                        >
-                          Mettre en pause
-                        </Button>
+              {regles.map((regle) => {
+                const stock = regle.dernier_stock;
+                const sousSeuil = stock !== null && stock <= regle.seuil;
+                const largeur =
+                  stock === null
+                    ? 0
+                    : Math.min(100, Math.round((stock / Math.max(regle.seuil * 2, stock, 1)) * 100));
+                const IconeCanal =
+                  regle.canal === "telegram"
+                    ? Send
+                    : regle.canal === "whatsapp"
+                      ? MessageCircle
+                      : regle.canal === "printnode"
+                        ? Printer
+                        : Download;
+                const nomCanal =
+                  regle.canal === "telegram"
+                    ? "Telegram"
+                    : regle.canal === "whatsapp"
+                      ? "WhatsApp"
+                      : regle.canal === "printnode"
+                        ? "PrintNode"
+                        : "Téléchargement";
+                return (
+                  <TableRow key={regle.id} className="transition-colors hover:bg-secondary/50">
+                    <TableCell>
+                      <span className="font-medium">{regle.routeur_nom}</span>
+                      <span className="mt-1 flex">
+                        <Badge variant="outline" className="font-mono text-[11px]">
+                          {regle.profil}
+                        </Badge>
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      {stock === null ? (
+                        <span className="text-muted-foreground">pas encore relevé</span>
                       ) : (
+                        <div className="flex min-w-28 flex-col gap-1">
+                          <span className={sousSeuil ? "font-semibold text-signal" : "font-semibold"}>
+                            {stock} en stock
+                          </span>
+                          <div aria-hidden="true" className="h-1.5 overflow-hidden rounded-full bg-secondary">
+                            <div
+                              className={sousSeuil ? "h-full rounded-full bg-signal" : "h-full rounded-full bg-accent"}
+                              style={{ width: `${largeur}%` }}
+                            />
+                          </div>
+                          <span className="text-xs text-muted-foreground">
+                            seuil {regle.seuil} · toutes les {regle.frequence_minutes} min
+                          </span>
+                        </div>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <span className="font-medium tabular-nums">{regle.quantite_generation}</span>
+                      <span className="block text-xs text-muted-foreground">
+                        cible {regle.quantite_cible}
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      <span className="flex items-center gap-1.5">
+                        <IconeCanal aria-hidden="true" className="text-muted-foreground" />
+                        {nomCanal}
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex flex-col items-start gap-1.5">
+                        {regle.actif ? (
+                          <Badge className="bg-accent text-accent-foreground">
+                            <span aria-hidden="true" className="size-2 animate-pulse rounded-full bg-accent-foreground" />
+                            Actif
+                          </Badge>
+                        ) : (
+                          <Badge className="bg-signal text-white">
+                            <Pause aria-hidden="true" />
+                            En pause
+                          </Badge>
+                        )}
+                        {regle.simulation_reussie ? (
+                          <Badge variant="outline" className="border-signal/40 text-signal">
+                            Simulation OK
+                          </Badge>
+                        ) : null}
+                        {regle.derniere_erreur ? (
+                          <span className="max-w-44 text-xs text-destructive">{regle.derniere_erreur}</span>
+                        ) : null}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex flex-wrap justify-end gap-2">
                         <Button
                           disabled={occupe}
-                          onClick={() => setCible(regle)}
+                          variant="outline"
+                          size="sm"
+                          onClick={() => modifier(regle)}
                         >
-                          Activer le réapprovisionnement automatique
+                          <Pencil data-icon="inline-start" aria-hidden="true" />
+                          Modifier
                         </Button>
-                      )}
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
+                        {regle.actif ? (
+                          <Button
+                            disabled={occupe}
+                            size="sm"
+                            className="bg-signal text-white hover:bg-signal/90"
+                            onClick={() => void changerActivation(regle, false)}
+                          >
+                            <Pause data-icon="inline-start" aria-hidden="true" />
+                            Pause
+                          </Button>
+                        ) : (
+                          <Button
+                            disabled={occupe}
+                            size="sm"
+                            className="bg-accent text-accent-foreground hover:bg-accent/85"
+                            onClick={() => setCible(regle)}
+                          >
+                            <Play data-icon="inline-start" aria-hidden="true" />
+                            Activer
+                          </Button>
+                        )}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
           {regles.length === 0 && (
-            <p className="pt-4 text-sm">Aucune règle pour le moment.</p>
+            <div className="flex flex-col items-center gap-2 py-10 text-center">
+              <RefreshCw aria-hidden="true" className="text-muted-foreground" />
+              <p className="font-display text-lg">Aucune règle pour le moment</p>
+              <p className="max-w-sm text-sm text-muted-foreground">
+                Créez votre première règle ci-dessous : choisissez un routeur,
+                un profil, un seuil, et le tour est joué.
+              </p>
+            </div>
           )}
         </CardContent>
       </Card>
 
-      <Card>
+      <Card id="nouvelle-regle" className="hero-entree scroll-mt-6" style={{ animationDelay: "180ms" }}>
         <CardHeader>
-          <CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            <span aria-hidden="true" className="flex size-8 items-center justify-center rounded-md bg-signal text-white">
+              <RefreshCw />
+            </span>
             {regleEnModification === null ? "Nouvelle règle" : "Modifier la règle"}
           </CardTitle>
           <CardDescription>
@@ -346,6 +482,7 @@ function Contenu({
             <Label htmlFor="routeur">Routeur</Label>
             <select
               id="routeur"
+              className="h-9 w-full rounded-lg border border-input bg-background px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
               value={form.routerConnectionId}
               onChange={(e) => setForm((f) => ({
                 ...f,
@@ -368,28 +505,30 @@ function Contenu({
               onChange={(profil) => setForm((f) => ({ ...f, profil }))}
             />
           </div>
-          <div>
-            <Label htmlFor="seuil">Seuil minimum</Label>
-            <Input id="seuil" inputMode="numeric" {...champ("seuil")} />
-          </div>
-          <div>
-            <Label htmlFor="quantite">Quantité de génération</Label>
-            <Input id="quantite" inputMode="numeric"
-              {...champ("quantiteGeneration")} />
-          </div>
-          <div>
-            <Label htmlFor="cible">Quantité cible</Label>
-            <Input id="cible" inputMode="numeric"
-              {...champ("quantiteCible")} />
-          </div>
-          <div>
-            <Label htmlFor="frequence">Fréquence (minutes)</Label>
-            <Input id="frequence" inputMode="numeric"
-              {...champ("frequenceMinutes")} />
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <Label htmlFor="seuil">Seuil minimum (tickets neufs)</Label>
+              <Input id="seuil" inputMode="numeric" {...champ("seuil")} />
+            </div>
+            <div>
+              <Label htmlFor="quantite">Quantité de génération</Label>
+              <Input id="quantite" inputMode="numeric"
+                {...champ("quantiteGeneration")} />
+            </div>
+            <div>
+              <Label htmlFor="cible">Quantité cible</Label>
+              <Input id="cible" inputMode="numeric"
+                {...champ("quantiteCible")} />
+            </div>
+            <div>
+              <Label htmlFor="frequence">Fréquence de vérification (minutes)</Label>
+              <Input id="frequence" inputMode="numeric"
+                {...champ("frequenceMinutes")} />
+            </div>
           </div>
           <div>
             <Label htmlFor="canal">Canal de livraison</Label>
-            <select id="canal" {...champ("canal")}>
+            <select id="canal" className="h-9 w-full rounded-lg border border-input bg-background px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50" {...champ("canal")}>
               <option value="telechargement">Téléchargement PDF</option>
               <option value="telegram">Telegram</option>
               <option value="whatsapp">WhatsApp</option>
@@ -462,7 +601,7 @@ function Contenu({
               {...champ("volumeLimiteOctets")} />
           </div>
           <div className="flex flex-wrap gap-2">
-            <Button disabled={occupe} onClick={() => void enregistrer()}>
+            <Button disabled={occupe} className="bg-signal text-white hover:bg-signal/90" onClick={() => void enregistrer()}>
               {regleEnModification === null
                 ? "Enregistrer la règle"
                 : "Enregistrer les modifications"}
@@ -513,9 +652,10 @@ function Contenu({
             </div>
           )}
           <DialogFooter>
-            <Button onClick={() => setCible(null)}>Annuler</Button>
+            <Button variant="outline" onClick={() => setCible(null)}>Annuler</Button>
             <Button
               disabled={occupe || (cible?.blocages.length ?? 0) > 0}
+              className="bg-signal text-white hover:bg-signal/90"
               onClick={() => cible && void changerActivation(cible, true)}
             >
               Je confirme l&apos;activation
