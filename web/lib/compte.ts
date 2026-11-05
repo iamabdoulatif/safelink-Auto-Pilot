@@ -13,6 +13,7 @@ export type Profil = {
   courriel: string;
   creeLe: string;
   motDePasseChangeLe: string | null;
+  aPhoto: boolean;
   recuperationTelegram: "disponible" | "groupe" | "absente";
 };
 
@@ -21,9 +22,11 @@ export async function lireProfil(courriel: string): Promise<Profil | null> {
     courriel: string;
     created_at: Date;
     mot_de_passe_change_le: Date | null;
+    a_photo: boolean;
     chat_id: string | null;
   }>(
-    `SELECT u.courriel, u.created_at, u.mot_de_passe_change_le, t.chat_id
+    `SELECT u.courriel, u.created_at, u.mot_de_passe_change_le,
+       u.photo IS NOT NULL AS a_photo, t.chat_id
      FROM utilisateurs u
      LEFT JOIN configurations_telegram t ON t.tenant_id = u.tenant_id
      WHERE u.courriel = $1`,
@@ -35,6 +38,7 @@ export async function lireProfil(courriel: string): Promise<Profil | null> {
     courriel: l.courriel,
     creeLe: l.created_at.toISOString(),
     motDePasseChangeLe: l.mot_de_passe_change_le?.toISOString() ?? null,
+    aPhoto: l.a_photo,
     recuperationTelegram: !l.chat_id
       ? "absente"
       : estChatPrive(l.chat_id)

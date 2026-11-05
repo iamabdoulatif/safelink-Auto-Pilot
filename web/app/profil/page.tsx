@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { FormulaireMotDePasse } from "@/components/formulaire-mot-de-passe";
+import { PhotoProfil } from "@/components/photo-profil";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
@@ -38,6 +39,7 @@ export default async function PageProfil() {
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-3 text-sm">
+          <PhotoProfil courriel={profil.courriel} aPhoto={profil.aPhoto} />
           <p className="break-all">
             <span className="text-muted-foreground">Courriel : </span>
             {profil.courriel}
