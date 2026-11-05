@@ -10,7 +10,14 @@ export async function POST(req: Request) {
   const controle = await verifierAppelInterne(req, { exigerRunId: true });
   if ("reponse" in controle) return controle.reponse;
   const corps = controle.appel.corps;
-  const runId = typeof corps["runId"] === "string" ? corps["runId"] : "";
+  // Les anciennes versions du workflow signent l'identifiant sous
+  // `cleIdempotence`; accepter cet alias conserve la compatibilité sans
+  // desserrer la vérification : la valeur doit toujours égaler x-run-id.
+  const runId = typeof corps["runId"] === "string"
+    ? corps["runId"]
+    : typeof corps["cleIdempotence"] === "string"
+      ? corps["cleIdempotence"]
+      : "";
   if (!runId || runId !== controle.appel.runId) {
     return Response.json({ error: "runId incohérent." }, { status: 400 });
   }

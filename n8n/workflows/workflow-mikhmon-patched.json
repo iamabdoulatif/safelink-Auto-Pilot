@@ -59,7 +59,7 @@
     272
    ],
    "parameters": {
-    "jsCode": "const input = $json.body ?? $json;\nvar reponseJob = input && input.data ? input.data : null;\nif (reponseJob && reponseJob.runId) {\n  var travailJob = {};\n  try {\n    var lusJob = $('Signer la lecture config').all();\n    for (var kJob = 0; kJob < lusJob.length; kJob++) {\n      var candJob = (lusJob[kJob] && lusJob[kJob].json) || {};\n      if (String(candJob.runId) === String(reponseJob.runId)) { travailJob = candJob; break; }\n    }\n  } catch (eJob) {}\n  var routeurJob = reponseJob.routeur || {};\n  var mikhmonJob = reponseJob.mikhmon || {};\n  var lotJob = reponseJob.lot || {};\n  var livraisonJob = reponseJob.livraison || {};\n  var tgJob = livraisonJob.telegram || {};\n  var waJob = livraisonJob.whatsapp || {};\n  var pnJob = livraisonJob.printnode || {};\n  var racineJob = String(travailJob.appUrl || '');\n  if (!racineJob) { try { racineJob = String(($(\"Signer l'appel jobs\").first().json || {}).appUrl || \"\"); } catch (eRacine) {} }\n  if (!routeurJob.adresse || !routeurJob.motDePasseEcriture) throw new Error('Configuration routeur incomplète.');\n  input.routerBaseUrl = String(routeurJob.adresse).replace(/\\/$/, '');\n  input.routerUser = routeurJob.utilisateurEcriture;\n  input.routerPassword = routeurJob.motDePasseEcriture;\n  input.hotspotServer = mikhmonJob.serveurHotspot || 'all';\n  input.profile = lotJob.profil;\n  input.quantity = lotJob.quantite;\n  input.threshold = lotJob.seuil;\n  var canalJob = String(livraisonJob.canal || 'telechargement');\n  input.deliveryChannel = canalJob === 'telechargement' ? 'pdf' : canalJob;\n  input.recipient = livraisonJob.destinataire || tgJob.chatId || waJob.destinataire || '';\n  input.tenantId = reponseJob.tenantId;\n  input.runId = reponseJob.runId;\n  input.cleIdempotence = reponseJob.runId;\n  input.simulation = reponseJob.simulation === true || travailJob.surveillance === true;\n  input.telegramBotToken = tgJob.jeton || '';\n  input.whatsappWebhookUrl = waJob.webhookUrl || '';\n  input.printNodeApiKey = pnJob.cle || '';\n  input.printNodePrinterId = pnJob.printerId || 0;\n  if (racineJob) input.callbackUrl = racineJob.replace(/\\/$/, '') + '/api/internal/n8n/callback';\n}\n// Normalisation des entrees imposees (/api/generer-tickets) : userId/tenantId,\n// mikhmonConnectionId, routerConnectionId, profile, quantity, deliveryChannel,\n// telegramChatId, runId, timestamp. runId = cle d'idempotence (cleIdempotence).\n// L'URL Mikhmon vient de la configuration applicative, jamais d'ici :\n// ce workflow n'appelle que RouterOS (/rest/ip/hotspot/user), source unique\n// de verite (tickets visibles automatiquement dans Mikhmon). AUCUN mot de\n// passe de ticket ne remonte vers l'application : seul le NOMBRE est signe.\nif (input.runId && !input.cleIdempotence) input.cleIdempotence = String(input.runId);\nif (input.quantity === undefined && input.quantite !== undefined) input.quantity = input.quantite;\nif (input.profile === undefined && input.profil !== undefined) input.profile = input.profil;\nif (input.deliveryChannel === undefined && input.canal !== undefined) input.deliveryChannel = input.canal;\nif (input.recipient === undefined && input.telegramChatId !== undefined) input.recipient = String(input.telegramChatId);\nif (input.userId === undefined && input.utilisateurId !== undefined) input.userId = String(input.utilisateurId);\nif (input.quantity === undefined && input.targetQuantity !== undefined) input.quantity = input.targetQuantity;\nif (input.recipient === undefined && input.whatsappRecipient !== undefined) input.recipient = String(input.whatsappRecipient);\nconst env = (name, fallback = '') => (($env && $env[name]) || fallback); // Entrees signees SafeLink d'abord, $env en repli (compose OK).\nconst asInt = (value, fallback) => { const n = Number(value); return Number.isFinite(n) ? Math.floor(n) : fallback; };\n\nconst rawBase = String(input.routerBaseUrl || env('ROUTEROS_BASE_URL', '')).replace(/\\/$/, '');\nif (!rawBase) throw new Error(\"ROUTEROS_BASE_URL est obligatoire (ex. http://host.docker.internal:9110 depuis n8n Docker).\");\nif (!/^https?:\\/\\/[^\\/\\s]+(\\/.*)?$/i.test(rawBase)) throw new Error('ROUTEROS_BASE_URL invalide : ' + rawBase);\nlet routerBaseUrl = rawBase;\nconst tenantId = String(input.tenantId || env('TENANT_ID', 'defaut') || 'defaut').slice(0, 64);\nconst cleIdempotence = String(input.cleIdempotence || '').slice(0, 128);\n\nconst profilesRaw = String(input.profiles ?? input.profile ?? env('MIKHMON_PROFILES', '') ?? env('MIKHMON_PROFILE', 'default'));\nconst profiles = [...new Set(profilesRaw.split(',').map(s => s.trim()).filter(Boolean))];\nif (!profiles.length) throw new Error('Aucun profil : renseignez profile ou MIKHMON_PROFILES (ex. \"default,vip\").');\n\nconst deliveryChannel = String(input.deliveryChannel || env('DELIVERY_CHANNEL', 'telegram')).toLowerCase();\nif (!['telegram', 'whatsapp', 'printnode', 'interface', 'pdf'].includes(deliveryChannel)) {\n  throw new Error('DELIVERY_CHANNEL inconnu : \"' + deliveryChannel + '\" (telegram, whatsapp, printnode, interface ou pdf).');\n}\n\nconst shared = {\n  routerBaseUrl,\n  routerUser: String(input.routerUser || env('ROUTEROS_USER', 'n8n-vouchers')),\n  routerPassword: String(input.routerPassword || env('ROUTEROS_PASSWORD', '')),\n  hotspotServer: String(input.hotspotServer || env('MIKHMON_HOTSPOT_SERVER', 'all')),\n  threshold: Math.max(0, asInt(input.threshold ?? env('TICKET_THRESHOLD', 50), 50)),\n  quantity: Math.max(1, Math.min(500, asInt(input.quantity ?? env('TICKET_QUANTITY', 50), 50))),\n  usernameLength: Math.max(3, Math.min(12, asInt(input.usernameLength ?? 4, 4))),\n  passwordLength: Math.max(3, Math.min(16, asInt(input.passwordLength ?? 4, 4))),\n  prefix: String(input.prefix ?? env('TICKET_PREFIX', '')),\n  limitUptime: String(input.limitUptime ?? env('TICKET_LIMIT_UPTIME', '')),\n  limitBytesTotal: String(input.limitBytesTotal ?? env('TICKET_LIMIT_BYTES_TOTAL', '')),\n  deliveryChannel,\n  recipient: String(input.recipient || env('DELIVERY_RECIPIENT', '')),\n  tenantId,\n  userId: String(input.userId || ''),\n  mikhmonConnectionId: input.mikhmonConnectionId === undefined || input.mikhmonConnectionId === null ? null : Number(input.mikhmonConnectionId),\n  routerConnectionId: input.routerConnectionId === undefined || input.routerConnectionId === null ? null : Number(input.routerConnectionId),\n  cleIdempotence: cleIdempotence,\n  forcerGeneration: input.forcerGeneration === true,\n  callbackUrl: String(input.callbackUrl || ''),\n  pdfServiceUrl: String(input.pdfServiceUrl || env('PDF_SERVICE_URL', 'http://gotenberg:3000/forms/chromium/convert/html')).replace(/\\/$/, ''),\n  whatsappWebhookUrl: String(input.whatsappWebhookUrl || env('WHATSAPP_WEBHOOK_URL', '')),\n  printNodePrinterId: asInt(input.printNodePrinterId ?? env('PRINTNODE_PRINTER_ID', 0), 0),\n  printNodeApiKey: String(input.printNodeApiKey || env('PRINTNODE_API_KEY', '')),\n  telegramBotToken: String(input.telegramBotToken || env('TELEGRAM_BOT_TOKEN', ''))\n};\nreturn profiles.map(profile => ({ json: { ...shared, profile } }));"
+    "jsCode": "const input = $json.body ?? $json;\nvar reponseJob = input && input.data ? input.data : null;\nif (reponseJob && reponseJob.runId) {\n  var travailJob = {};\n  try {\n    var lusJob = $('Signer la lecture config').all();\n    for (var kJob = 0; kJob < lusJob.length; kJob++) {\n      var candJob = (lusJob[kJob] && lusJob[kJob].json) || {};\n      if (String(candJob.runId) === String(reponseJob.runId)) { travailJob = candJob; break; }\n    }\n  } catch (eJob) {}\n  var routeurJob = reponseJob.routeur || {};\n  var mikhmonJob = reponseJob.mikhmon || {};\n  var lotJob = reponseJob.lot || {};\n  var livraisonJob = reponseJob.livraison || {};\n  var tgJob = livraisonJob.telegram || {};\n  var waJob = livraisonJob.whatsapp || {};\n  var pnJob = livraisonJob.printnode || {};\n  var racineJob = String(travailJob.appUrl || '');\n  if (!racineJob) { try { racineJob = String(($(\"Signer l'appel jobs\").first().json || {}).appUrl || \"\"); } catch (eRacine) {} }\n  if (!routeurJob.adresse || !routeurJob.motDePasseEcriture) throw new Error('Configuration routeur incomplète.');\n  input.routerBaseUrl = String(routeurJob.adresse).replace(/\\/$/, '');\n  input.routerUser = routeurJob.utilisateurEcriture;\n  input.routerPassword = routeurJob.motDePasseEcriture;\n  input.hotspotServer = mikhmonJob.serveurHotspot || 'all';\n  input.profile = lotJob.profil;\n  input.quantity = lotJob.quantite;\n  input.threshold = lotJob.seuil;\n  var canalJob = String(livraisonJob.canal || 'telechargement');\n  input.deliveryChannel = canalJob === 'telechargement' ? 'pdf' : canalJob;\n  input.recipient = livraisonJob.destinataire || tgJob.chatId || waJob.destinataire || '';\n  input.tenantId = reponseJob.tenantId;\n  input.runId = reponseJob.runId;\n  input.cleIdempotence = reponseJob.runId;\n  input.simulation = reponseJob.simulation === true || travailJob.surveillance === true;\n  input.telegramBotToken = tgJob.jeton || '';\n  input.whatsappWebhookUrl = waJob.webhookUrl || '';\n  input.printNodeApiKey = pnJob.cle || '';\n  input.printNodePrinterId = pnJob.printerId || 0;\n  if (racineJob) input.callbackUrl = racineJob.replace(/\\/$/, '') + '/api/internal/n8n/callback';\n}\n// Normalisation des entrees imposees (/api/generer-tickets) : userId/tenantId,\n// mikhmonConnectionId, routerConnectionId, profile, quantity, deliveryChannel,\n// telegramChatId, runId, timestamp. runId = cle d'idempotence (cleIdempotence).\n// L'URL Mikhmon vient de la configuration applicative, jamais d'ici :\n// ce workflow n'appelle que RouterOS (/rest/ip/hotspot/user), source unique\n// de verite (tickets visibles automatiquement dans Mikhmon). AUCUN mot de\n// passe de ticket ne remonte vers l'application : seul le NOMBRE est signe.\nif (input.runId && !input.cleIdempotence) input.cleIdempotence = String(input.runId);\nif (input.quantity === undefined && input.quantite !== undefined) input.quantity = input.quantite;\nif (input.profile === undefined && input.profil !== undefined) input.profile = input.profil;\nif (input.deliveryChannel === undefined && input.canal !== undefined) input.deliveryChannel = input.canal;\nif (input.recipient === undefined && input.telegramChatId !== undefined) input.recipient = String(input.telegramChatId);\nif (input.userId === undefined && input.utilisateurId !== undefined) input.userId = String(input.utilisateurId);\nif (input.quantity === undefined && input.targetQuantity !== undefined) input.quantity = input.targetQuantity;\nif (input.recipient === undefined && input.whatsappRecipient !== undefined) input.recipient = String(input.whatsappRecipient);\nconst env = (name, fallback = '') => (($env && $env[name]) || fallback); // Entrees signees SafeLink d'abord, $env en repli (compose OK).\nconst asInt = (value, fallback) => { const n = Number(value); return Number.isFinite(n) ? Math.floor(n) : fallback; };\n\nconst rawBase = String(input.routerBaseUrl || env('ROUTEROS_BASE_URL', '')).replace(/\\/$/, '');\nif (!rawBase) throw new Error(\"ROUTEROS_BASE_URL est obligatoire (ex. http://host.docker.internal:9110 depuis n8n Docker).\");\nif (!/^https?:\\/\\/[^\\/\\s]+(\\/.*)?$/i.test(rawBase)) throw new Error('ROUTEROS_BASE_URL invalide : ' + rawBase);\nlet routerBaseUrl = rawBase;\nconst tenantId = String(input.tenantId || env('TENANT_ID', 'defaut') || 'defaut').slice(0, 64);\nconst cleIdempotence = String(input.cleIdempotence || '').slice(0, 128);\n\nconst profilesRaw = String(input.profiles ?? input.profile ?? env('MIKHMON_PROFILES', '') ?? env('MIKHMON_PROFILE', 'default'));\nconst profiles = [...new Set(profilesRaw.split(',').map(s => s.trim()).filter(Boolean))];\nif (!profiles.length) throw new Error('Aucun profil : renseignez profile ou MIKHMON_PROFILES (ex. \"default,vip\").');\n\nconst deliveryChannel = String(input.deliveryChannel || env('DELIVERY_CHANNEL', 'telegram')).toLowerCase();\nif (!['telegram', 'whatsapp', 'printnode', 'interface', 'pdf'].includes(deliveryChannel)) {\n  throw new Error('DELIVERY_CHANNEL inconnu : \"' + deliveryChannel + '\" (telegram, whatsapp, printnode, interface ou pdf).');\n}\n\nconst shared = {\n  routerBaseUrl,\n  routerUser: String(input.routerUser || env('ROUTEROS_USER', 'n8n-vouchers')),\n  routerPassword: String(input.routerPassword || env('ROUTEROS_PASSWORD', '')),\n  hotspotServer: String(input.hotspotServer || env('MIKHMON_HOTSPOT_SERVER', 'all')),\n  threshold: Math.max(0, asInt(input.threshold ?? env('TICKET_THRESHOLD', 50), 50)),\n  quantity: Math.max(1, Math.min(500, asInt(input.quantity ?? env('TICKET_QUANTITY', 50), 50))),\n  usernameLength: Math.max(3, Math.min(12, asInt(input.usernameLength ?? 4, 4))),\n  passwordLength: Math.max(3, Math.min(16, asInt(input.passwordLength ?? 4, 4))),\n  prefix: String(input.prefix ?? env('TICKET_PREFIX', '')),\n  limitUptime: String(input.limitUptime ?? env('TICKET_LIMIT_UPTIME', '')),\n  limitBytesTotal: String(input.limitBytesTotal ?? env('TICKET_LIMIT_BYTES_TOTAL', '')),\n  deliveryChannel,\n  recipient: String(input.recipient || env('DELIVERY_RECIPIENT', '')),\n  tenantId,\n  userId: String(input.userId || ''),\n  mikhmonConnectionId: input.mikhmonConnectionId === undefined || input.mikhmonConnectionId === null ? null : Number(input.mikhmonConnectionId),\n  routerConnectionId: input.routerConnectionId === undefined || input.routerConnectionId === null ? null : Number(input.routerConnectionId),\n  cleIdempotence: cleIdempotence,\n  runId: reponseJob && reponseJob.runId ? String(reponseJob.runId) : '',\n  simulation: input.simulation === true,\n  forcerGeneration: input.forcerGeneration === true,\n  callbackUrl: String(input.callbackUrl || ''),\n  pdfServiceUrl: String(input.pdfServiceUrl || env('PDF_SERVICE_URL', 'http://gotenberg:3000/forms/chromium/convert/html')).replace(/\\/$/, ''),\n  whatsappWebhookUrl: String(input.whatsappWebhookUrl || env('WHATSAPP_WEBHOOK_URL', '')),\n  printNodePrinterId: asInt(input.printNodePrinterId ?? env('PRINTNODE_PRINTER_ID', 0), 0),\n  printNodeApiKey: String(input.printNodeApiKey || env('PRINTNODE_API_KEY', '')),\n  telegramBotToken: String(input.telegramBotToken || env('TELEGRAM_BOT_TOKEN', ''))\n};\nreturn profiles.map(profile => ({ json: { ...shared, profile } }));"
    }
   },
   {
@@ -72,9 +72,9 @@
     272
    ],
    "parameters": {
-    "jsCode": "const inputs = $input.all().map(i => i.json);\nfunction parseUptime(v) {\n  if (v === null || v === undefined) return 0;\n  if (typeof v === 'number') return Number.isFinite(v) && v > 0 ? v : 0;\n  const s = String(v).trim();\n  if (s === '' || s === '0' || s === '0s') return 0;\n  let m = s.match(/^(?:(\\d+)w)?(?:(\\d+)d)?(?:(\\d+)h)?(?:(\\d+)m)?(?:(\\d+)s)?$/i);\n  if (m && m[0] !== '') {\n    const g = i => parseInt(m[i] || '0', 10);\n    return (((g(1) * 7 + g(2)) * 24 + g(3)) * 60 + g(4)) * 60 + g(5);\n  }\n  m = s.match(/^(\\d+):(\\d{1,2}):(\\d{1,2})$/);\n  if (m) return (+m[1]) * 3600 + (+m[2]) * 60 + (+m[3]);\n  const n = Number(s);\n  return Number.isFinite(n) && n > 0 ? Math.floor(n) : 0;\n}\nfunction isDisabled(u) {\n  return u.disabled === true || String(u.disabled || '').toLowerCase() === 'true';\n}\nasync function assertPdfService(url, helpers) {\n  if (!url) throw new Error('PDF_SERVICE_URL est obligatoire.');\n  const base = url.replace(/\\/forms\\/.*$/, '');\n  try {\n    await helpers.httpRequest({ method: 'GET', url: base + '/health', timeout: 10000 });\n    return;\n  } catch (e) { /* repli : sonde directe de l'endpoint */ }\n  try {\n    await helpers.httpRequest({ method: 'GET', url, timeout: 10000 });\n    return;\n  } catch (e) {\n    const sc = e.statusCode || (e.response && (e.response.statusCode || e.response.status));\n    if (sc === 404 || sc === 405) return;\n    throw new Error('Service PDF injoignable : ' + url + ' (' + (e.message || e) + '). Demarrez Gotenberg.');\n  }\n}\nasync function validateConfig(cfg, telegramToken, helpers) {\n  if (!cfg.routerPassword) throw new Error('ROUTEROS_PASSWORD est obligatoire. Utilisez un compte RouterOS dédié (ex. app-fix).');\n  await assertPdfService(cfg.pdfServiceUrl, helpers);\n  if (cfg.deliveryChannel === 'telegram' && !telegramToken) throw new Error('TELEGRAM_BOT_TOKEN est obligatoire pour le canal telegram.');\n  if ((cfg.deliveryChannel === 'telegram' || cfg.deliveryChannel === 'whatsapp') && !cfg.recipient) throw new Error('Destinataire vide pour le canal ' + cfg.deliveryChannel + ' (DELIVERY_RECIPIENT).');\n  if (cfg.deliveryChannel === 'whatsapp' && !cfg.whatsappWebhookUrl) throw new Error(\"WHATSAPP_WEBHOOK_URL est obligatoire pour le canal whatsapp.\");\n  if (cfg.deliveryChannel === 'printnode' && (!cfg.printNodeApiKey || !cfg.printNodePrinterId)) throw new Error('PRINTNODE_API_KEY et PRINTNODE_PRINTER_ID sont obligatoires pour le canal printnode.');\n}\nconst out = [];\nfor (const cfg of inputs) {\n  const telegramToken = cfg.telegramBotToken || '';\n  await validateConfig(cfg, telegramToken, this.helpers);\n  const auth = 'Basic ' + Buffer.from(cfg.routerUser + ':' + cfg.routerPassword).toString('base64');\n  const response = await this.helpers.httpRequest({\n    method: 'GET',\n    url: cfg.routerBaseUrl + '/rest/ip/hotspot/user',\n    headers: { Authorization: auth, Accept: 'application/json' },\n    json: true,\n    timeout: 30000,\n    skipSslCertificateValidation: (['1', 'true', 'oui'].indexOf(String(($env && $env.ROUTEROS_TLS_INSECURE) || '').toLowerCase()) !== -1) /* Exception labo explicite uniquement, verifie par defaut. */\n  });\n  const profRes = await this.helpers.httpRequest({\n    method: 'GET',\n    url: cfg.routerBaseUrl + '/rest/ip/hotspot/user/profile',\n    headers: { Authorization: auth, Accept: 'application/json' },\n    json: true,\n    timeout: 30000,\n    skipSslCertificateValidation: (['1', 'true', 'oui'].indexOf(String(($env && $env.ROUTEROS_TLS_INSECURE) || '').toLowerCase()) !== -1) /* Exception labo explicite uniquement, verifie par defaut. */\n  });\n  const profs = Array.isArray(profRes) ? profRes : (profRes.data || profRes.results || []);\n  if (!profs.some(p => String(p.name) === cfg.profile)) throw new Error('Profil hotspot \"' + cfg.profile + '\" introuvable (creez-le dans /ip/hotspot/user/profile).');\n  const users = Array.isArray(response) ? response : (response.data || response.results || []);\n  const sameProfile = users.filter(u => String(u.profile || '') === cfg.profile);\n  const available = sameProfile.filter(u => !isDisabled(u) && parseUptime(u.uptime) === 0);\n  const shouldGenerate = available.length < cfg.threshold;\n  out.push({ json: { ...cfg, existingNames: users.map(u => String(u.name)), stockTotal: sameProfile.length, stockAvailable: available.length, shouldGenerate, checkedAt: new Date().toISOString() } });\n}\nreturn out;\n",
-    "onError": "continueErrorOutput"
-   }
+    "jsCode": "const inputs = $input.all().map(i => i.json);\nfunction parseUptime(v) {\n  if (v === null || v === undefined) return 0;\n  if (typeof v === 'number') return Number.isFinite(v) && v > 0 ? v : 0;\n  const s = String(v).trim();\n  if (s === '' || s === '0' || s === '0s') return 0;\n  let m = s.match(/^(?:(\\d+)w)?(?:(\\d+)d)?(?:(\\d+)h)?(?:(\\d+)m)?(?:(\\d+)s)?$/i);\n  if (m && m[0] !== '') {\n    const g = i => parseInt(m[i] || '0', 10);\n    return (((g(1) * 7 + g(2)) * 24 + g(3)) * 60 + g(4)) * 60 + g(5);\n  }\n  m = s.match(/^(\\d+):(\\d{1,2}):(\\d{1,2})$/);\n  if (m) return (+m[1]) * 3600 + (+m[2]) * 60 + (+m[3]);\n  const n = Number(s);\n  return Number.isFinite(n) && n > 0 ? Math.floor(n) : 0;\n}\nfunction isDisabled(u) {\n  return u.disabled === true || String(u.disabled || '').toLowerCase() === 'true';\n}\nasync function assertPdfService(url, helpers) {\n  if (!url) throw new Error('PDF_SERVICE_URL est obligatoire.');\n  const base = url.replace(/\\/forms\\/.*$/, '');\n  try {\n    await helpers.httpRequest({ method: 'GET', url: base + '/health', timeout: 10000 });\n    return;\n  } catch (e) { /* repli : sonde directe de l'endpoint */ }\n  try {\n    await helpers.httpRequest({ method: 'GET', url, timeout: 10000 });\n    return;\n  } catch (e) {\n    const sc = e.statusCode || (e.response && (e.response.statusCode || e.response.status));\n    if (sc === 404 || sc === 405) return;\n    throw new Error('Service PDF injoignable : ' + url + ' (' + (e.message || e) + '). Demarrez Gotenberg.');\n  }\n}\nasync function validateConfig(cfg, telegramToken, helpers) {\n  if (!cfg.routerPassword) throw new Error('ROUTEROS_PASSWORD est obligatoire. Utilisez un compte RouterOS dédié (ex. app-fix).');\n  await assertPdfService(cfg.pdfServiceUrl, helpers);\n  if (cfg.deliveryChannel === 'telegram' && !telegramToken) throw new Error('TELEGRAM_BOT_TOKEN est obligatoire pour le canal telegram.');\n  if ((cfg.deliveryChannel === 'telegram' || cfg.deliveryChannel === 'whatsapp') && !cfg.recipient) throw new Error('Destinataire vide pour le canal ' + cfg.deliveryChannel + ' (DELIVERY_RECIPIENT).');\n  if (cfg.deliveryChannel === 'whatsapp' && !cfg.whatsappWebhookUrl) throw new Error(\"WHATSAPP_WEBHOOK_URL est obligatoire pour le canal whatsapp.\");\n  if (cfg.deliveryChannel === 'printnode' && (!cfg.printNodeApiKey || !cfg.printNodePrinterId)) throw new Error('PRINTNODE_API_KEY et PRINTNODE_PRINTER_ID sont obligatoires pour le canal printnode.');\n}\nconst out = [];\nfor (const cfg of inputs) {\n  const telegramToken = cfg.telegramBotToken || '';\n  await validateConfig(cfg, telegramToken, this.helpers);\n  const auth = 'Basic ' + Buffer.from(cfg.routerUser + ':' + cfg.routerPassword).toString('base64');\n  const response = await this.helpers.httpRequest({\n    method: 'GET',\n    url: cfg.routerBaseUrl + '/rest/ip/hotspot/user',\n    headers: { Authorization: auth, Accept: 'application/json' },\n    json: true,\n    timeout: 30000,\n    skipSslCertificateValidation: (['1', 'true', 'oui'].indexOf(String(($env && $env.ROUTEROS_TLS_INSECURE) || '').toLowerCase()) !== -1) /* Exception labo explicite uniquement, verifie par defaut. */\n  });\n  const profRes = await this.helpers.httpRequest({\n    method: 'GET',\n    url: cfg.routerBaseUrl + '/rest/ip/hotspot/user/profile',\n    headers: { Authorization: auth, Accept: 'application/json' },\n    json: true,\n    timeout: 30000,\n    skipSslCertificateValidation: (['1', 'true', 'oui'].indexOf(String(($env && $env.ROUTEROS_TLS_INSECURE) || '').toLowerCase()) !== -1) /* Exception labo explicite uniquement, verifie par defaut. */\n  });\n  const profs = Array.isArray(profRes) ? profRes : (profRes.data || profRes.results || []);\n  if (!profs.some(p => String(p.name) === cfg.profile)) throw new Error('Profil hotspot \"' + cfg.profile + '\" introuvable (creez-le dans /ip/hotspot/user/profile).');\n  const users = Array.isArray(response) ? response : (response.data || response.results || []);\n  const sameProfile = users.filter(u => String(u.profile || '') === cfg.profile);\n  const available = sameProfile.filter(u => !isDisabled(u) && parseUptime(u.uptime) === 0);\n  const shouldGenerate = available.length < cfg.threshold;\n  out.push({ json: { ...cfg, existingNames: users.map(u => String(u.name)), stockTotal: sameProfile.length, stockAvailable: available.length, shouldGenerate, checkedAt: new Date().toISOString() } });\n}\nreturn out;\n"
+   },
+   "onError": "continueErrorOutput"
   },
   {
    "id": "9ee9fd30-057f-48e4-b9af-b16a1cc40133",
@@ -87,25 +87,36 @@
    ],
    "parameters": {
     "conditions": {
-     "boolean": [
-      {
-       "value1": "={{$json.shouldGenerate}}",
-       "operation": "isTrue"
-      },
-      {
-       "value1": "={{$json.forcerGeneration}}",
-       "operation": "isTrue"
-      }
-     ],
-     "combinator": "or",
      "options": {
       "caseSensitive": true,
       "leftValue": "",
-      "typeValidation": "strict",
-      "version": 1
-     }
+      "typeValidation": "loose",
+      "version": 2
+     },
+     "conditions": [
+      {
+       "leftValue": "={{$json.shouldGenerate}}",
+       "operator": {
+        "type": "boolean",
+        "operation": "true",
+        "singleValue": true
+       },
+       "id": "cond-0"
+      },
+      {
+       "leftValue": "={{$json.forcerGeneration}}",
+       "operator": {
+        "type": "boolean",
+        "operation": "true",
+        "singleValue": true
+       },
+       "id": "cond-1"
+      }
+     ],
+     "combinator": "or"
     },
-    "options": {}
+    "options": {},
+    "looseTypeValidation": true
    }
   },
   {
@@ -118,9 +129,9 @@
     160
    ],
    "parameters": {
-    "jsCode": "const inputs = $input.all().map(i => i.json);\nconst alphabet = '23456789abcdefghijkmnpqrstuvwxyz';\nconst aleatoireCrypto = (n) => { try { var NC = require('crypto'); if (NC && NC.randomBytes) return NC.randomBytes(n); } catch (eCrypto) {} throw new Error('Génération aléatoire sécurisée indisponible : aucun ticket créé.'); }; const rand = len => { const o = aleatoireCrypto(len); let s = ''; for (let i = 0; i < len; i++) s += alphabet[o[i] % alphabet.length]; return s; }; const esc = s => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\"/g, '&quot;'); \nconst usedNames = new Set();\nfor (const c of inputs) for (const n of (c.existingNames || [])) usedNames.add(n);\nfunction uniqueUsername(prefix, len) {\n  for (let attempt = 0; attempt < 25; attempt++) {\n    const u = (prefix || '') + rand(len);\n    if (!usedNames.has(u)) { usedNames.add(u); return u; }\n  }\n  throw new Error('Impossible de générer un identifiant unique après 25 essais (augmentez usernameLength ou prefix).');\n}\nconst out = [];\nconst clesVues = new Set();\nfor (const cfg of inputs) {\n  const auth = 'Basic ' + Buffer.from(cfg.routerUser + ':' + cfg.routerPassword).toString('base64');\n  const cle = String(cfg.cleIdempotence || '');\n  const marqueur = cle ? ('cle:' + cle) : '';\n  // Idempotence : un appel rejoue avec la meme cle retrouve les\n  // tickets deja crees (commentaire traceur) et n'en recree aucun.\n  if (marqueur && !clesVues.has(marqueur)) {\n    let existants = [];\n    try {\n      const deja = await this.helpers.httpRequest({ method: 'GET', url: cfg.routerBaseUrl + '/rest/ip/hotspot/user', headers: { Authorization: auth, Accept: 'application/json' }, json: true, timeout: 30000, skipSslCertificateValidation: (['1', 'true', 'oui'].indexOf(String(($env && $env.ROUTEROS_TLS_INSECURE) || '').toLowerCase()) !== -1) /* Exception labo explicite uniquement, verifie par defaut. */ });\n      existants = Array.isArray(deja) ? deja : (deja.data || deja.results || []);\n    } catch (e) {\n      throw new Error('Verification anti-doublon impossible : ' + (e.message || e));\n    }\n    if (existants.some(function (u) { return String((u && u.comment) || '').indexOf(marqueur) !== -1; })) {\n      out.push({ json: { ...cfg, tickets: [], generatedAt: new Date().toISOString(), html: '', generatedCount: 0, dejaGenere: true } });\n      clesVues.add(marqueur);\n      continue;\n    }\n  }\n  if (marqueur) clesVues.add(marqueur);\n  const tickets = [];\n  for (let i = 0; i < cfg.quantity; i++) {\n    const username = uniqueUsername(cfg.prefix, cfg.usernameLength);\n    const password = rand(cfg.passwordLength);\n    const body = { name: username, password, profile: cfg.profile, server: cfg.hotspotServer, comment: 'n8n-mikhmon tenant:' + (cfg.tenantId || 'defaut') + ' cle:' + (cle || 'sans') + ' ' + new Date().toISOString() };\n    if (cfg.limitUptime) body['limit-uptime'] = cfg.limitUptime;\n    if (cfg.limitBytesTotal) body['limit-bytes-total'] = cfg.limitBytesTotal;\n    try {\n      const result = await this.helpers.httpRequest({ method: 'PUT', url: cfg.routerBaseUrl + '/rest/ip/hotspot/user', headers: { Authorization: auth, 'Content-Type': 'application/json' }, body, json: true, timeout: 30000, skipSslCertificateValidation: (['1', 'true', 'oui'].indexOf(String(($env && $env.ROUTEROS_TLS_INSECURE) || '').toLowerCase()) !== -1) /* Exception labo explicite uniquement, verifie par defaut. */ });\n      tickets.push({ username, password, profile: cfg.profile, routerResult: result });\n    } catch (e) {\n      throw new Error('Échec création ticket ' + username + ' (' + (i + 1) + '/' + cfg.quantity + ') : ' + (e.message || e) + ' — ' + tickets.length + ' ticket(s) déjà créé(s).');\n    }\n  }\n  let stockApres = null;\n  try {\n    const relu = await this.helpers.httpRequest({ method: 'GET', url: cfg.routerBaseUrl + '/rest/ip/hotspot/user', headers: { Authorization: auth, Accept: 'application/json' }, json: true, timeout: 30000, skipSslCertificateValidation: (['1', 'true', 'oui'].indexOf(String(($env && $env.ROUTEROS_TLS_INSECURE) || '').toLowerCase()) !== -1) /* Exception labo explicite uniquement, verifie par defaut. */ });\n    const liste = Array.isArray(relu) ? relu : (relu.data || relu.results || []);\n    const neuf = function (u) { return String((u && u.profile) || '') === cfg.profile && (u && u.disabled) !== true && String((u && u.disabled) || '').toLowerCase() !== 'true' && ['0s', '00:00:00', ''].indexOf(String((u && u.uptime) || '0s').trim()) !== -1; };\n    stockApres = liste.filter(neuf).length;\n  } catch (eApres) { stockApres = null; }\n  const generatedAt = new Date().toISOString();\n  const rows = tickets.map(t => `<tr><td>${esc(t.username)}</td><td>${esc(t.password)}</td><td>${esc(t.profile)}</td></tr>`).join('');\n  const html = `<!doctype html><html><head><meta charset='utf-8'><style>body{font-family:Arial,sans-serif;margin:24px}h1{font-size:20px}.meta{color:#555;margin-bottom:16px}table{width:100%;border-collapse:collapse}td,th{border:1px solid #bbb;padding:8px;text-align:left}th{background:#f0a500;color:#111}.ticket{page-break-inside:avoid}</style></head><body><h1>Tickets Wi-Fi</h1><div class='meta'>Profil: ${esc(cfg.profile)} · Générés: ${tickets.length} · ${generatedAt}</div><table><thead><tr><th>Utilisateur</th><th>Mot de passe</th><th>Profil</th></tr></thead><tbody>${rows}</tbody></table>`;\n  out.push({ json: { ...cfg, tickets: tickets.map(({routerResult, ...t}) => t), generatedAt, html, generatedCount: tickets.length, stockAvant: (cfg.stockAvailable !== undefined ? cfg.stockAvailable : null), stockApres: stockApres } });\n}\nreturn out;",
-    "onError": "continueErrorOutput"
-   }
+    "jsCode": "const inputs = $input.all().map(i => i.json);\nconst alphabet = '23456789abcdefghijkmnpqrstuvwxyz';\nconst aleatoireCrypto = (n) => { try { var NC = require('crypto'); if (NC && NC.randomBytes) return NC.randomBytes(n); } catch (eCrypto) {} throw new Error('Génération aléatoire sécurisée indisponible : aucun ticket créé.'); }; const rand = len => { const o = aleatoireCrypto(len); let s = ''; for (let i = 0; i < len; i++) s += alphabet[o[i] % alphabet.length]; return s; }; const esc = s => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\"/g, '&quot;'); \nconst usedNames = new Set();\nfor (const c of inputs) for (const n of (c.existingNames || [])) usedNames.add(n);\nfunction uniqueUsername(prefix, len) {\n  for (let attempt = 0; attempt < 25; attempt++) {\n    const u = (prefix || '') + rand(len);\n    if (!usedNames.has(u)) { usedNames.add(u); return u; }\n  }\n  throw new Error('Impossible de générer un identifiant unique après 25 essais (augmentez usernameLength ou prefix).');\n}\nconst out = [];\nconst clesVues = new Set();\nfor (const cfg of inputs) {\n  const auth = 'Basic ' + Buffer.from(cfg.routerUser + ':' + cfg.routerPassword).toString('base64');\n  const cle = String(cfg.cleIdempotence || '');\n  const marqueur = cle ? ('cle:' + cle) : '';\n  // Idempotence : un appel rejoue avec la meme cle retrouve les\n  // tickets deja crees (commentaire traceur) et n'en recree aucun.\n  if (marqueur && !clesVues.has(marqueur)) {\n    let existants = [];\n    try {\n      const deja = await this.helpers.httpRequest({ method: 'GET', url: cfg.routerBaseUrl + '/rest/ip/hotspot/user', headers: { Authorization: auth, Accept: 'application/json' }, json: true, timeout: 30000, skipSslCertificateValidation: (['1', 'true', 'oui'].indexOf(String(($env && $env.ROUTEROS_TLS_INSECURE) || '').toLowerCase()) !== -1) /* Exception labo explicite uniquement, verifie par defaut. */ });\n      existants = Array.isArray(deja) ? deja : (deja.data || deja.results || []);\n    } catch (e) {\n      throw new Error('Verification anti-doublon impossible : ' + (e.message || e));\n    }\n    if (existants.some(function (u) { return String((u && u.comment) || '').indexOf(marqueur) !== -1; })) {\n      out.push({ json: { ...cfg, tickets: [], generatedAt: new Date().toISOString(), html: '', generatedCount: 0, dejaGenere: true } });\n      clesVues.add(marqueur);\n      continue;\n    }\n  }\n  if (marqueur) clesVues.add(marqueur);\n  const tickets = [];\n  for (let i = 0; i < cfg.quantity; i++) {\n    const username = uniqueUsername(cfg.prefix, cfg.usernameLength);\n    const password = rand(cfg.passwordLength);\n    const body = { name: username, password, profile: cfg.profile, server: cfg.hotspotServer, comment: 'n8n-mikhmon tenant:' + (cfg.tenantId || 'defaut') + ' cle:' + (cle || 'sans') + ' ' + new Date().toISOString() };\n    if (cfg.limitUptime) body['limit-uptime'] = cfg.limitUptime;\n    if (cfg.limitBytesTotal) body['limit-bytes-total'] = cfg.limitBytesTotal;\n    try {\n      const result = await this.helpers.httpRequest({ method: 'PUT', url: cfg.routerBaseUrl + '/rest/ip/hotspot/user', headers: { Authorization: auth, 'Content-Type': 'application/json' }, body, json: true, timeout: 30000, skipSslCertificateValidation: (['1', 'true', 'oui'].indexOf(String(($env && $env.ROUTEROS_TLS_INSECURE) || '').toLowerCase()) !== -1) /* Exception labo explicite uniquement, verifie par defaut. */ });\n      tickets.push({ username, password, profile: cfg.profile, routerResult: result });\n    } catch (e) {\n      throw new Error('Échec création ticket ' + username + ' (' + (i + 1) + '/' + cfg.quantity + ') : ' + (e.message || e) + ' — ' + tickets.length + ' ticket(s) déjà créé(s).');\n    }\n  }\n  let stockApres = null;\n  try {\n    const relu = await this.helpers.httpRequest({ method: 'GET', url: cfg.routerBaseUrl + '/rest/ip/hotspot/user', headers: { Authorization: auth, Accept: 'application/json' }, json: true, timeout: 30000, skipSslCertificateValidation: (['1', 'true', 'oui'].indexOf(String(($env && $env.ROUTEROS_TLS_INSECURE) || '').toLowerCase()) !== -1) /* Exception labo explicite uniquement, verifie par defaut. */ });\n    const liste = Array.isArray(relu) ? relu : (relu.data || relu.results || []);\n    const neuf = function (u) { return String((u && u.profile) || '') === cfg.profile && (u && u.disabled) !== true && String((u && u.disabled) || '').toLowerCase() !== 'true' && ['0s', '00:00:00', ''].indexOf(String((u && u.uptime) || '0s').trim()) !== -1; };\n    stockApres = liste.filter(neuf).length;\n  } catch (eApres) { stockApres = null; }\n  const generatedAt = new Date().toISOString();\n  const rows = tickets.map(t => `<tr><td>${esc(t.username)}</td><td>${esc(t.password)}</td><td>${esc(t.profile)}</td></tr>`).join('');\n  const html = `<!doctype html><html><head><meta charset='utf-8'><style>body{font-family:Arial,sans-serif;margin:24px}h1{font-size:20px}.meta{color:#555;margin-bottom:16px}table{width:100%;border-collapse:collapse}td,th{border:1px solid #bbb;padding:8px;text-align:left}th{background:#f0a500;color:#111}.ticket{page-break-inside:avoid}</style></head><body><h1>Tickets Wi-Fi</h1><div class='meta'>Profil: ${esc(cfg.profile)} · Générés: ${tickets.length} · ${generatedAt}</div><table><thead><tr><th>Utilisateur</th><th>Mot de passe</th><th>Profil</th></tr></thead><tbody>${rows}</tbody></table>`;\n  out.push({ json: { ...cfg, tickets: tickets.map(({routerResult, ...t}) => t), generatedAt, html, generatedCount: tickets.length, stockAvant: (cfg.stockAvailable !== undefined ? cfg.stockAvailable : null), stockApres: stockApres } });\n}\nreturn out;"
+   },
+   "onError": "continueErrorOutput"
   },
   {
    "id": "80c5d0b7-4a9a-45f3-b865-c78f94400988",
@@ -161,7 +172,8 @@
     "options": {
      "timeout": 60000
     }
-   }
+   },
+   "onError": "continueErrorOutput"
   },
   {
    "id": "a4163f99-a6d0-4495-9f01-8a25b70ffdfd",
@@ -334,7 +346,8 @@
     "options": {
      "timeout": 60000
     }
-   }
+   },
+   "onError": "continueErrorOutput"
   },
   {
    "id": "225f489b-aa45-4d71-ad06-5ccc4d4d0274",
@@ -370,7 +383,8 @@
     "options": {
      "timeout": 60000
     }
-   }
+   },
+   "onError": "continueErrorOutput"
   },
   {
    "id": "b39c66ec-1d2c-4ede-9a11-296591971b31",
@@ -383,7 +397,8 @@
    ],
    "parameters": {
     "jsCode": "const out = [];\nconst items = $input.all();\nfor (let i = 0; i < items.length; i++) {\n  const cfg = items[i].json;\n  const pdf = await this.helpers.getBinaryDataBuffer(i, 'data');\n  if (!cfg.printNodeApiKey || !cfg.printNodePrinterId) throw new Error('PRINTNODE_API_KEY et PRINTNODE_PRINTER_ID sont obligatoires.');\n  const auth = 'Basic ' + Buffer.from(cfg.printNodeApiKey + ':').toString('base64');\n  const result = await this.helpers.httpRequest({ method: 'POST', url: 'https://api.printnode.com/printjobs', headers: { Authorization: auth, 'Content-Type': 'application/json' }, body: { printerId: cfg.printNodePrinterId, title: 'Tickets Mikhmon ' + cfg.profile, contentType: 'pdf_base64', content: pdf.toString('base64'), source: 'n8n-mikhmon' }, json: true, timeout: 60000 });\n  out.push({ json: { status: 'printed', printNode: result, generatedCount: cfg.generatedCount, profile: cfg.profile } });\n}\nreturn out;"
-   }
+   },
+   "onError": "continueErrorOutput"
   },
   {
    "id": "49baa036-6a80-485c-a678-0399c3630d61",
@@ -395,7 +410,7 @@
     400
    ],
    "parameters": {
-    "jsCode": "return $input.all().map(i => ({ json: { status: 'no_generation', message: `Stock suffisant pour le profil ${i.json.profile}.`, profile: i.json.profile, stockAvailable: i.json.stockAvailable, threshold: i.json.threshold, checkedAt: i.json.checkedAt } }));"
+    "jsCode": "return $input.all().map(i => ({ json: { ...i.json, status: 'no_generation', message: `Stock suffisant pour le profil ${i.json.profile}.` } }));"
    }
   },
   {
@@ -508,21 +523,27 @@
    ],
    "parameters": {
     "conditions": {
-     "boolean": [
-      {
-       "value1": "={{$json.approved}}",
-       "operation": "isTrue"
-      }
-     ],
-     "combinator": "and",
      "options": {
       "caseSensitive": true,
       "leftValue": "",
-      "typeValidation": "strict",
-      "version": 1
-     }
+      "typeValidation": "loose",
+      "version": 2
+     },
+     "conditions": [
+      {
+       "leftValue": "={{$json.approved}}",
+       "operator": {
+        "type": "boolean",
+        "operation": "true",
+        "singleValue": true
+       },
+       "id": "cond-0"
+      }
+     ],
+     "combinator": "and"
     },
-    "options": {}
+    "options": {},
+    "looseTypeValidation": true
    }
   },
   {
@@ -593,11 +614,11 @@
       },
       {
        "name": "X-Timestamp",
-       "value": "={{$json.horodatage}}"
+       "value": "={{String($json.horodatage || Date.now())}}"
       },
       {
        "name": "X-Run-Id",
-       "value": "={{$json.runId}}"
+       "value": "={{String($json.runId || $json.cleIdempotence || '')}}"
       }
      ]
     },
@@ -740,21 +761,27 @@
   {
    "parameters": {
     "conditions": {
-     "boolean": [
-      {
-       "value1": "={{$json.simulation}}",
-       "operation": "isTrue"
-      }
-     ],
-     "combinator": "and",
      "options": {
       "caseSensitive": true,
       "leftValue": "",
-      "typeValidation": "strict",
-      "version": 1
-     }
+      "typeValidation": "loose",
+      "version": 2
+     },
+     "conditions": [
+      {
+       "leftValue": "={{$json.simulation}}",
+       "operator": {
+        "type": "boolean",
+        "operation": "true",
+        "singleValue": true
+       },
+       "id": "cond-0"
+      }
+     ],
+     "combinator": "and"
     },
-    "options": {}
+    "options": {},
+    "looseTypeValidation": true
    },
    "id": "81cd8a2b-7a9e-4a2d-bb5a-87bfd09a85e6",
    "name": "Mode simulation ?",
@@ -767,7 +794,7 @@
   },
   {
    "parameters": {
-    "jsCode": "return $input.all().map(function (entree) {\n  var cfg = entree.json || {};\n  if (!cfg.runId) throw new Error('Erreur sans runId : abandon.');\n  cfg.erreur = cfg.erreur || cfg.error || 'Échec pendant le traitement (voir l\\'exécution n8n).';\n  return { json: cfg };\n});\n"
+    "jsCode": "// Le node en échec ne rend pas toujours sa config : on la reprend en amont.\nvar recus = $input.all();\nvar premier = (recus[0] || {}).json || {};\nvar brut = premier.erreur || premier.error || premier.message\n  || \"Échec pendant le traitement (voir l'exécution n8n).\";\nif (typeof brut === 'object') brut = brut.message || JSON.stringify(brut);\n// Une URL Telegram en erreur contient le jeton : jamais vers l'application.\nvar message = String(brut).replace(/bot\\d+:[\\w-]+/g, 'bot<masqué>').slice(0, 500);\nvar cibles = recus.filter(function (it) { return it.json && it.json.runId; });\n// ponytail: sans runId sur l'élément en échec, tous les jobs de la rafale\n// sont clôturés en échec ; à affiner si plusieurs règles échouent séparément.\nif (!cibles.length) {\n  try { cibles = $('Paramètres Mikhmon').all().filter(function (it) { return it.json && it.json.runId; }); }\n  catch (e) { cibles = []; }\n}\nif (!cibles.length) throw new Error('Erreur sans runId : ' + message);\nreturn cibles.map(function (it) {\n  return { json: Object.assign({}, it.json, { erreur: message }) };\n});\n"
    },
    "id": "75e9f30b-d789-4515-91a5-9f8f1fd87f47",
    "name": "Préparer l'erreur signée",
@@ -802,7 +829,8 @@
    "position": [
     2176,
     -160
-   ]
+   ],
+   "onError": "continueErrorOutput"
   },
   {
    "parameters": {
@@ -833,15 +861,27 @@
   {
    "parameters": {
     "conditions": {
-     "string": [
+     "options": {
+      "caseSensitive": true,
+      "leftValue": "",
+      "typeValidation": "loose",
+      "version": 2
+     },
+     "conditions": [
       {
-       "value1": "={{$json.route}}",
-       "operation": "equals",
-       "value2": "prompt"
+       "leftValue": "={{$json.route}}",
+       "operator": {
+        "type": "string",
+        "operation": "equals"
+       },
+       "rightValue": "prompt",
+       "id": "cond-0"
       }
-     ]
+     ],
+     "combinator": "and"
     },
-    "options": {}
+    "options": {},
+    "looseTypeValidation": true
    },
    "id": "d3a1ab2f-4bf8-4c39-9d8f-4d5b4d2a3f61",
    "name": "Demander avant génération ?",
@@ -991,6 +1031,13 @@
     [
      {
       "node": "Rattacher la config au PDF",
+      "type": "main",
+      "index": 0
+     }
+    ],
+    [
+     {
+      "node": "Préparer l'erreur signée",
       "type": "main",
       "index": 0
      }
@@ -1285,6 +1332,13 @@
       "type": "main",
       "index": 0
      }
+    ],
+    [
+     {
+      "node": "Préparer l'erreur signée",
+      "type": "main",
+      "index": 0
+     }
     ]
    ]
   },
@@ -1296,6 +1350,13 @@
       "type": "main",
       "index": 0
      }
+    ],
+    [
+     {
+      "node": "Préparer l'erreur signée",
+      "type": "main",
+      "index": 0
+     }
     ]
    ]
   },
@@ -1304,6 +1365,13 @@
     [
      {
       "node": "Clôturer l'envoi",
+      "type": "main",
+      "index": 0
+     }
+    ],
+    [
+     {
+      "node": "Préparer l'erreur signée",
       "type": "main",
       "index": 0
      }
@@ -1326,6 +1394,13 @@
     [
      {
       "node": "Envoyer PDF Telegram",
+      "type": "main",
+      "index": 0
+     }
+    ],
+    [
+     {
+      "node": "Préparer l'erreur signée",
       "type": "main",
       "index": 0
      }
@@ -1880,41 +1955,41 @@
      2128,
      800
     ]
-  },
-  {
-   "parameters": {
-    "jsCode": "const env = (name, fallback = '') => String(($env && $env[name]) || fallback);\nconst mode = env('MIKHMON_WEEKLY_MODE', 'disabled').toLowerCase();\nif (mode !== 'weekly_prompt' && mode !== 'weekly_auto') return [];\nconst now = new Date();\nconst jours = env('MIKHMON_WEEKLY_DAYS', '1').split(',').map(v => Number(v.trim())).filter(v => Number.isInteger(v) && v >= 0 && v <= 6);\nconst heure = env('MIKHMON_WEEKLY_TIME', '09:00').match(/^(\\d{2}):(\\d{2})$/);\nif (!jours.length || !heure) throw new Error('Planification invalide : MIKHMON_WEEKLY_DAYS doit contenir 0..6 et MIKHMON_WEEKLY_TIME HH:mm.');\nconst minuteActuelle = now.getUTCHours() * 60 + now.getUTCMinutes();\nconst minuteCible = Number(heure[1]) * 60 + Number(heure[2]);\nif (jours.indexOf(now.getUTCDay()) === -1 || minuteActuelle < minuteCible || minuteActuelle >= minuteCible + 15) return [];\nconst jour = now.toISOString().slice(0, 10);\nconst profil = env('MIKHMON_WEEKLY_PROFILE', env('MIKHMON_PROFILE', 'default'));\nconst quantity = Math.max(1, Math.min(500, Number(env('MIKHMON_WEEKLY_QUANTITY', env('TICKET_QUANTITY', '50'))) || 50));\nconst deliveryChannel = env('MIKHMON_WEEKLY_CHANNEL', env('DELIVERY_CHANNEL', 'telegram')).toLowerCase();\nconst recipient = env('MIKHMON_WEEKLY_RECIPIENT', env('DELIVERY_RECIPIENT', ''));\nconst approvalRecipient = env('MIKHMON_WEEKLY_APPROVAL_RECIPIENT', recipient);\nconst appUrl = env('APP_URL', '').replace(/\\/$/, '');\nconst runId = 'weekly-' + jour + '-' + String(profil).replace(/[^a-zA-Z0-9_-]/g, '_');\nreturn [{ json: {\n  route: mode === 'weekly_prompt' ? 'prompt' : 'auto',\n  runId, cleIdempotence: runId, tenantId: env('TENANT_ID', 'defaut'), userId: env('WEEKLY_USER_ID', ''),\n  routerBaseUrl: env('ROUTEROS_BASE_URL', ''), routerUser: env('ROUTEROS_USER', 'n8n-vouchers'), routerPassword: env('ROUTEROS_PASSWORD', ''),\n  hotspotServer: env('MIKHMON_HOTSPOT_SERVER', 'all'), profile: profil, quantity, threshold: Number(env('TICKET_THRESHOLD', '50')) || 50,\n  deliveryChannel, recipient, approvalRecipient, telegramBotToken: env('TELEGRAM_BOT_TOKEN', ''),\n  pdfServiceUrl: env('PDF_SERVICE_URL', 'http://gotenberg:3000/forms/chromium/convert/html'),\n  whatsappWebhookUrl: env('WHATSAPP_WEBHOOK_URL', ''), printNodeApiKey: env('PRINTNODE_API_KEY', ''), printNodePrinterId: Number(env('PRINTNODE_PRINTER_ID', '0')) || 0,\n  callbackUrl: appUrl ? appUrl + '/api/internal/n8n/callback' : '', forcerGeneration: mode === 'weekly_auto',\n  weeklyMode: mode, weeklyDays: jours, weeklyTime: env('MIKHMON_WEEKLY_TIME', '09:00'), scheduledAt: now.toISOString()\n} }];"
    },
-   "id": "2bcf89e7-12cb-43f1-9c86-4a5dd02f6f7a",
-   "name": "Planification utilisateur",
-   "type": "n8n-nodes-base.code",
-   "typeVersion": 2,
-   "position": [
-    272,
-    512
-   ]
-  },
-  {
-   "parameters": {
-    "conditions": {
-     "string": [
-      {
-       "value1": "={{$json.route}}",
-       "operation": "equals",
-       "value2": "prompt"
-      }
-     ]
+   {
+    "parameters": {
+     "jsCode": "const env = (name, fallback = '') => String(($env && $env[name]) || fallback);\nconst mode = env('MIKHMON_WEEKLY_MODE', 'disabled').toLowerCase();\nif (mode !== 'weekly_prompt' && mode !== 'weekly_auto') return [];\nconst now = new Date();\nconst jours = env('MIKHMON_WEEKLY_DAYS', '1').split(',').map(v => Number(v.trim())).filter(v => Number.isInteger(v) && v >= 0 && v <= 6);\nconst heure = env('MIKHMON_WEEKLY_TIME', '09:00').match(/^(\\d{2}):(\\d{2})$/);\nif (!jours.length || !heure) throw new Error('Planification invalide : MIKHMON_WEEKLY_DAYS doit contenir 0..6 et MIKHMON_WEEKLY_TIME HH:mm.');\nconst minuteActuelle = now.getUTCHours() * 60 + now.getUTCMinutes();\nconst minuteCible = Number(heure[1]) * 60 + Number(heure[2]);\nif (jours.indexOf(now.getUTCDay()) === -1 || minuteActuelle < minuteCible || minuteActuelle >= minuteCible + 15) return [];\nconst jour = now.toISOString().slice(0, 10);\nconst profil = env('MIKHMON_WEEKLY_PROFILE', env('MIKHMON_PROFILE', 'default'));\nconst quantity = Math.max(1, Math.min(500, Number(env('MIKHMON_WEEKLY_QUANTITY', env('TICKET_QUANTITY', '50'))) || 50));\nconst deliveryChannel = env('MIKHMON_WEEKLY_CHANNEL', env('DELIVERY_CHANNEL', 'telegram')).toLowerCase();\nconst recipient = env('MIKHMON_WEEKLY_RECIPIENT', env('DELIVERY_RECIPIENT', ''));\nconst approvalRecipient = env('MIKHMON_WEEKLY_APPROVAL_RECIPIENT', recipient);\nconst appUrl = env('APP_URL', '').replace(/\\/$/, '');\nconst runId = 'weekly-' + jour + '-' + String(profil).replace(/[^a-zA-Z0-9_-]/g, '_');\nreturn [{ json: {\n  route: mode === 'weekly_prompt' ? 'prompt' : 'auto',\n  runId, cleIdempotence: runId, tenantId: env('TENANT_ID', 'defaut'), userId: env('WEEKLY_USER_ID', ''),\n  routerBaseUrl: env('ROUTEROS_BASE_URL', ''), routerUser: env('ROUTEROS_USER', 'n8n-vouchers'), routerPassword: env('ROUTEROS_PASSWORD', ''),\n  hotspotServer: env('MIKHMON_HOTSPOT_SERVER', 'all'), profile: profil, quantity, threshold: Number(env('TICKET_THRESHOLD', '50')) || 50,\n  deliveryChannel, recipient, approvalRecipient, telegramBotToken: env('TELEGRAM_BOT_TOKEN', ''),\n  pdfServiceUrl: env('PDF_SERVICE_URL', 'http://gotenberg:3000/forms/chromium/convert/html'),\n  whatsappWebhookUrl: env('WHATSAPP_WEBHOOK_URL', ''), printNodeApiKey: env('PRINTNODE_API_KEY', ''), printNodePrinterId: Number(env('PRINTNODE_PRINTER_ID', '0')) || 0,\n  callbackUrl: appUrl ? appUrl + '/api/internal/n8n/callback' : '', forcerGeneration: mode === 'weekly_auto',\n  weeklyMode: mode, weeklyDays: jours, weeklyTime: env('MIKHMON_WEEKLY_TIME', '09:00'), scheduledAt: now.toISOString()\n} }];"
     },
-    "options": {}
+    "id": "2bcf89e7-12cb-43f1-9c86-4a5dd02f6f7a",
+    "name": "Planification utilisateur",
+    "type": "n8n-nodes-base.code",
+    "typeVersion": 2,
+    "position": [
+     272,
+     512
+    ]
    },
-   "id": "d3a1ab2f-4bf8-4c39-9d8f-4d5b4d2a3f61",
-   "name": "Demander avant génération ?",
-   "type": "n8n-nodes-base.if",
-   "typeVersion": 2.2,
-   "position": [
-    544,
-    512
-   ]
+   {
+    "parameters": {
+     "conditions": {
+      "string": [
+       {
+        "value1": "={{$json.route}}",
+        "operation": "equals",
+        "value2": "prompt"
+       }
+      ]
+     },
+     "options": {}
+    },
+    "id": "d3a1ab2f-4bf8-4c39-9d8f-4d5b4d2a3f61",
+    "name": "Demander avant génération ?",
+    "type": "n8n-nodes-base.if",
+    "typeVersion": 2.2,
+    "position": [
+     544,
+     512
+    ]
    }
   ],
   "connections": {
@@ -1936,42 +2011,42 @@
        "node": "Paramètres Mikhmon",
        "type": "main",
        "index": 0
-     },
-     {
-      "node": "Planification utilisateur",
-      "type": "main",
-      "index": 0
-     }
+      },
+      {
+       "node": "Planification utilisateur",
+       "type": "main",
+       "index": 0
+      }
+     ]
     ]
-   ]
-  },
-  "Planification utilisateur": {
-   "main": [
-    [
-     {
-      "node": "Demander avant génération ?",
-      "type": "main",
-      "index": 0
-     }
+   },
+   "Planification utilisateur": {
+    "main": [
+     [
+      {
+       "node": "Demander avant génération ?",
+       "type": "main",
+       "index": 0
+      }
+     ]
     ]
-   ]
-  },
-  "Demander avant génération ?": {
-   "main": [
-    [
-     {
-      "node": "Préparer le récapitulatif",
-      "type": "main",
-      "index": 0
-     }
-    ],
-    [
-     {
-      "node": "Générer les tickets dans RouterOS",
-      "type": "main",
-      "index": 0
-     }
-    ]
+   },
+   "Demander avant génération ?": {
+    "main": [
+     [
+      {
+       "node": "Préparer le récapitulatif",
+       "type": "main",
+       "index": 0
+      }
+     ],
+     [
+      {
+       "node": "Générer les tickets dans RouterOS",
+       "type": "main",
+       "index": 0
+      }
+     ]
     ]
    },
    "Paramètres Mikhmon": {
