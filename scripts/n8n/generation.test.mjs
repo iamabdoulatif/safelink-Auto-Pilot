@@ -103,11 +103,16 @@ describe("Format de ticket Mikhmon", () => {
     }
   });
 
+  it("10-JOURS reste à 8 caractères au total", async () => {
+    const r = await executer(cfg({ profile: "10-JOURS" }), routeurMikhmon());
+    for (const t of r.tickets) assert.match(t.username, /^10j[2-9]{5}$/);
+  });
+
   it("commentaire vc- reconnu par Mikhmon et clé d'idempotence", async () => {
     const routeur = routeurMikhmon();
     await executer(cfg(), routeur);
     for (const u of routeur.utilisateurs) {
-      assert.match(u.comment, /^vc-\d{3}-\d{2}\.\d{2}\.\d{2}-cle:RUN-M$/);
+      assert.match(u.comment, /^vc-\d{3}-\d{2}\.\d{2}\.\d{2}$/);
       assert.equal(u.password, u.name);
     }
     const rejeu = await executer(cfg(), routeur);

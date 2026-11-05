@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Tickets au format Mikhmon dans le workflow automatique (idempotent).
 
-Identifiant = mot de passe (préfixe du profil + 6 chiffres), commentaire
-vc-<lot>-<mm.dd.yy>-cle:<runId> reconnu par Mikhmon, PDF au template client.
+Identifiant = mot de passe (préfixe du profil + chiffres, 8 caractères),
+commentaire vc-<lot>-<mm.dd.yy> comme Mikhmon, PDF au template client.
 Utilisation : python3 scripts/n8n/patch-workflow-ticket-mikhmon.py
 """
 import json
@@ -84,6 +84,23 @@ def main():
         debut = c.index("const rows = tickets.map")
         fin = c.index("</table>`;", debut) + len("</table>`;")
         c = c[:debut] + RENDU.replace("__CSS__", CSS.replace("\n", "")) + c[fin:]
+        gen["jsCode"] = c
+
+    # Commentaire strictement Mikhmon (vc-700-10.31.26) et 8 caractères au total.
+    if "commentaireDuLot" not in gen["jsCode"]:
+        c = gen["jsCode"]
+        c = remplacer(c, "const usedNames = new Set();",
+                      "// ponytail: lot déduit du runId pour détecter un rejeu sans marque dans le\n"
+                      "// commentaire ; 1 chance sur 900 de collision le même jour, le cycle suivant reprend.\n"
+                      "const commentaireDuLot = (cleLot) => { const lot = cleLot ? 100 + (require('crypto').createHash('sha256').update(cleLot).digest().readUInt16BE(0) % 900) : 100 + (aleatoireCrypto(2).readUInt16BE(0) % 900); return 'vc-' + lot + '-' + dateMikhmon(new Date()); };\n"
+                      "const usedNames = new Set();")
+        c = remplacer(c, "existants.some(function (u) { return String((u && u.comment) || '').indexOf(marqueur) !== -1; })",
+                      "existants.some(function (u) { const cu = String((u && u.comment) || ''); return cu.indexOf(marqueur) !== -1 || cu === commentaireDuLot(cle); })")
+        c = remplacer(c, "  const lotTicket = 100 + (aleatoireCrypto(2).readUInt16BE(0) % 900);\n"
+                         "  const commentaireTicket = 'vc-' + lotTicket + '-' + dateMikhmon(new Date()) + (cle ? '-cle:' + cle : '');\n",
+                      "  const commentaireTicket = commentaireDuLot(cle);\n")
+        c = remplacer(c, "uniqueUsername(prefixeTicket, 6)",
+                      "uniqueUsername(prefixeTicket, Math.max(4, 8 - prefixeTicket.length))")
         gen["jsCode"] = c
 
     code = noeuds["Paramètres Mikhmon"]["parameters"]
