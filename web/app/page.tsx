@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ActionsParc } from "@/components/actions-parc";
 import { AjouterParc } from "@/components/ajouter-parc";
+import { MaterielRouteur } from "@/components/materiel-routeur";
 
 // Une ligne lue par la requête : les compteurs Postgres arrivent en texte,
 // l'horodatage en Date ou en texte selon le pilote.
@@ -162,9 +163,15 @@ async function ListeRouteurs() {
                 <StatutRouteur critiques={critiques} majeurs={majeurs} />
               </CardHeader>
               <CardContent className="flex flex-col gap-1 text-sm">
-                <p className="text-muted-foreground">
-                  Modèle : {r.modele ?? "inconnu — en attente du premier relevé"}
-                </p>
+                {/* Suspense par carte : un routeur lent ne bloque pas le parc. */}
+                <Suspense fallback={<Skeleton className="h-14 w-full" />}>
+                  <MaterielRouteur
+                    tenantId={tenantId}
+                    routeurId={r.id}
+                    urlBase={r.url_base}
+                    modeleConnu={r.modele}
+                  />
+                </Suspense>
                 <p className="text-muted-foreground">
                   {/* La date du dernier releve REUSSI : sans elle, un ecran vert
                   peut afficher l'etat d'il y a trois jours. */}
