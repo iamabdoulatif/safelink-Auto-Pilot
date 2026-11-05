@@ -33,6 +33,7 @@ import { ApercuProduit } from "@/components/landing/apercu-produit";
 import { RouteurMikrotik3D } from "@/components/landing/routeur-mikrotik-3d";
 import { Illustration3D } from "@/components/landing/illustration-3d";
 import { Revelation } from "@/components/landing/revelation";
+import { LienEspace } from "@/components/landing/lien-espace";
 import {
   CanauxTabs,
   FaqAccueil,
@@ -141,10 +142,10 @@ export default function PageAccueil() {
             </p>
             <div className="hero-entree mt-8 flex flex-wrap items-center gap-3" style={{ animationDelay: "270ms" }}>
               <Button asChild size="lg" className="bg-accent text-accent-foreground hover:bg-accent/85">
-                <Link href="/connexion">
+                <LienEspace>
                   Accéder à mon espace
                   <ArrowRight data-icon="inline-end" aria-hidden="true" />
-                </Link>
+                </LienEspace>
               </Button>
               <Button
                 asChild
@@ -544,10 +545,10 @@ export default function PageAccueil() {
           </div>
           <div className="flex flex-col items-start gap-3">
             <Button asChild size="lg" variant="secondary" className="w-fit shrink-0">
-              <Link href="/connexion">
+              <LienEspace>
                 Accéder à mon espace
                 <ArrowRight data-icon="inline-end" aria-hidden="true" />
-              </Link>
+              </LienEspace>
             </Button>
             <a href="#fonctionnement" className="text-sm underline-offset-4 opacity-75 hover:underline">
               Ou revoir comment ça marche
@@ -585,7 +586,7 @@ export default function PageAccueil() {
             <nav aria-label="Accès" className="flex flex-col gap-2.5 text-sm">
               <span className="font-semibold">Accès</span>
               <Link href="/connexion" className="opacity-70 hover:opacity-100">Se connecter</Link>
-              <Link href="/connexion" className="opacity-70 hover:opacity-100">Accéder à mon espace</Link>
+              <LienEspace className="opacity-70 hover:opacity-100">Accéder à mon espace</LienEspace>
             </nav>
           </div>
           <Separator className="bg-sidebar-border" />

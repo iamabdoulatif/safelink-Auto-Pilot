@@ -108,7 +108,7 @@ export function EnTeteAccueil() {
             </Button>
           ) : null}
           <Button asChild size="sm" className="bg-accent text-accent-foreground hover:bg-accent/85">
-            <Link href="/connexion">
+            <Link href={connecte ? "/" : "/connexion"}>
               Accéder à mon espace
               <ArrowRight data-icon="inline-end" aria-hidden="true" />
             </Link>
@@ -147,7 +147,7 @@ export function EnTeteAccueil() {
               <Separator className="bg-sidebar-border" />
               <SheetClose asChild>
                 <Button asChild variant="secondary" className="w-full">
-                  <Link href="/connexion">
+                  <Link href={connecte ? "/" : "/connexion"}>
                     Accéder à mon espace
                     <ArrowRight data-icon="inline-end" aria-hidden="true" />
                   </Link>
