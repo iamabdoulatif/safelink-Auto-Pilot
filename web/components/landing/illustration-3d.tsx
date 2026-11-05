@@ -341,16 +341,60 @@ function creerDiagnostic(THREE: ModuleThree): Illustration {
 }
 
 function creerCanaux(THREE: ModuleThree): Illustration {
+  // Schéma de livraison : le PDF à gauche, trois destinations à droite —
+  // avion Telegram, bulle WhatsApp et vraie imprimante, reliés par des
+  // trajets où circulent des impulsions vertes.
   const groupe = new THREE.Group();
   const document = creerDocumentPDF(THREE);
   document.position.set(-1.55, 0.05, 0.35);
   document.rotation.y = 0.22;
   groupe.add(document);
 
+  const telegram = creerTelegram(THREE);
+  telegram.position.set(1.32, 0.85, 0.25);
+  groupe.add(telegram);
+
+  const whatsapp = creerWhatsApp(THREE);
+  whatsapp.position.set(1.98, -0.05, 0.65);
+  groupe.add(whatsapp);
+
+  const mac = creerMac(THREE);
+  mac.position.set(-0.62, -1.0, -0.1);
+  mac.scale.setScalar(0.8);
+  groupe.add(mac);
+
+  const imprimante = creerImprimante(THREE);
+  imprimante.groupe.position.set(0.68, -1.02, 0.35);
+  imprimante.groupe.scale.setScalar(0.88);
+  groupe.add(imprimante.groupe);
+
+  // Câble qui raccorde le Mac à l'imprimante (canal PrintNode).
+  const cable = new THREE.Mesh(
+    new THREE.TubeGeometry(
+      new THREE.CatmullRomCurve3([
+        new THREE.Vector3(-0.12, -1.08, -0.02),
+        new THREE.Vector3(0.16, -1.32, 0.12),
+        new THREE.Vector3(0.36, -1.14, 0.28),
+        new THREE.Vector3(0.46, -0.86, 0.35),
+      ]),
+      32,
+      0.02,
+      8,
+    ),
+    new THREE.MeshStandardMaterial({ color: 0x24304a, roughness: 0.55 }),
+  );
+  groupe.add(cable);
+
   const destinations = [
-    { nom: "Telegram", position: new THREE.Vector3(1.55, 0.78, 0.25), couleur: 0x24304a },
-    { nom: "WhatsApp", position: new THREE.Vector3(1.85, -0.05, 0.65), couleur: 0x1e9e6a },
-    { nom: "Impression", position: new THREE.Vector3(1.45, -0.82, 0.1), couleur: 0xc24e2d },
+    { groupe: telegram, baseY: 0.85, phase: 0 },
+    { groupe: whatsapp, baseY: -0.05, phase: 1.3 },
+    { groupe: imprimante.groupe, baseY: -1.02, phase: 2.4 },
+  ];
+
+  const cibles = [
+    new THREE.Vector3(1.32, 0.85, 0.25),
+    new THREE.Vector3(1.98, -0.05, 0.65),
+    new THREE.Vector3(0.05, -0.8, 0.2),
   ];
   const trajets: Array<{
     courbe: InstanceType<ModuleThree["QuadraticBezierCurve3"]>;
@@ -358,35 +402,12 @@ function creerCanaux(THREE: ModuleThree): Illustration {
     phase: number;
   }> = [];
 
-  destinations.forEach((destination, index) => {
-    const noeud = new THREE.Group();
-    const sphere = new THREE.Mesh(
-      new THREE.SphereGeometry(0.34, 28, 28),
-      new THREE.MeshStandardMaterial({
-        color: destination.couleur,
-        roughness: 0.35,
-        metalness: 0.05,
-      }),
-    );
-    sphere.castShadow = true;
-    noeud.add(sphere);
-    const etiquette = creerEtiquette(
-      THREE,
-      destination.nom,
-      destination.nom === "WhatsApp" ? "#1e9e6a" : "#24304a",
-      "#f4efe3",
-    );
-    etiquette.position.set(0, -0.52, 0.12);
-    etiquette.scale.setScalar(0.62);
-    noeud.add(etiquette);
-    noeud.position.copy(destination.position);
-    groupe.add(noeud);
-
-    const milieu = new THREE.Vector3(0.05, destination.position.y + 0.42, 0.72);
+  cibles.forEach((cible, index) => {
+    const milieu = new THREE.Vector3(0.05, cible.y + 0.42, 0.72);
     const courbe = new THREE.QuadraticBezierCurve3(
       new THREE.Vector3(-0.78, 0.18, 0.55),
       milieu,
-      destination.position.clone(),
+      cible.clone(),
     );
     const tube = new THREE.Mesh(
       new THREE.TubeGeometry(courbe, 36, 0.018, 8),
@@ -411,12 +432,329 @@ function creerCanaux(THREE: ModuleThree): Illustration {
     maj: (temps, vitesse) => {
       document.rotation.y = 0.22 + Math.sin(temps * 0.8) * 0.07 * vitesse;
       document.position.y = 0.05 + Math.sin(temps * 1.15) * 0.05 * vitesse;
+      destinations.forEach((destination) => {
+        destination.groupe.position.y =
+          destination.baseY + Math.sin(temps * 1.1 + destination.phase) * 0.045 * vitesse;
+      });
+      mac.position.y = -1.0 + Math.sin(temps * 1.1 + 2.4) * 0.045 * vitesse;
+      mac.rotation.y = -0.06 + Math.sin(temps * 0.6 + 0.5) * 0.05 * vitesse;
+      telegram.rotation.y = Math.sin(temps * 0.7) * 0.1 * vitesse;
+      whatsapp.rotation.y = -0.08 + Math.sin(temps * 0.7 + 1) * 0.09 * vitesse;
+      // La feuille imprimée sort en boucle, puis recommence.
+      const cycle = vitesse === 0 ? 0.55 : (temps * 0.28) % 1;
+      imprimante.papier.position.y = -0.18 - cycle * 0.22;
+      imprimante.papier.position.z = 0.4 + cycle * 0.08;
+      imprimante.papierMateriau.opacity = cycle > 0.88 ? 1 - (cycle - 0.88) / 0.12 : 1;
       trajets.forEach((trajet) => {
         const progression = vitesse === 0 ? 0.5 : (temps * 0.24 + trajet.phase) % 1;
         trajet.impulsion.position.copy(trajet.courbe.getPoint(progression));
       });
     },
   };
+}
+
+function creerTelegram(THREE: ModuleThree) {
+  const groupe = new THREE.Group();
+  // Disque bleu nuit bordé d'un fin anneau crème, façon pastille d'app.
+  const disque = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.37, 0.37, 0.1, 48),
+    new THREE.MeshStandardMaterial({ color: 0x24304a, roughness: 0.32, metalness: 0.08 }),
+  );
+  disque.rotation.x = Math.PI / 2;
+  disque.castShadow = true;
+  groupe.add(disque);
+
+  const anneau = new THREE.Mesh(
+    new THREE.TorusGeometry(0.37, 0.018, 10, 64),
+    new THREE.MeshStandardMaterial({ color: 0xf4efe3, roughness: 0.4 }),
+  );
+  anneau.position.z = 0.05;
+  groupe.add(anneau);
+
+  // Avion en papier en relief : aile claire, aile grisée pour le pli,
+  // et fine arête centrale pour lire le pliage.
+  const aileClaire = creerFaceAvion(THREE, [0.32, 0.06, -0.26, 0.24, -0.03, 0.0], 0xfbf8f0);
+  const aileGrise = creerFaceAvion(THREE, [0.32, 0.06, -0.03, 0.0, -0.22, -0.2], 0xd8d2c0);
+  aileClaire.position.z = 0.075;
+  aileGrise.position.z = 0.07;
+  groupe.add(aileClaire);
+  groupe.add(aileGrise);
+
+  const arete = new THREE.Mesh(
+    new THREE.TubeGeometry(
+      new THREE.CatmullRomCurve3([
+        new THREE.Vector3(0.32, 0.06, 0.085),
+        new THREE.Vector3(0.12, 0.02, 0.1),
+        new THREE.Vector3(-0.03, 0.0, 0.09),
+      ]),
+      12,
+      0.012,
+      8,
+    ),
+    new THREE.MeshStandardMaterial({ color: 0x24304a, roughness: 0.5 }),
+  );
+  groupe.add(arete);
+
+  const etiquette = creerEtiquette(THREE, "Telegram", "#24304a", "#f4efe3");
+  etiquette.position.set(0, -0.52, 0.12);
+  etiquette.scale.setScalar(0.52);
+  groupe.add(etiquette);
+  return groupe;
+}
+
+function creerFaceAvion(
+  THREE: ModuleThree,
+  sommets: [number, number, number, number, number, number],
+  couleur: number,
+) {
+  const [x1, y1, x2, y2, x3, y3] = sommets;
+  const forme = new THREE.Shape();
+  forme.moveTo(x1, y1);
+  forme.lineTo(x2, y2);
+  forme.lineTo(x3, y3);
+  forme.closePath();
+  const geometrie = new THREE.ExtrudeGeometry(forme, {
+    depth: 0.02,
+    bevelEnabled: true,
+    bevelThickness: 0.006,
+    bevelSize: 0.006,
+    bevelSegments: 2,
+  });
+  const face = new THREE.Mesh(
+    geometrie,
+    new THREE.MeshStandardMaterial({ color: couleur, roughness: 0.45, side: THREE.DoubleSide }),
+  );
+  face.rotation.z = -0.12;
+  return face;
+}
+
+function creerWhatsApp(THREE: ModuleThree) {
+  const groupe = new THREE.Group();
+  // Bulle de discussion verte, queue comprise dans la silhouette.
+  const forme = new THREE.Shape();
+  const l = 0.37;
+  const h = 0.31;
+  const r = 0.17;
+  forme.moveTo(-l + r, -h);
+  forme.lineTo(-0.12, -h);
+  forme.lineTo(-0.22, -h - 0.16);
+  forme.lineTo(0.02, -h);
+  forme.lineTo(l - r, -h);
+  forme.quadraticCurveTo(l, -h, l, -h + r);
+  forme.lineTo(l, h - r);
+  forme.quadraticCurveTo(l, h, l - r, h);
+  forme.lineTo(-l + r, h);
+  forme.quadraticCurveTo(-l, h, -l, h - r);
+  forme.lineTo(-l, -h + r);
+  forme.quadraticCurveTo(-l, -h, -l + r, -h);
+
+  const bulle = new THREE.Mesh(
+    new THREE.ExtrudeGeometry(forme, {
+      depth: 0.12,
+      bevelEnabled: true,
+      bevelThickness: 0.02,
+      bevelSize: 0.02,
+      bevelSegments: 3,
+    }),
+    new THREE.MeshStandardMaterial({ color: 0x1e9e6a, roughness: 0.35, metalness: 0.05 }),
+  );
+  bulle.castShadow = true;
+  groupe.add(bulle);
+
+  // Combiné téléphonique blanc au centre de la bulle.
+  const combine = new THREE.Mesh(
+    new THREE.PlaneGeometry(0.48, 0.48),
+    new THREE.MeshBasicMaterial({ map: creerTextureCombine(THREE), transparent: true }),
+  );
+  combine.position.z = 0.16;
+  groupe.add(combine);
+
+  const etiquette = creerEtiquette(THREE, "WhatsApp", "#1e9e6a", "#f4efe3");
+  etiquette.position.set(0, -0.58, 0.12);
+  etiquette.scale.setScalar(0.52);
+  groupe.add(etiquette);
+  groupe.rotation.y = -0.08;
+  return groupe;
+}
+
+function creerTextureCombine(THREE: ModuleThree) {
+  const canvas = document.createElement("canvas");
+  canvas.width = 256;
+  canvas.height = 256;
+  const contexte = canvas.getContext("2d");
+  if (contexte) {
+    contexte.clearRect(0, 0, canvas.width, canvas.height);
+    contexte.fillStyle = "#fbf8f0";
+    contexte.font = "700 165px Arial, sans-serif";
+    contexte.textAlign = "center";
+    contexte.textBaseline = "middle";
+    contexte.fillText("☎", canvas.width / 2, canvas.height / 2 + 10);
+  }
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.anisotropy = 8;
+  return texture;
+}
+
+function creerMac(THREE: ModuleThree) {
+  // iMac vu de face : écran avec fenêtre d'impression macOS, pied alu.
+  const groupe = new THREE.Group();
+  const cadre = new THREE.Mesh(
+    geometrieCarte(THREE, 1.18, 0.8, 0.05),
+    new THREE.MeshStandardMaterial({ color: 0xd9d5c9, roughness: 0.35, metalness: 0.45 }),
+  );
+  cadre.castShadow = true;
+  groupe.add(cadre);
+
+  const ecran = new THREE.Mesh(
+    new THREE.PlaneGeometry(1.08, 0.66),
+    new THREE.MeshStandardMaterial({ map: creerTextureEcranMac(THREE), roughness: 0.35 }),
+  );
+  ecran.position.set(0, 0.04, 0.04);
+  groupe.add(ecran);
+
+  const menton = new THREE.Mesh(
+    new THREE.BoxGeometry(1.18, 0.09, 0.05),
+    new THREE.MeshStandardMaterial({ color: 0xcac5b6, roughness: 0.35, metalness: 0.45 }),
+  );
+  menton.position.set(0, -0.4, 0);
+  groupe.add(menton);
+
+  const cou = new THREE.Mesh(
+    new THREE.BoxGeometry(0.16, 0.28, 0.04),
+    new THREE.MeshStandardMaterial({ color: 0xcac5b6, roughness: 0.35, metalness: 0.45 }),
+  );
+  cou.position.set(0, -0.58, -0.06);
+  cou.rotation.x = 0.18;
+  groupe.add(cou);
+
+  const pied = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.3, 0.34, 0.045, 32),
+    new THREE.MeshStandardMaterial({ color: 0xcac5b6, roughness: 0.35, metalness: 0.45 }),
+  );
+  pied.scale.z = 0.55;
+  pied.position.set(0, -0.74, -0.02);
+  groupe.add(pied);
+  groupe.rotation.y = -0.06;
+  return groupe;
+}
+
+function creerTextureEcranMac(THREE: ModuleThree) {
+  const canvas = document.createElement("canvas");
+  canvas.width = 640;
+  canvas.height = 400;
+  const contexte = canvas.getContext("2d");
+  if (contexte) {
+    // Fond d'écran : nuit vers vert, dans la charte du site.
+    const degrade = contexte.createLinearGradient(0, 0, 640, 400);
+    degrade.addColorStop(0, "#24304a");
+    degrade.addColorStop(1, "#173d2c");
+    contexte.fillStyle = degrade;
+    contexte.fillRect(0, 0, 640, 400);
+    // Barre de menu macOS.
+    contexte.fillStyle = "rgba(244, 239, 227, 0.92)";
+    contexte.fillRect(0, 0, 640, 34);
+    contexte.fillStyle = "#24304a";
+    contexte.font = "700 19px Arial, sans-serif";
+    contexte.fillText(" SafeLink — Impression", 14, 24);
+    contexte.font = "500 17px Arial, sans-serif";
+    contexte.fillText("PrintNode", 520, 24);
+    // Fenêtre d'impression.
+    contexte.fillStyle = "#fbf8f0";
+    contexte.fillRect(110, 78, 420, 250);
+    contexte.fillStyle = "#e7dfca";
+    contexte.fillRect(110, 78, 420, 44);
+    contexte.fillStyle = "#24304a";
+    contexte.font = "700 21px Arial, sans-serif";
+    contexte.fillText("Tickets Hotspot — PDF", 132, 108);
+    contexte.font = "500 18px Arial, sans-serif";
+    contexte.fillStyle = "#5a657d";
+    contexte.fillText("Lot prêt · planche à découper", 132, 152);
+    contexte.fillText("Imprimante : bureau", 132, 184);
+    for (let i = 0; i < 3; i++) {
+      const y = 206 + i * 30;
+      contexte.strokeStyle = "#ddd4bc";
+      contexte.strokeRect(132, y, 300, 22);
+      contexte.fillStyle = i === 0 ? "#1e9e6a" : "#24304a";
+      contexte.beginPath();
+      contexte.arc(146, y + 11, 5, 0, Math.PI * 2);
+      contexte.fill();
+    }
+    // Bouton Imprimer vert.
+    contexte.fillStyle = "#1e9e6a";
+    contexte.fillRect(356, 272, 140, 36);
+    contexte.fillStyle = "#f4efe3";
+    contexte.font = "700 19px Arial, sans-serif";
+    contexte.textAlign = "center";
+    contexte.fillText("Imprimer", 426, 297);
+    contexte.textAlign = "left";
+  }
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.anisotropy = 8;
+  return texture;
+}
+
+function creerImprimante(THREE: ModuleThree) {
+  const groupe = new THREE.Group();
+  const corps = new THREE.Mesh(
+    geometrieCarte(THREE, 1.0, 0.56, 0.62),
+    new THREE.MeshStandardMaterial({ color: 0x24304a, roughness: 0.42 }),
+  );
+  corps.castShadow = true;
+  groupe.add(corps);
+
+  const couvercle = new THREE.Mesh(
+    new THREE.BoxGeometry(0.76, 0.07, 0.42),
+    new THREE.MeshStandardMaterial({ color: 0x111827, roughness: 0.5 }),
+  );
+  couvercle.position.set(0, 0.31, -0.04);
+  groupe.add(couvercle);
+
+  // Feuille vierge qui entre par le haut, légèrement penchée en arrière.
+  const papierEntree = new THREE.Mesh(
+    new THREE.PlaneGeometry(0.6, 0.44),
+    new THREE.MeshStandardMaterial({ color: 0xfbf8f0, roughness: 0.55, side: THREE.DoubleSide }),
+  );
+  papierEntree.position.set(0, 0.56, -0.14);
+  papierEntree.rotation.x = -0.32;
+  groupe.add(papierEntree);
+
+  const bandeAvant = new THREE.Mesh(
+    new THREE.BoxGeometry(0.86, 0.15, 0.04),
+    new THREE.MeshStandardMaterial({ color: 0xf4efe3, roughness: 0.5 }),
+  );
+  bandeAvant.position.set(0, 0.04, 0.32);
+  groupe.add(bandeAvant);
+
+  const led = new THREE.Mesh(
+    new THREE.SphereGeometry(0.045, 14, 14),
+    new THREE.MeshStandardMaterial({
+      color: 0x1e9e6a,
+      emissive: 0x1e9e6a,
+      emissiveIntensity: 1.6,
+    }),
+  );
+  led.position.set(0.33, 0.04, 0.35);
+  groupe.add(led);
+
+  // Feuille imprimée qui sort par l'avant (animée dans maj).
+  const papierMateriau = new THREE.MeshStandardMaterial({
+    map: creerTexturePDF(THREE),
+    roughness: 0.55,
+    transparent: true,
+    side: THREE.DoubleSide,
+  });
+  const papier = new THREE.Mesh(new THREE.PlaneGeometry(0.62, 0.48), papierMateriau);
+  papier.position.set(0, -0.18, 0.4);
+  papier.rotation.x = 0.38;
+  groupe.add(papier);
+
+  const etiquette = creerEtiquette(THREE, "Impression", "#24304a", "#f4efe3");
+  etiquette.position.set(0, -0.6, 0.12);
+  etiquette.scale.setScalar(0.52);
+  groupe.add(etiquette);
+  return { groupe, papier, papierMateriau };
 }
 
 function creerSecurite(THREE: ModuleThree): Illustration {
