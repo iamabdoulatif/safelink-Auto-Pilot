@@ -7,7 +7,7 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-sans);
+  --font-sans: var(--font-titres);
   --font-mono: var(--font-geist-mono);
   --font-heading: var(--font-sans);
   --color-sidebar-ring: var(--sidebar-ring);
@@ -53,85 +53,84 @@
 }
 
 :root {
-  /* Palette unique du site : 4 couleurs, tout le reste est une nuance.
-     Crème #F4EFE3 (fonds), bleu nuit #24304A (texte et primaire),
-     vert signal #1E9E6A (actions et statut OK), rouge brique #C24E2D
-     (alertes). Le statut « majeur » réutilise le bleu nuit : pas de
-     5e couleur. */
-  --font-display: var(--font-fraunces), Georgia, "Times New Roman", serif;
-  --background: #f4efe3;
-  --foreground: #24304a;
-  --card: #fbf8f0;
-  --card-foreground: #24304a;
-  --popover: #fbf8f0;
-  --popover-foreground: #24304a;
-  --primary: #24304a;
-  --primary-foreground: #f4efe3;
-  --secondary: #e7dfca;
-  --secondary-foreground: #24304a;
-  --muted: #eae3cf;
-  --muted-foreground: #5a657d;
-  --accent: #e0f0e6;
-  --accent-foreground: #24304a;
+  /* Charte inspirée du wireframe de référence : noir profond #191A23,
+     blanc cassé #F3F3F3, vert lime #B9FF66 en accent (fond clair,
+     texte noir dessus). Le rouge brique ne sert qu'aux alertes.
+     Titres et texte en Space Grotesk, codes en mono. */
+  --font-display: var(--font-titres), "Space Grotesk", Arial, sans-serif;
+  --background: #f3f3f3;
+  --foreground: #191a23;
+  --card: #ffffff;
+  --card-foreground: #191a23;
+  --popover: #ffffff;
+  --popover-foreground: #191a23;
+  --primary: #191a23;
+  --primary-foreground: #ffffff;
+  --secondary: #e9e9e9;
+  --secondary-foreground: #191a23;
+  --muted: #e9e9e9;
+  --muted-foreground: #5b5b66;
+  --accent: #b9ff66;
+  --accent-foreground: #191a23;
   --destructive: #c24e2d;
-  --border: #ddd4bc;
-  --input: #ddd4bc;
-  --ring: #1e9e6a;
+  --border: #d6d6d6;
+  --input: #d6d6d6;
+  --ring: #191a23;
   --status-critique: #c24e2d;
-  --status-majeur: #24304a;
-  --status-ok: #1e9e6a;
+  --status-majeur: #191a23;
+  --status-ok: #4d7c0f;
   --chart-1: #c24e2d;
-  --chart-2: #1e9e6a;
-  --chart-3: #24304a;
-  --chart-4: #8a94a8;
-  --chart-5: #d8cfb2;
+  --chart-2: #4d7c0f;
+  --chart-3: #191a23;
+  --chart-4: #8a8a93;
+  --chart-5: #b9ff66;
   --radius: 0.625rem;
-  --sidebar: #24304a;
-  --sidebar-foreground: #f4efe3;
-  --sidebar-primary: #f4efe3;
-  --sidebar-primary-foreground: #24304a;
-  --sidebar-accent: #31405f;
-  --sidebar-accent-foreground: #f4efe3;
-  --sidebar-border: rgb(244 239 227 / 14%);
-  --sidebar-ring: #1e9e6a;
+  --sidebar: #191a23;
+  --sidebar-foreground: #f3f3f3;
+  --sidebar-primary: #b9ff66;
+  --sidebar-primary-foreground: #191a23;
+  --sidebar-accent: #292a38;
+  --sidebar-accent-foreground: #f3f3f3;
+  --sidebar-border: rgb(243 243 243 / 14%);
+  --sidebar-ring: #b9ff66;
 }
 
 .dark {
-  /* Mode sombre : mêmes 4 couleurs, en nuances inversées. */
-  --background: #171f31;
-  --foreground: #f4efe3;
-  --card: #1e2942;
-  --card-foreground: #f4efe3;
-  --popover: #1e2942;
-  --popover-foreground: #f4efe3;
-  --primary: #f4efe3;
-  --primary-foreground: #24304a;
-  --secondary: #2a3752;
-  --secondary-foreground: #f4efe3;
-  --muted: #2a3752;
-  --muted-foreground: #aab3c5;
-  --accent: #173d2c;
-  --accent-foreground: #f4efe3;
+  /* Mode sombre : mêmes couleurs, noir en fond et lime en primaire. */
+  --background: #191a23;
+  --foreground: #f3f3f3;
+  --card: #23242f;
+  --card-foreground: #f3f3f3;
+  --popover: #23242f;
+  --popover-foreground: #f3f3f3;
+  --primary: #b9ff66;
+  --primary-foreground: #191a23;
+  --secondary: #2a2b36;
+  --secondary-foreground: #f3f3f3;
+  --muted: #2a2b36;
+  --muted-foreground: #b8b8c0;
+  --accent: #b9ff66;
+  --accent-foreground: #191a23;
   --destructive: #d96a49;
-  --border: rgb(244 239 227 / 12%);
-  --input: rgb(244 239 227 / 16%);
-  --ring: #1e9e6a;
+  --border: rgb(243 243 243 / 12%);
+  --input: rgb(243 243 243 / 16%);
+  --ring: #b9ff66;
   --status-critique: #d96a49;
-  --status-majeur: #f4efe3;
-  --status-ok: #35b57f;
+  --status-majeur: #f3f3f3;
+  --status-ok: #b9ff66;
   --chart-1: #d96a49;
-  --chart-2: #35b57f;
-  --chart-3: #f4efe3;
-  --chart-4: #8a94a8;
-  --chart-5: #d8cfb2;
-  --sidebar: #1e2942;
-  --sidebar-foreground: #f4efe3;
-  --sidebar-primary: #f4efe3;
-  --sidebar-primary-foreground: #24304a;
-  --sidebar-accent: #2a3752;
-  --sidebar-accent-foreground: #f4efe3;
-  --sidebar-border: rgb(244 239 227 / 12%);
-  --sidebar-ring: #1e9e6a;
+  --chart-2: #b9ff66;
+  --chart-3: #f3f3f3;
+  --chart-4: #8a8a93;
+  --chart-5: #4d7c0f;
+  --sidebar: #111218;
+  --sidebar-foreground: #f3f3f3;
+  --sidebar-primary: #b9ff66;
+  --sidebar-primary-foreground: #191a23;
+  --sidebar-accent: #23242f;
+  --sidebar-accent-foreground: #f3f3f3;
+  --sidebar-border: rgb(243 243 243 / 12%);
+  --sidebar-ring: #b9ff66;
 }
 
 @layer base {
@@ -149,30 +148,30 @@
   ::selection {
     @apply bg-primary text-primary-foreground;
   }
-  /* Échelle typographique unique : Fraunces pour les titres (h1 à h3),
-     Geist pour le texte. La couleur hérite du contexte : crème sur fond
+  /* Échelle typographique unique : Space Grotesk pour les titres
+     (h1 à h3) et le texte, comme le wireframe de référence. La couleur hérite du contexte : crème sur fond
      bleu nuit, bleu nuit sur fond crème. Les classes Tailwind posées
      sur un titre gardent la priorité sur ces valeurs par défaut. */
   h1 {
     font-family: var(--font-display);
     font-size: clamp(2.5rem, 6vw, 4rem);
-    font-weight: 560;
+    font-weight: 600;
     line-height: 1.02;
-    letter-spacing: -0.015em;
+    letter-spacing: -0.02em;
     text-wrap: balance;
   }
   h2 {
     font-family: var(--font-display);
     font-size: clamp(1.875rem, 4vw, 2.75rem);
-    font-weight: 560;
+    font-weight: 600;
     line-height: 1.08;
-    letter-spacing: -0.01em;
+    letter-spacing: -0.02em;
     text-wrap: balance;
   }
   h3 {
     font-family: var(--font-display);
     font-size: 1.5rem;
-    font-weight: 560;
+    font-weight: 600;
     line-height: 1.2;
   }
   h4 {

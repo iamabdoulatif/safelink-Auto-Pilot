@@ -1,22 +1,19 @@
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
-import { Fraunces, Geist, Geist_Mono } from "next/font/google";
+import { Geist_Mono, Space_Grotesk } from "next/font/google";
 import "./globals.css";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
 });
 
-// Police des titres, chargée une fois pour tout le site.
-const fraunces = Fraunces({
-  variable: "--font-fraunces",
+// Police unique du site (titres et texte), chargée une fois :
+// Space Grotesk, la grotesque du wireframe de référence.
+const titres = Space_Grotesk({
+  variable: "--font-titres",
   subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
 });
 
 export const metadata: Metadata = {
@@ -26,14 +23,14 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#f4efe3",
+  themeColor: "#f3f3f3",
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html
       lang="fr"
-      className={`${geistSans.variable} ${geistMono.variable} ${fraunces.variable} h-full antialiased`}
+      className={`${titres.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-screen">{children}</body>
     </html>

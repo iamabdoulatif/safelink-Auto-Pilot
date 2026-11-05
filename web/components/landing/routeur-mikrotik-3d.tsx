@@ -104,10 +104,10 @@ function initialiserScene(
   scene.add(routeur.groupe);
   scene.add(creerDecor(THREE));
 
-  const lumiereHemisphere = new THREE.HemisphereLight(0xf4efe3, 0x24304a, 1.8);
+  const lumiereHemisphere = new THREE.HemisphereLight(0xf3f3f3, 0x191a23, 1.8);
   scene.add(lumiereHemisphere);
 
-  const lumierePrincipale = new THREE.DirectionalLight(0xf4efe3, 2.6);
+  const lumierePrincipale = new THREE.DirectionalLight(0xf3f3f3, 2.6);
   lumierePrincipale.position.set(4, 7, 5);
   lumierePrincipale.castShadow = true;
   lumierePrincipale.shadow.mapSize.set(1024, 1024);
@@ -117,7 +117,7 @@ function initialiserScene(
   lumierePrincipale.shadow.camera.bottom = -6;
   scene.add(lumierePrincipale);
 
-  const lumiereSignal = new THREE.DirectionalLight(0x1e9e6a, 1.1);
+  const lumiereSignal = new THREE.DirectionalLight(0xb9ff66, 1.1);
   lumiereSignal.position.set(-5, 3, -4);
   scene.add(lumiereSignal);
 
@@ -246,12 +246,12 @@ function creerRouteur(THREE: ModuleThree) {
   }> = [];
 
   const plastiqueCreme = new THREE.MeshStandardMaterial({
-    color: 0xf4efe3,
+    color: 0xf3f3f3,
     roughness: 0.42,
     metalness: 0.02,
   });
   const plastiqueBleu = new THREE.MeshStandardMaterial({
-    color: 0x24304a,
+    color: 0x191a23,
     roughness: 0.48,
     metalness: 0.08,
   });
@@ -309,8 +309,8 @@ function creerRouteur(THREE: ModuleThree) {
     groupe.add(contact);
 
     const ledMaterial = new THREE.MeshStandardMaterial({
-      color: 0x1e9e6a,
-      emissive: 0x1e9e6a,
+      color: 0xb9ff66,
+      emissive: 0xb9ff66,
       emissiveIntensity: 1,
       roughness: 0.25,
     });
@@ -366,7 +366,7 @@ function creerRouteur(THREE: ModuleThree) {
 function creerAntenne(THREE: ModuleThree, x: number, z: number, inclinaison: number) {
   const groupe = new THREE.Group();
   const matiere = new THREE.MeshStandardMaterial({
-    color: 0x24304a,
+    color: 0x191a23,
     roughness: 0.45,
     metalness: 0.12,
   });
@@ -403,7 +403,7 @@ function creerCableRJ45(
   const fiche = new THREE.Mesh(
     new THREE.BoxGeometry(0.34, 0.26, 0.52),
     new THREE.MeshStandardMaterial({
-      color: 0xf4efe3,
+      color: 0xf3f3f3,
       roughness: 0.22,
       metalness: 0.02,
       transparent: true,
@@ -420,7 +420,7 @@ function creerCableRJ45(
   groupe.add(clip);
 
   [-0.09, -0.03, 0.03, 0.09].forEach((decalage, index) => {
-    const couleur = [0x1e9e6a, 0xf4efe3, 0x24304a, 0xc24e2d][index] ?? 0x1e9e6a;
+    const couleur = [0xb9ff66, 0xf3f3f3, 0x191a23, 0xc24e2d][index] ?? 0xb9ff66;
     const fil = new THREE.Mesh(
       new THREE.BoxGeometry(0.035, 0.16, 0.03),
       new THREE.MeshStandardMaterial({ color: couleur, roughness: 0.45 }),
@@ -455,8 +455,8 @@ function creerCableRJ45(
   const impulsion = new THREE.Mesh(
     new THREE.SphereGeometry(0.075, 18, 18),
     new THREE.MeshStandardMaterial({
-      color: 0x1e9e6a,
-      emissive: 0x1e9e6a,
+      color: 0xb9ff66,
+      emissive: 0xb9ff66,
       emissiveIntensity: 1.6,
       roughness: 0.2,
     }),
@@ -471,7 +471,7 @@ function creerPanneauMikhmon(THREE: ModuleThree) {
   const cadre = new THREE.Mesh(
     new THREE.BoxGeometry(2.75, 1.72, 0.09),
     new THREE.MeshStandardMaterial({
-      color: 0x24304a,
+      color: 0x191a23,
       roughness: 0.38,
       metalness: 0.12,
     }),
@@ -493,8 +493,8 @@ function creerPanneauMikhmon(THREE: ModuleThree) {
   const voyant = new THREE.Mesh(
     new THREE.SphereGeometry(0.045, 16, 16),
     new THREE.MeshStandardMaterial({
-      color: 0x1e9e6a,
-      emissive: 0x1e9e6a,
+      color: 0xb9ff66,
+      emissive: 0xb9ff66,
       emissiveIntensity: 1.5,
     }),
   );
@@ -553,14 +553,14 @@ function creerOndes(THREE: ModuleThree) {
   const groupe = new THREE.Group();
   const point = new THREE.Mesh(
     new THREE.SphereGeometry(0.09, 20, 20),
-    new THREE.MeshBasicMaterial({ color: 0x1e9e6a }),
+    new THREE.MeshBasicMaterial({ color: 0xb9ff66 }),
   );
   point.position.y = -0.35;
   groupe.add(point);
 
   [0.48, 0.82, 1.16].forEach((rayon) => {
     const material = new THREE.MeshBasicMaterial({
-      color: 0x1e9e6a,
+      color: 0xb9ff66,
       transparent: true,
       opacity: 0.65,
       side: THREE.DoubleSide,
@@ -580,7 +580,7 @@ function creerAnneaux(THREE: ModuleThree) {
   const elements: Array<InstanceType<ModuleThree["Mesh"]>> = [];
   for (let i = 0; i < 2; i++) {
     const material = new THREE.MeshBasicMaterial({
-      color: 0x1e9e6a,
+      color: 0xb9ff66,
       transparent: true,
       opacity: 0.16,
       side: THREE.DoubleSide,
@@ -600,7 +600,7 @@ function creerDecor(THREE: ModuleThree) {
   const disque = new THREE.Mesh(
     new THREE.CircleGeometry(3.35, 72),
     new THREE.MeshBasicMaterial({
-      color: 0x1e9e6a,
+      color: 0xb9ff66,
       transparent: true,
       opacity: 0.07,
       depthWrite: false,
@@ -662,25 +662,25 @@ function creerTextureEtiquette(THREE: ModuleThree) {
   if (!contexte) return new THREE.CanvasTexture(canvas);
 
   contexte.clearRect(0, 0, canvas.width, canvas.height);
-  contexte.fillStyle = "#24304a";
+  contexte.fillStyle = "#191a23";
   contexte.font = "700 118px Arial, sans-serif";
   contexte.textAlign = "left";
   contexte.textBaseline = "middle";
   contexte.fillText("MikroTik", 42, 150);
 
-  contexte.fillStyle = "#1e9e6a";
+  contexte.fillStyle = "#4d7c0f";
   contexte.font = "700 44px Arial, sans-serif";
   contexte.fillText("SAFELINK AUTO-PILOT", 46, 255);
 
-  contexte.fillStyle = "#24304a";
+  contexte.fillStyle = "#191a23";
   contexte.font = "500 34px Arial, sans-serif";
   contexte.fillText("Routeur surveillé • Tickets Hotspot", 46, 330);
 
   contexte.beginPath();
   contexte.arc(900, 128, 54, 0, Math.PI * 2);
-  contexte.fillStyle = "#1e9e6a";
+  contexte.fillStyle = "#4d7c0f";
   contexte.fill();
-  contexte.fillStyle = "#f4efe3";
+  contexte.fillStyle = "#f3f3f3";
   contexte.font = "700 48px Arial, sans-serif";
   contexte.textAlign = "center";
   contexte.fillText("5G", 900, 130);
@@ -729,20 +729,20 @@ function creerTextureTicket(THREE: ModuleThree, code: string, duree: string) {
 
   contexte.fillStyle = "#fbf8f0";
   contexte.fillRect(0, 0, canvas.width, canvas.height);
-  contexte.fillStyle = "#24304a";
+  contexte.fillStyle = "#191a23";
   contexte.font = "700 34px Arial, sans-serif";
   contexte.textAlign = "left";
   contexte.fillText("WI-FI HOTSPOT", 34, 58);
   contexte.textAlign = "right";
-  contexte.fillStyle = "#1e9e6a";
+  contexte.fillStyle = "#4d7c0f";
   contexte.fillText(duree, 606, 58);
 
-  contexte.fillStyle = "#24304a";
+  contexte.fillStyle = "#191a23";
   contexte.font = "700 82px 'Courier New', monospace";
   contexte.textAlign = "left";
   contexte.fillText(code, 34, 178);
 
-  contexte.strokeStyle = "#24304a";
+  contexte.strokeStyle = "#191a23";
   contexte.setLineDash([12, 10]);
   contexte.lineWidth = 3;
   contexte.beginPath();
@@ -754,7 +754,7 @@ function creerTextureTicket(THREE: ModuleThree, code: string, duree: string) {
   contexte.fillStyle = "#5a657d";
   contexte.font = "500 30px Arial, sans-serif";
   contexte.fillText("Identifiant = mot de passe", 34, 312);
-  contexte.fillStyle = "#1e9e6a";
+  contexte.fillStyle = "#4d7c0f";
   contexte.beginPath();
   contexte.arc(574, 318, 18, 0, Math.PI * 2);
   contexte.fill();
@@ -772,37 +772,37 @@ function creerTextureMikhmon(THREE: ModuleThree) {
   const contexte = canvas.getContext("2d");
   if (!contexte) return new THREE.CanvasTexture(canvas);
 
-  contexte.fillStyle = "#f4efe3";
+  contexte.fillStyle = "#f3f3f3";
   contexte.fillRect(0, 0, canvas.width, canvas.height);
-  contexte.fillStyle = "#24304a";
+  contexte.fillStyle = "#191a23";
   contexte.fillRect(0, 0, canvas.width, 86);
-  contexte.fillStyle = "#f4efe3";
+  contexte.fillStyle = "#f3f3f3";
   contexte.font = "700 42px Arial, sans-serif";
   contexte.fillText("Mikhmon", 30, 56);
   contexte.font = "500 24px Arial, sans-serif";
   contexte.fillText("Hotspot Manager", 245, 55);
-  contexte.fillStyle = "#1e9e6a";
+  contexte.fillStyle = "#4d7c0f";
   contexte.beginPath();
   contexte.arc(958, 43, 17, 0, Math.PI * 2);
   contexte.fill();
 
-  contexte.fillStyle = "#24304a";
+  contexte.fillStyle = "#191a23";
   contexte.fillRect(0, 86, 218, 554);
-  contexte.fillStyle = "#f4efe3";
+  contexte.fillStyle = "#f3f3f3";
   contexte.font = "600 26px Arial, sans-serif";
   ["Dashboard", "Hotspot", "Users", "Vouchers", "Generate", "Log"].forEach((item, index) => {
     if (index === 3) {
-      contexte.fillStyle = "#1e9e6a";
+      contexte.fillStyle = "#4d7c0f";
       contexte.fillRect(14, 122 + index * 62, 190, 44);
-      contexte.fillStyle = "#f4efe3";
+      contexte.fillStyle = "#f3f3f3";
     }
     contexte.fillText(item, 30, 152 + index * 62);
-    contexte.fillStyle = "#f4efe3";
+    contexte.fillStyle = "#f3f3f3";
   });
 
   const cartes = [
-    { titre: "Actifs", valeur: "128", couleur: "#1e9e6a" },
-    { titre: "Tickets 1J", valeur: "342", couleur: "#24304a" },
+    { titre: "Actifs", valeur: "128", couleur: "#4d7c0f" },
+    { titre: "Tickets 1J", valeur: "342", couleur: "#191a23" },
     { titre: "Tickets 10J", valeur: "96", couleur: "#c24e2d" },
   ];
   cartes.forEach((carte, index) => {
@@ -818,19 +818,19 @@ function creerTextureMikhmon(THREE: ModuleThree) {
     contexte.fillStyle = "#5a657d";
     contexte.font = "600 22px Arial, sans-serif";
     contexte.fillText(carte.titre, x + 48, 156);
-    contexte.fillStyle = "#24304a";
+    contexte.fillStyle = "#191a23";
     contexte.font = "700 46px Arial, sans-serif";
     contexte.fillText(carte.valeur, x + 24, 212);
   });
 
-  contexte.fillStyle = "#24304a";
+  contexte.fillStyle = "#191a23";
   contexte.font = "700 27px Arial, sans-serif";
   contexte.fillText("Derniers vouchers générés", 246, 292);
   const lignes = [
-    ["10j48372", "10 jours", "#1e9e6a"],
-    ["1j638291", "1 jour", "#1e9e6a"],
+    ["10j48372", "10 jours", "#4d7c0f"],
+    ["1j638291", "1 jour", "#4d7c0f"],
     ["7j205914", "7 jours", "#c24e2d"],
-    ["1j771204", "1 jour", "#24304a"],
+    ["1j771204", "1 jour", "#191a23"],
   ] as const;
   lignes.forEach(([code, duree, couleur], index) => {
     const y = 326 + index * 68;
@@ -842,7 +842,7 @@ function creerTextureMikhmon(THREE: ModuleThree) {
     contexte.beginPath();
     contexte.arc(274, y + 26, 9, 0, Math.PI * 2);
     contexte.fill();
-    contexte.fillStyle = "#24304a";
+    contexte.fillStyle = "#191a23";
     contexte.font = "700 27px 'Courier New', monospace";
     contexte.fillText(code, 302, y + 35);
     contexte.font = "500 24px Arial, sans-serif";

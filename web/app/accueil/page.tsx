@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Fraunces, IBM_Plex_Mono } from "next/font/google";
+import { IBM_Plex_Mono } from "next/font/google";
 import {
   Activity,
   ArrowRight,
@@ -42,7 +42,6 @@ import {
 // Page publique : presente les fonctions reelles du produit avec les
 // composants shadcn/ui. L'apercu du hero est un exemple fictif, signale
 // comme tel, sans chiffre ni client invente.
-const titres = Fraunces({ subsets: ["latin"], variable: "--font-titres" });
 const codes = IBM_Plex_Mono({
   subsets: ["latin"],
   weight: ["500", "600"],
@@ -81,7 +80,7 @@ function TitreSection({
 }) {
   return (
     <div className="flex max-w-2xl flex-col gap-3">
-      <Badge variant="outline" className="w-fit font-mono text-[11px] tracking-[0.14em] uppercase">
+      <Badge className="w-fit border-transparent bg-accent font-mono text-[11px] tracking-[0.14em] text-accent-foreground uppercase">
         {surtitre}
       </Badge>
       <h2 id={id} className="text-balance font-[family-name:var(--font-titres)] text-4xl font-medium tracking-tight">
@@ -94,7 +93,7 @@ function TitreSection({
 
 export default function PageAccueil() {
   return (
-    <div className={`${titres.variable} ${codes.variable} bg-background`}>
+    <div className={`${codes.variable} bg-background`}>
       <EnTeteAccueil />
 
       {/* Hero */}
@@ -120,7 +119,7 @@ export default function PageAccueil() {
         />
         <div className="relative mx-auto grid max-w-6xl items-start gap-12 px-4 pt-14 pb-16 sm:px-6 lg:grid-cols-[1.1fr_0.9fr] lg:pt-20 lg:pb-24">
           <div>
-            <Badge variant="secondary" className="font-mono text-[11px] tracking-[0.14em] uppercase">
+            <Badge className="border-transparent bg-accent font-mono text-[11px] tracking-[0.14em] text-accent-foreground uppercase">
               Routeurs MikroTik · Tickets Hotspot
             </Badge>
             <h1 className="mt-5 text-balance font-[family-name:var(--font-titres)] text-5xl leading-[1.02] font-medium tracking-tight sm:text-6xl">
@@ -130,7 +129,7 @@ export default function PageAccueil() {
               SafeLink surveille vos routeurs, signale ce qui ne va pas et recrée vos tickets Wi-Fi avant la rupture de stock — sans jamais écrire sur le routeur sans votre accord.
             </p>
             <div className="mt-8 flex flex-wrap items-center gap-3">
-              <Button asChild size="lg" variant="secondary">
+              <Button asChild size="lg" className="bg-accent text-accent-foreground hover:bg-accent/85">
                 <Link href="/connexion">
                   Accéder à mon espace
                   <ArrowRight data-icon="inline-end" aria-hidden="true" />

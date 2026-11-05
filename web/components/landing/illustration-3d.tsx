@@ -119,13 +119,13 @@ function initialiserIllustration(
   renderer.domElement.style.height = "100%";
   conteneur.appendChild(renderer.domElement);
 
-  scene.add(new THREE.HemisphereLight(0xf4efe3, 0x24304a, 1.9));
-  const lumiere = new THREE.DirectionalLight(0xf4efe3, 2.4);
+  scene.add(new THREE.HemisphereLight(0xf3f3f3, 0x191a23, 1.9));
+  const lumiere = new THREE.DirectionalLight(0xf3f3f3, 2.4);
   lumiere.position.set(3.5, 5, 4.5);
   lumiere.castShadow = true;
   lumiere.shadow.mapSize.set(1024, 1024);
   scene.add(lumiere);
-  const accent = new THREE.DirectionalLight(0x1e9e6a, 1.0);
+  const accent = new THREE.DirectionalLight(0xb9ff66, 1.0);
   accent.position.set(-4, 2.5, -3);
   scene.add(accent);
 
@@ -225,7 +225,7 @@ function creerSol(THREE: ModuleThree) {
   const disque = new THREE.Mesh(
     new THREE.CircleGeometry(2.9, 64),
     new THREE.MeshBasicMaterial({
-      color: 0x1e9e6a,
+      color: 0xb9ff66,
       transparent: true,
       opacity: 0.07,
       depthWrite: false,
@@ -268,13 +268,13 @@ function creerStock(THREE: ModuleThree): Illustration {
 
   const anneau = new THREE.Mesh(
     new THREE.TorusGeometry(1.72, 0.035, 12, 96, Math.PI * 1.45),
-    new THREE.MeshBasicMaterial({ color: 0x1e9e6a, transparent: true, opacity: 0.8 }),
+    new THREE.MeshBasicMaterial({ color: 0xb9ff66, transparent: true, opacity: 0.8 }),
   );
   anneau.rotation.set(Math.PI / 2.25, 0, Math.PI * 0.78);
   anneau.position.y = -0.72;
   groupe.add(anneau);
 
-  const seuil = creerEtiquette(THREE, "Seuil atteint → nouveau lot", "#24304a", "#f4efe3");
+  const seuil = creerEtiquette(THREE, "Seuil atteint → nouveau lot", "#191a23", "#f3f3f3");
   seuil.position.set(0, -1.02, 0.95);
   seuil.scale.setScalar(0.82);
   groupe.add(seuil);
@@ -302,15 +302,15 @@ function creerDiagnostic(THREE: ModuleThree): Illustration {
   const courbe = new THREE.CatmullRomCurve3(points);
   const ligne = new THREE.Mesh(
     new THREE.TubeGeometry(courbe, 72, 0.028, 8),
-    new THREE.MeshBasicMaterial({ color: 0x1e9e6a }),
+    new THREE.MeshBasicMaterial({ color: 0xb9ff66 }),
   );
   groupe.add(ligne);
 
   const impulsion = new THREE.Mesh(
     new THREE.SphereGeometry(0.09, 18, 18),
     new THREE.MeshStandardMaterial({
-      color: 0x1e9e6a,
-      emissive: 0x1e9e6a,
+      color: 0xb9ff66,
+      emissive: 0xb9ff66,
       emissiveIntensity: 1.7,
     }),
   );
@@ -318,13 +318,13 @@ function creerDiagnostic(THREE: ModuleThree): Illustration {
 
   const routeurs: Array<InstanceType<ModuleThree["Group"]>> = [];
   [-1.45, 0, 1.45].forEach((x, index) => {
-    const routeur = creerMiniRouteur(THREE, index === 1 ? 0xc24e2d : 0x1e9e6a);
+    const routeur = creerMiniRouteur(THREE, index === 1 ? 0xc24e2d : 0xb9ff66);
     routeur.position.set(x, -0.92, -0.55);
     groupe.add(routeur);
     routeurs.push(routeur);
   });
 
-  const etiquette = creerEtiquette(THREE, "CPU • RAM • Wi-Fi • Ports", "#f4efe3", "#24304a");
+  const etiquette = creerEtiquette(THREE, "CPU • RAM • Wi-Fi • Ports", "#f3f3f3", "#191a23");
   etiquette.position.set(0, 1.08, 0.2);
   groupe.add(etiquette);
 
@@ -381,7 +381,7 @@ function creerCanaux(THREE: ModuleThree): Illustration {
       0.02,
       8,
     ),
-    new THREE.MeshStandardMaterial({ color: 0x24304a, roughness: 0.55 }),
+    new THREE.MeshStandardMaterial({ color: 0x191a23, roughness: 0.55 }),
   );
   groupe.add(cable);
 
@@ -411,15 +411,15 @@ function creerCanaux(THREE: ModuleThree): Illustration {
     );
     const tube = new THREE.Mesh(
       new THREE.TubeGeometry(courbe, 36, 0.018, 8),
-      new THREE.MeshBasicMaterial({ color: 0x24304a, transparent: true, opacity: 0.38 }),
+      new THREE.MeshBasicMaterial({ color: 0x191a23, transparent: true, opacity: 0.38 }),
     );
     groupe.add(tube);
 
     const impulsion = new THREE.Mesh(
       new THREE.SphereGeometry(0.07, 16, 16),
       new THREE.MeshStandardMaterial({
-        color: 0x1e9e6a,
-        emissive: 0x1e9e6a,
+        color: 0xb9ff66,
+        emissive: 0xb9ff66,
         emissiveIntensity: 1.6,
       }),
     );
@@ -458,7 +458,7 @@ function creerTelegram(THREE: ModuleThree) {
   // Disque bleu nuit bordé d'un fin anneau crème, façon pastille d'app.
   const disque = new THREE.Mesh(
     new THREE.CylinderGeometry(0.37, 0.37, 0.1, 48),
-    new THREE.MeshStandardMaterial({ color: 0x24304a, roughness: 0.32, metalness: 0.08 }),
+    new THREE.MeshStandardMaterial({ color: 0x191a23, roughness: 0.32, metalness: 0.08 }),
   );
   disque.rotation.x = Math.PI / 2;
   disque.castShadow = true;
@@ -466,7 +466,7 @@ function creerTelegram(THREE: ModuleThree) {
 
   const anneau = new THREE.Mesh(
     new THREE.TorusGeometry(0.37, 0.018, 10, 64),
-    new THREE.MeshStandardMaterial({ color: 0xf4efe3, roughness: 0.4 }),
+    new THREE.MeshStandardMaterial({ color: 0xf3f3f3, roughness: 0.4 }),
   );
   anneau.position.z = 0.05;
   groupe.add(anneau);
@@ -491,11 +491,11 @@ function creerTelegram(THREE: ModuleThree) {
       0.012,
       8,
     ),
-    new THREE.MeshStandardMaterial({ color: 0x24304a, roughness: 0.5 }),
+    new THREE.MeshStandardMaterial({ color: 0x191a23, roughness: 0.5 }),
   );
   groupe.add(arete);
 
-  const etiquette = creerEtiquette(THREE, "Telegram", "#24304a", "#f4efe3");
+  const etiquette = creerEtiquette(THREE, "Telegram", "#191a23", "#f3f3f3");
   etiquette.position.set(0, -0.52, 0.12);
   etiquette.scale.setScalar(0.52);
   groupe.add(etiquette);
@@ -556,7 +556,7 @@ function creerWhatsApp(THREE: ModuleThree) {
       bevelSize: 0.02,
       bevelSegments: 3,
     }),
-    new THREE.MeshStandardMaterial({ color: 0x1e9e6a, roughness: 0.35, metalness: 0.05 }),
+    new THREE.MeshStandardMaterial({ color: 0x65a30d, roughness: 0.35, metalness: 0.05 }),
   );
   bulle.castShadow = true;
   groupe.add(bulle);
@@ -569,7 +569,7 @@ function creerWhatsApp(THREE: ModuleThree) {
   combine.position.z = 0.16;
   groupe.add(combine);
 
-  const etiquette = creerEtiquette(THREE, "WhatsApp", "#1e9e6a", "#f4efe3");
+  const etiquette = creerEtiquette(THREE, "WhatsApp", "#b9ff66", "#191a23");
   etiquette.position.set(0, -0.58, 0.12);
   etiquette.scale.setScalar(0.52);
   groupe.add(etiquette);
@@ -647,14 +647,14 @@ function creerTextureEcranMac(THREE: ModuleThree) {
   if (contexte) {
     // Fond d'écran : nuit vers vert, dans la charte du site.
     const degrade = contexte.createLinearGradient(0, 0, 640, 400);
-    degrade.addColorStop(0, "#24304a");
-    degrade.addColorStop(1, "#173d2c");
+    degrade.addColorStop(0, "#191a23");
+    degrade.addColorStop(1, "#2e4a1f");
     contexte.fillStyle = degrade;
     contexte.fillRect(0, 0, 640, 400);
     // Barre de menu macOS.
     contexte.fillStyle = "rgba(244, 239, 227, 0.92)";
     contexte.fillRect(0, 0, 640, 34);
-    contexte.fillStyle = "#24304a";
+    contexte.fillStyle = "#191a23";
     contexte.font = "700 19px Arial, sans-serif";
     contexte.fillText(" SafeLink — Impression", 14, 24);
     contexte.font = "500 17px Arial, sans-serif";
@@ -664,7 +664,7 @@ function creerTextureEcranMac(THREE: ModuleThree) {
     contexte.fillRect(110, 78, 420, 250);
     contexte.fillStyle = "#e7dfca";
     contexte.fillRect(110, 78, 420, 44);
-    contexte.fillStyle = "#24304a";
+    contexte.fillStyle = "#191a23";
     contexte.font = "700 21px Arial, sans-serif";
     contexte.fillText("Tickets Hotspot — PDF", 132, 108);
     contexte.font = "500 18px Arial, sans-serif";
@@ -675,15 +675,15 @@ function creerTextureEcranMac(THREE: ModuleThree) {
       const y = 206 + i * 30;
       contexte.strokeStyle = "#ddd4bc";
       contexte.strokeRect(132, y, 300, 22);
-      contexte.fillStyle = i === 0 ? "#1e9e6a" : "#24304a";
+      contexte.fillStyle = i === 0 ? "#4d7c0f" : "#191a23";
       contexte.beginPath();
       contexte.arc(146, y + 11, 5, 0, Math.PI * 2);
       contexte.fill();
     }
     // Bouton Imprimer vert.
-    contexte.fillStyle = "#1e9e6a";
+    contexte.fillStyle = "#b9ff66";
     contexte.fillRect(356, 272, 140, 36);
-    contexte.fillStyle = "#f4efe3";
+    contexte.fillStyle = "#191a23";
     contexte.font = "700 19px Arial, sans-serif";
     contexte.textAlign = "center";
     contexte.fillText("Imprimer", 426, 297);
@@ -699,7 +699,7 @@ function creerImprimante(THREE: ModuleThree) {
   const groupe = new THREE.Group();
   const corps = new THREE.Mesh(
     geometrieCarte(THREE, 1.0, 0.56, 0.62),
-    new THREE.MeshStandardMaterial({ color: 0x24304a, roughness: 0.42 }),
+    new THREE.MeshStandardMaterial({ color: 0x191a23, roughness: 0.42 }),
   );
   corps.castShadow = true;
   groupe.add(corps);
@@ -722,7 +722,7 @@ function creerImprimante(THREE: ModuleThree) {
 
   const bandeAvant = new THREE.Mesh(
     new THREE.BoxGeometry(0.86, 0.15, 0.04),
-    new THREE.MeshStandardMaterial({ color: 0xf4efe3, roughness: 0.5 }),
+    new THREE.MeshStandardMaterial({ color: 0xf3f3f3, roughness: 0.5 }),
   );
   bandeAvant.position.set(0, 0.04, 0.32);
   groupe.add(bandeAvant);
@@ -730,8 +730,8 @@ function creerImprimante(THREE: ModuleThree) {
   const led = new THREE.Mesh(
     new THREE.SphereGeometry(0.045, 14, 14),
     new THREE.MeshStandardMaterial({
-      color: 0x1e9e6a,
-      emissive: 0x1e9e6a,
+      color: 0xb9ff66,
+      emissive: 0xb9ff66,
       emissiveIntensity: 1.6,
     }),
   );
@@ -750,7 +750,7 @@ function creerImprimante(THREE: ModuleThree) {
   papier.rotation.x = 0.38;
   groupe.add(papier);
 
-  const etiquette = creerEtiquette(THREE, "Impression", "#24304a", "#f4efe3");
+  const etiquette = creerEtiquette(THREE, "Impression", "#191a23", "#f3f3f3");
   etiquette.position.set(0, -0.6, 0.12);
   etiquette.scale.setScalar(0.52);
   groupe.add(etiquette);
@@ -769,17 +769,17 @@ function creerSecurite(THREE: ModuleThree): Illustration {
 
   const anneau = new THREE.Mesh(
     new THREE.TorusGeometry(2.05, 0.025, 10, 96),
-    new THREE.MeshBasicMaterial({ color: 0x1e9e6a, transparent: true, opacity: 0.55 }),
+    new THREE.MeshBasicMaterial({ color: 0xb9ff66, transparent: true, opacity: 0.55 }),
   );
   anneau.rotation.x = Math.PI / 2.35;
   anneau.position.y = -0.78;
   groupe.add(anneau);
 
-  const lecture = creerEtiquette(THREE, "Lecture seule", "#1e9e6a", "#f4efe3");
+  const lecture = creerEtiquette(THREE, "Lecture seule", "#b9ff66", "#191a23");
   lecture.position.set(-0.78, -1.0, 0.8);
   lecture.scale.setScalar(0.72);
   groupe.add(lecture);
-  const ecriture = creerEtiquette(THREE, "Écriture validée", "#c24e2d", "#f4efe3");
+  const ecriture = creerEtiquette(THREE, "Écriture validée", "#c24e2d", "#f3f3f3");
   ecriture.position.set(1.02, -1.0, 0.8);
   ecriture.scale.setScalar(0.72);
   groupe.add(ecriture);
@@ -799,8 +799,8 @@ function creerPublics(THREE: ModuleThree): Illustration {
   const groupe = new THREE.Group();
   const personnes: Array<InstanceType<ModuleThree["Group"]>> = [];
   const definitions = [
-    { nom: "Gérant", x: -1.55, couleur: 0x24304a },
-    { nom: "Revendeur", x: 0, couleur: 0x1e9e6a },
+    { nom: "Gérant", x: -1.55, couleur: 0x191a23 },
+    { nom: "Revendeur", x: 0, couleur: 0xb9ff66 },
     { nom: "Technicien", x: 1.55, couleur: 0xc24e2d },
   ];
 
@@ -813,7 +813,7 @@ function creerPublics(THREE: ModuleThree): Illustration {
 
   const arc = new THREE.Mesh(
     new THREE.TorusGeometry(1.85, 0.022, 10, 80, Math.PI),
-    new THREE.MeshBasicMaterial({ color: 0x24304a, transparent: true, opacity: 0.42 }),
+    new THREE.MeshBasicMaterial({ color: 0x191a23, transparent: true, opacity: 0.42 }),
   );
   arc.position.y = 0.52;
   arc.rotation.z = 0;
@@ -857,7 +857,7 @@ function creerMiniRouteur(THREE: ModuleThree, couleurLed: number) {
   const groupe = new THREE.Group();
   const corps = new THREE.Mesh(
     geometrieCarte(THREE, 1.05, 0.34, 0.5),
-    new THREE.MeshStandardMaterial({ color: 0xf4efe3, roughness: 0.45 }),
+    new THREE.MeshStandardMaterial({ color: 0xf3f3f3, roughness: 0.45 }),
   );
   corps.castShadow = true;
   groupe.add(corps);
@@ -884,7 +884,7 @@ function creerMiniRouteur(THREE: ModuleThree, couleurLed: number) {
   [-0.34, 0.34].forEach((x) => {
     const antenne = new THREE.Mesh(
       new THREE.CapsuleGeometry(0.025, 0.42, 5, 10),
-      new THREE.MeshStandardMaterial({ color: 0x24304a, roughness: 0.45 }),
+      new THREE.MeshStandardMaterial({ color: 0x191a23, roughness: 0.45 }),
     );
     antenne.position.set(x, 0.38, -0.12);
     antenne.rotation.z = x < 0 ? 0.1 : -0.1;
@@ -932,12 +932,12 @@ function creerBouclier(THREE: ModuleThree) {
       bevelSize: 0.035,
       bevelSegments: 3,
     }),
-    new THREE.MeshStandardMaterial({ color: 0x1e9e6a, roughness: 0.38 }),
+    new THREE.MeshStandardMaterial({ color: 0xb9ff66, roughness: 0.38 }),
   );
   bouclier.castShadow = true;
   groupe.add(bouclier);
 
-  const coche = creerEtiquette(THREE, "✓", "#f4efe3", "#1e9e6a");
+  const coche = creerEtiquette(THREE, "✓", "#191a23", "#b9ff66");
   coche.position.set(0, 0.02, 0.16);
   coche.scale.setScalar(0.55);
   groupe.add(coche);
@@ -955,14 +955,14 @@ function creerCadenas(THREE: ModuleThree) {
 
   const anse = new THREE.Mesh(
     new THREE.TorusGeometry(0.34, 0.055, 12, 40, Math.PI),
-    new THREE.MeshStandardMaterial({ color: 0x24304a, roughness: 0.32, metalness: 0.35 }),
+    new THREE.MeshStandardMaterial({ color: 0x191a23, roughness: 0.32, metalness: 0.35 }),
   );
   anse.position.y = 0.42;
   groupe.add(anse);
 
   const trou = new THREE.Mesh(
     new THREE.CylinderGeometry(0.09, 0.09, 0.32, 20),
-    new THREE.MeshStandardMaterial({ color: 0xf4efe3, roughness: 0.4 }),
+    new THREE.MeshStandardMaterial({ color: 0xf3f3f3, roughness: 0.4 }),
   );
   trou.rotation.x = Math.PI / 2;
   trou.position.z = 0.16;
@@ -975,7 +975,7 @@ function creerPersonne(THREE: ModuleThree, couleur: number, nom: string) {
   const groupe = new THREE.Group();
   const tete = new THREE.Mesh(
     new THREE.SphereGeometry(0.27, 24, 24),
-    new THREE.MeshStandardMaterial({ color: 0xf4efe3, roughness: 0.5 }),
+    new THREE.MeshStandardMaterial({ color: 0xf3f3f3, roughness: 0.5 }),
   );
   tete.position.y = 0.48;
   tete.castShadow = true;
@@ -989,7 +989,7 @@ function creerPersonne(THREE: ModuleThree, couleur: number, nom: string) {
   corps.castShadow = true;
   groupe.add(corps);
 
-  const etiquette = creerEtiquette(THREE, nom, "#f4efe3", "#24304a");
+  const etiquette = creerEtiquette(THREE, nom, "#f3f3f3", "#191a23");
   etiquette.position.set(0, -0.78, 0.24);
   etiquette.scale.setScalar(0.58);
   groupe.add(etiquette);
@@ -1065,13 +1065,13 @@ function creerTextureMiniTicket(THREE: ModuleThree, code: string) {
   if (contexte) {
     contexte.fillStyle = "#fbf8f0";
     contexte.fillRect(0, 0, canvas.width, canvas.height);
-    contexte.fillStyle = "#24304a";
+    contexte.fillStyle = "#191a23";
     contexte.font = "700 32px Arial, sans-serif";
     contexte.fillText("WI-FI HOTSPOT", 30, 54);
-    contexte.fillStyle = "#1e9e6a";
+    contexte.fillStyle = "#4d7c0f";
     contexte.font = "700 58px 'Courier New', monospace";
     contexte.fillText(code, 30, 158);
-    contexte.strokeStyle = "#24304a";
+    contexte.strokeStyle = "#191a23";
     contexte.setLineDash([12, 10]);
     contexte.lineWidth = 3;
     contexte.beginPath();
@@ -1099,10 +1099,10 @@ function creerTexturePDF(THREE: ModuleThree) {
     contexte.fillRect(0, 0, canvas.width, canvas.height);
     contexte.fillStyle = "#c24e2d";
     contexte.fillRect(0, 0, canvas.width, 104);
-    contexte.fillStyle = "#f4efe3";
+    contexte.fillStyle = "#f3f3f3";
     contexte.font = "700 52px Arial, sans-serif";
     contexte.fillText("PDF", 30, 68);
-    contexte.fillStyle = "#24304a";
+    contexte.fillStyle = "#191a23";
     contexte.font = "700 31px Arial, sans-serif";
     contexte.fillText("Tickets Hotspot", 30, 166);
     contexte.font = "500 25px Arial, sans-serif";
@@ -1112,11 +1112,11 @@ function creerTexturePDF(THREE: ModuleThree) {
       const y = 258 + i * 72;
       contexte.strokeStyle = "#ddd4bc";
       contexte.strokeRect(30, y, 452, 54);
-      contexte.fillStyle = i % 2 === 0 ? "#1e9e6a" : "#24304a";
+      contexte.fillStyle = i % 2 === 0 ? "#4d7c0f" : "#191a23";
       contexte.beginPath();
       contexte.arc(58, y + 27, 9, 0, Math.PI * 2);
       contexte.fill();
-      contexte.fillStyle = "#24304a";
+      contexte.fillStyle = "#191a23";
       contexte.font = "700 25px 'Courier New', monospace";
       contexte.fillText(`ticket_${2480 + i * 137}`, 82, y + 36);
     }

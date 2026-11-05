@@ -86,7 +86,7 @@ export function EnTeteAccueil() {
           >
             <Link href="/connexion">Se connecter</Link>
           </Button>
-          <Button asChild size="sm" variant="secondary">
+          <Button asChild size="sm" className="bg-accent text-accent-foreground hover:bg-accent/85">
             <Link href="/connexion">
               Accéder à mon espace
               <ArrowRight data-icon="inline-end" aria-hidden="true" />
