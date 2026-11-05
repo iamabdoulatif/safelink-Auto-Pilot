@@ -249,6 +249,7 @@ function Contenu({
             <Button
               type="button"
               disabled={occupe}
+              className="bg-signal text-white hover:bg-signal/90"
               onClick={() => void enregistrer()}
             >
               Activer le réapprovisionnement
@@ -271,9 +272,9 @@ function Contenu({
               <p className="flex flex-wrap items-center gap-2 font-medium">
                 {a.routeur_nom ?? "?"} · {a.profil} ·
                 {a.actif ? (
-                  <Badge variant="secondary">activé</Badge>
+                  <Badge className="bg-accent text-accent-foreground">activé</Badge>
                 ) : (
-                  <Badge variant="outline">en pause</Badge>
+                  <Badge className="bg-signal text-white">en pause</Badge>
                 )}
                 {a.statut_run && (
                   <Badge
@@ -339,7 +340,7 @@ export default function Reapprovisionnement() {
   return (
     <main className="mx-auto flex max-w-4xl flex-col gap-4 p-4 sm:p-6">
       <div>
-        <h1 className="text-2xl font-semibold">
+        <h1 className="text-2xl font-semibold tracking-tight">
           Réapprovisionnement automatique
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">

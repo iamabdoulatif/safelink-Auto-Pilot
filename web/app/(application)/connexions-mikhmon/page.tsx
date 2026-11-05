@@ -320,7 +320,7 @@ function Contenu({ initiales }: { initiales: Promise<{ data?: Installation[] }> 
           </div>
           <div className="pt-1">
             <div className="flex flex-wrap gap-2">
-              <Button type="button" disabled={occupe} onClick={() => void enregistrer()}>
+              <Button type="button" disabled={occupe} className="bg-signal text-white hover:bg-signal/90" onClick={() => void enregistrer()}>
                 {editionId === null ? "Enregistrer" : "Enregistrer les modifications"}
               </Button>
               {editionId !== null && (
@@ -413,7 +413,7 @@ export default function ConnexionsMikhmon() {
   return (
     <main className="mx-auto flex max-w-3xl flex-col gap-4 p-4 sm:p-6">
       <div>
-        <h1 className="text-2xl font-semibold">Mes connexions Mikhmon</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">Mes connexions Mikhmon</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Installations Mikhmon de votre espace. Mikhmon n&apos;a pas
           d&apos;API de génération : les tickets sont créés dans RouterOS et

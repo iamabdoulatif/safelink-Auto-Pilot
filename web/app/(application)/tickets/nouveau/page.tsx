@@ -374,6 +374,7 @@ function Contenu() {
             <Button
               type="button"
               disabled={occupe}
+              className="bg-signal text-white hover:bg-signal/90"
               onClick={() => void demander(true)}
             >
               Valider et générer
@@ -389,7 +390,7 @@ export default function GenererTickets() {
   return (
     <main className="mx-auto flex max-w-3xl flex-col gap-4 p-4 sm:p-6">
       <div>
-        <h1 className="text-2xl font-semibold">Générer des tickets</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">Générer des tickets</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Les tickets sont créés dans RouterOS et deviennent visibles dans
           Mikhmon. Aucune écriture avant votre validation du récapitulatif.

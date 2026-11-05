@@ -140,7 +140,7 @@ function Contenu({ initiale }: { initiale: Promise<{ data?: Config }> }) {
             <span>Activation</span>
           </label>
           <div className="pt-1">
-            <Button type="button" disabled={occupe} onClick={() => void enregistrer()}>
+            <Button type="button" disabled={occupe} className="bg-signal text-white hover:bg-signal/90" onClick={() => void enregistrer()}>
               Enregistrer et tester
             </Button>
           </div>
@@ -177,7 +177,7 @@ export default function ConfigurationWhatsApp() {
   return (
     <main className="mx-auto flex max-w-3xl flex-col gap-4 p-4 sm:p-6">
       <div>
-        <h1 className="text-2xl font-semibold">Configuration WhatsApp</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">Configuration WhatsApp</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Un adaptateur par espace. Les mots de passe des tickets ne
           transitent jamais dans une URL.

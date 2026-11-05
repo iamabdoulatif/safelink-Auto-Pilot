@@ -313,6 +313,7 @@ function Contenu() {
             <Button
               type="button"
               disabled={occupe || !configId}
+              className="bg-signal text-white hover:bg-signal/90"
               onClick={() => void enregistrer()}
             >
               Enregistrer
@@ -328,7 +329,7 @@ export default function Routeurs() {
   return (
     <main className="mx-auto flex max-w-3xl flex-col gap-4 p-4 sm:p-6">
       <div>
-        <h1 className="text-2xl font-semibold">Mes routeurs</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">Mes routeurs</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Le diagnostic utilise le compte lecture seule ; les écritures
           utilisent uniquement le compte de correction, après validation

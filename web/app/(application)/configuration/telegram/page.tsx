@@ -182,7 +182,7 @@ function Contenu({ initiale }: { initiale: Promise<{ data?: ConfigTelegram }> })
           )}
 
           <div className="pt-1">
-            <Button type="button" disabled={occupe} onClick={() => void enregistrer()}>
+            <Button type="button" disabled={occupe} className="bg-signal text-white hover:bg-signal/90" onClick={() => void enregistrer()}>
               Enregistrer
             </Button>
           </div>
@@ -219,7 +219,7 @@ export default function ConfigurationTelegram() {
   return (
     <main className="mx-auto flex max-w-3xl flex-col gap-4 p-4 sm:p-6">
       <div>
-        <h1 className="text-2xl font-semibold">Configuration Telegram</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">Configuration Telegram</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Choisissez le bot qui enverra les tickets. Le jeton d&apos;un bot
           personnalisé est vérifié auprès de Telegram, chiffré en base, et

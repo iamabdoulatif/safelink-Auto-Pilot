@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { EntetePage } from "@/components/entete-page";
 
 // Ligne d'historique : runs + lots, sans aucun secret.
 type Ligne = {
@@ -64,16 +65,18 @@ async function Lignes() {
   return (
     <div className="flex flex-col gap-2">
       {rows.map((l) => (
-        <Card key={l.run_id}>
+        <Card key={l.run_id} className="transition-colors hover:border-foreground/25">
           <CardHeader className="flex-row items-center justify-between gap-2">
             <CardTitle className="truncate text-base">
               {l.routeur_nom ?? "?"} · {l.profil}
             </CardTitle>
-            <Badge
-              variant={l.statut === "echoue" ? "destructive" : "secondary"}
-            >
-              {l.statut}
-            </Badge>
+            {l.statut === "echoue" ? (
+              <Badge variant="destructive">{l.statut}</Badge>
+            ) : l.statut === "en_cours" || l.statut === "en_attente" ? (
+              <Badge className="bg-signal text-white">{l.statut}</Badge>
+            ) : (
+              <Badge className="bg-accent text-accent-foreground">{l.statut}</Badge>
+            )}
           </CardHeader>
           <CardContent className="flex flex-col gap-1 text-sm text-muted-foreground">
             <p>
@@ -103,13 +106,10 @@ async function Lignes() {
 export default function Historique() {
   return (
     <main className="mx-auto flex max-w-5xl flex-col gap-4 p-4 sm:p-6">
-      <div>
-        <h1 className="text-2xl font-semibold">Historique</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Générations manuelles et automatiques de votre espace. Aucun
-          secret n&apos;y figure.
-        </p>
-      </div>
+      <EntetePage
+        titre="Historique"
+        description="Générations manuelles et automatiques de votre espace. Aucun secret n'y figure."
+      />
       <Suspense
         fallback={
           <div className="flex flex-col gap-2">

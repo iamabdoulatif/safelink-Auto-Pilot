@@ -30,7 +30,7 @@ export default async function PageProfil() {
 
   return (
     <main className="mx-auto flex max-w-3xl flex-col gap-4 p-4 sm:p-6">
-      <h1 className="text-2xl font-semibold">Mon profil</h1>
+      <h1 className="text-2xl font-semibold tracking-tight">Mon profil</h1>
       <Card>
         <CardHeader>
           <CardTitle>Compte</CardTitle>

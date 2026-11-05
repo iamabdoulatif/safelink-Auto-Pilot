@@ -188,7 +188,7 @@ function Contenu({
             </div>
           </div>
           <div className="pt-1">
-            <Button type="button" disabled={occupe} onClick={() => void enregistrer()}>
+            <Button type="button" disabled={occupe} className="bg-signal text-white hover:bg-signal/90" onClick={() => void enregistrer()}>
               Enregistrer
             </Button>
           </div>
@@ -203,7 +203,7 @@ export default function Parametres() {
   return (
     <main className="mx-auto flex max-w-3xl flex-col gap-4 p-4 sm:p-6">
       <div>
-        <h1 className="text-2xl font-semibold">Paramètres du compte</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">Paramètres du compte</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Réglages de votre espace. Isolation stricte : un espace ne voit
           jamais les données d&apos;un autre.

@@ -10,7 +10,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
+import { EntetePage } from "@/components/entete-page";
 
 // Demande de generation mise en pause par n8n, sans secret ni mot de passe.
 type Demande = {
@@ -47,9 +48,12 @@ async function Demandes() {
     <ul className="grid gap-4">
       {rows.map((d) => (
         <li key={d.id}>
-          <Card>
+          <Card className="border-signal/40 transition-colors hover:border-signal">
             <CardHeader>
-              <CardTitle>Génération {d.profil ?? "—"}</CardTitle>
+              <CardTitle className="flex flex-wrap items-center gap-2">
+                Génération {d.profil ?? "—"}
+                <Badge className="bg-signal text-white">En attente</Badge>
+              </CardTitle>
               <CardDescription>
                 Reçue le {new Date(d.created_at).toLocaleString("fr-FR")} —
                 exécution {d.execution_id.slice(0, 8)}…
@@ -80,14 +84,11 @@ async function Demandes() {
 export default function PageApprobations() {
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-col gap-6 p-6">
-      <div>
-        <h1 className="font-serif text-3xl">Approbations</h1>
-        <p className="text-sm text-muted-foreground">
-          Les générations mises en pause attendent votre décision.
-        </p>
-      </div>
-      <Separator />
-      <Suspense fallback={<p>Chargement…</p>}>
+      <EntetePage
+        titre="Approbations"
+        description="Les générations mises en pause par vos workflows attendent votre décision : approuver reprend l'envoi, refuser l'arrête."
+      />
+      <Suspense fallback={<p className="text-sm text-muted-foreground">Chargement…</p>}>
         <Demandes />
       </Suspense>
     </main>

@@ -378,3 +378,31 @@
     animation: none;
   }
 }
+
+/* Principe appliqué à tout le dashboard : chaque page entre en cascade
+   (titre, cartes, tableaux), comme la page Réapprovisionnement.
+   La landing a son propre <main id="contenu"> et n'est pas touchée. */
+main:not(#contenu) > * {
+  animation: apparition 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+main:not(#contenu) > *:nth-child(2) {
+  animation-delay: 60ms;
+}
+main:not(#contenu) > *:nth-child(3) {
+  animation-delay: 120ms;
+}
+main:not(#contenu) > *:nth-child(4) {
+  animation-delay: 180ms;
+}
+main:not(#contenu) tbody tr {
+  transition: background-color 0.2s ease;
+}
+main:not(#contenu) tbody tr:hover {
+  background-color: color-mix(in srgb, var(--secondary) 55%, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  main:not(#contenu) > * {
+    animation: none;
+  }
+}

@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { EntetePage } from "@/components/entete-page";
 
 type LigneConstat = {
   regle: string;
@@ -53,19 +54,34 @@ async function Constats() {
       </Card>
     );
   }
+  const nbCritiques = rows.filter((c) => c.gravite === "critique").length;
+  const nbMajeures = rows.filter((c) => c.gravite === "majeure").length;
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-3">
+      <ul className="flex flex-wrap gap-2" aria-label="Résumé des constats">
+        <li>
+          <Badge variant="destructive">{nbCritiques} critique{nbCritiques > 1 ? "s" : ""}</Badge>
+        </li>
+        <li>
+          <Badge className="bg-signal text-white">{nbMajeures} majeure{nbMajeures > 1 ? "s" : ""}</Badge>
+        </li>
+        <li>
+          <Badge variant="secondary">{rows.length} au total</Badge>
+        </li>
+      </ul>
       {rows.map((c, i) => (
-        <Card key={c.regle + c.cible + i}>
+        <Card key={c.regle + c.cible + i} className="transition-colors hover:border-foreground/25">
           <CardHeader className="flex-row items-center justify-between gap-2">
             <CardTitle className="truncate text-base">
               {c.routeur_nom} — {c.titre}
             </CardTitle>
-            <Badge
-              variant={c.gravite === "critique" ? "destructive" : "secondary"}
-            >
-              {c.gravite}
-            </Badge>
+            {c.gravite === "critique" ? (
+              <Badge variant="destructive">{c.gravite}</Badge>
+            ) : c.gravite === "majeure" ? (
+              <Badge className="bg-signal text-white">{c.gravite}</Badge>
+            ) : (
+              <Badge variant="secondary">{c.gravite}</Badge>
+            )}
           </CardHeader>
           <CardContent className="flex flex-col gap-1 text-sm text-muted-foreground">
             <p>
@@ -83,13 +99,10 @@ async function Constats() {
 export default function Diagnostics() {
   return (
     <main className="mx-auto flex max-w-5xl flex-col gap-4 p-4 sm:p-6">
-      <div>
-        <h1 className="text-2xl font-semibold">Diagnostics</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Constats ouverts : matériel, Wi-Fi et configuration. Toute
-          correction passe par une validation humaine préalable.
-        </p>
-      </div>
+      <EntetePage
+        titre="Diagnostics"
+        description="Constats ouverts : matériel, Wi-Fi et configuration. Toute correction passe par une validation humaine préalable."
+      />
       <Suspense fallback={<Skeleton className="h-36 w-full" />}>
         <Constats />
       </Suspense>

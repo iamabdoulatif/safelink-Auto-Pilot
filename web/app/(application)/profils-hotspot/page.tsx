@@ -92,6 +92,7 @@ function Contenu({ initiales }: { initiales: Promise<{ data?: Config[] }> }) {
             <Button
               type="button"
               disabled={occupe || !configId}
+              className="bg-signal text-white hover:bg-signal/90"
               onClick={() => void charger(configId)}
             >
               Lister les profils
@@ -132,7 +133,7 @@ export default function ProfilsHotspot() {
   return (
     <main className="mx-auto flex max-w-3xl flex-col gap-4 p-4 sm:p-6">
       <div>
-        <h1 className="text-2xl font-semibold">Profils Hotspot</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">Profils Hotspot</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Durée, débit et clients simultanés par profil : la génération de
           tickets exige un profil explicite.
