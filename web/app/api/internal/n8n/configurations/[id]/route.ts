@@ -1,3 +1,6 @@
+import type { DestinataireSupplementaire } from "@/lib/destinataires-supplementaires";
+import { resoudreEnvois } from "@/lib/envois-supplementaires";
+import type { EnvoiSupplementaire } from "@/lib/envois-supplementaires";
 import { db } from "@/lib/db";
 import { verifierAppelInterne } from "@/lib/n8n-interne";
 import { dechiffrer } from "@/lib/chiffrement-serveur";
@@ -69,13 +72,15 @@ export async function GET(
     `SELECT run_id, tenant_id, utilisateur_id, router_connection_id,
        mikhmon_connection_id, profil, quantite_demandee, seuil,
        quantite_cible, canal_envoi, destinataire, whatsapp_recipient,
-       printnode_printer_id, statut, simulation
+       printnode_printer_id, statut, simulation,
+       destinataires_supplementaires
      FROM ticket_generation_runs WHERE run_id = $1`,
     [id],
   );
   const lignes = runs as (LigneRun & {
     whatsapp_recipient: string | null;
     printnode_printer_id: string | null;
+    destinataires_supplementaires: DestinataireSupplementaire[] | null;
   })[];
   if (lignes.length === 0) {
     return Response.json({ error: "Run inconnu." }, { status: 404 });
@@ -113,7 +118,12 @@ export async function GET(
   let telegram: Record<string, unknown> | null = null;
   let whatsapp: Record<string, unknown> | null = null;
   let printnode: Record<string, unknown> | null = null;
+  let supplementaires: EnvoiSupplementaire[] = [];
   try {
+    supplementaires = await resoudreEnvois(
+      run.tenant_id,
+      lignes[0].destinataires_supplementaires ?? [],
+    );
     if (run.canal_envoi === "telegram") {
       const { rows } = await db.query(
         `SELECT chat_id, jeton_chiffre, bot_verifie, statut_connexion
@@ -247,6 +257,7 @@ export async function GET(
         telegram,
         whatsapp,
         printnode,
+        supplementaires,
       },
     },
   });

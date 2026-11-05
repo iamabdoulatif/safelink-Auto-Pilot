@@ -42,6 +42,11 @@ export async function POST(req: Request) {
     !termine && typeof corps["erreur"] === "string"
       ? corps["erreur"].slice(0, 500)
       : null;
+  // Lot reussi, mais un autre destinataire n'a pas recu le PDF.
+  const avertissement =
+    termine && typeof corps["avertissement"] === "string"
+      ? corps["avertissement"].slice(0, 500)
+      : null;
 
   try {
     const { rows } = await db.query(
@@ -92,10 +97,10 @@ export async function POST(req: Request) {
           `UPDATE auto_replenishment_settings
            SET dernier_stock = $3, derniere_verif_le = now(),
                stock_rearme = ($3 > seuil), updated_at = now(),
-               derniere_erreur = NULL
+               derniere_erreur = $5
            WHERE tenant_id = $1 AND router_connection_id = $2
              AND profil = $4`,
-          [tenantId, run.router_connection_id, stockApres, run.profil],
+          [tenantId, run.router_connection_id, stockApres, run.profil, avertissement],
         );
       } else {
         await db.query(

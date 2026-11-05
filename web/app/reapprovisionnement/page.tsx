@@ -47,6 +47,7 @@ type Regle = {
   frequence_minutes: number;
   canal: string;
   destinataire: string;
+  destinataires_supplementaires: AutreDestinataire[];
   duree_limite: string | null;
   volume_limite_octets: number | null;
   actif: boolean;
@@ -55,6 +56,8 @@ type Regle = {
   derniere_erreur: string | null;
   blocages: string[];
 };
+
+type AutreDestinataire = { canal: "telegram" | "whatsapp"; valeur: string };
 
 type RouteurChoix = { id: number; nom: string };
 
@@ -98,6 +101,7 @@ function Contenu({
   const [regles, setRegles] = useState<Regle[]>(resolues.regles);
   const [routeurs, setRouteurs] = useState<RouteurChoix[]>(resolues.routeurs);
   const [form, setForm] = useState(VIDE);
+  const [autres, setAutres] = useState<AutreDestinataire[]>([]);
   const [regleEnModification, setRegleEnModification] = useState<number | null>(null);
   const [cible, setCible] = useState<Regle | null>(null);
   const [erreur, setErreur] = useState<string | null>(null);
@@ -146,6 +150,7 @@ function Contenu({
           frequenceMinutes: nombre(form.frequenceMinutes),
           canal: form.canal,
           destinataire: form.destinataire,
+          destinatairesSupplementaires: autres,
           dureeLimite: form.dureeLimite || undefined,
           volumeLimiteOctets: form.volumeLimiteOctets.trim() === ""
             ? undefined
@@ -163,6 +168,7 @@ function Contenu({
           ? "Réglage enregistré. Activez-le après les vérifications."
           : "Réglage modifié avec succès.");
         setForm(VIDE);
+    setAutres([]);
         setRegleEnModification(null);
         await charger();
       }
@@ -177,6 +183,7 @@ function Contenu({
     setErreur(null);
     setMessage(null);
     setRegleEnModification(regle.id);
+    setAutres(regle.destinataires_supplementaires ?? []);
     setForm({
       routerConnectionId: String(regle.router_connection_id),
       profil: regle.profil,
@@ -196,6 +203,7 @@ function Contenu({
   function annulerModification() {
     setRegleEnModification(null);
     setForm(VIDE);
+    setAutres([]);
     setErreur(null);
     setMessage(null);
   }
@@ -392,6 +400,58 @@ function Contenu({
             <Label htmlFor="destinataire">Destinataire</Label>
             <Input id="destinataire" {...champ("destinataire")} />
           </div>
+          <div className="flex flex-col gap-2">
+            <Label>Autres destinataires du PDF (5 maximum)</Label>
+            <p className="text-xs text-muted-foreground">
+              WhatsApp : numéro au format international. Telegram : chat ID, pas
+              un numéro. La personne doit d&apos;abord écrire à votre bot.
+            </p>
+            {autres.map((autre, i) => (
+              <div key={i} className="flex flex-wrap items-center gap-2">
+                <select
+                  aria-label={`Canal du destinataire ${i + 1}`}
+                  value={autre.canal}
+                  onChange={(e) => {
+                    const canal = e.target.value as AutreDestinataire["canal"];
+                    setAutres((l) => l.map((d, j) => (j === i ? { ...d, canal } : d)));
+                  }}
+                  className="h-9 rounded-md border border-input bg-transparent px-3 text-sm shadow-xs outline-none focus-visible:border-ring"
+                >
+                  <option value="whatsapp">WhatsApp</option>
+                  <option value="telegram">Telegram</option>
+                </select>
+                <Input
+                  aria-label={`Numéro ou chat ID du destinataire ${i + 1}`}
+                  className="min-w-40 flex-1"
+                  inputMode="tel"
+                  value={autre.valeur}
+                  placeholder={autre.canal === "whatsapp" ? "+2250700000000" : "123456789"}
+                  onChange={(e) => {
+                    const valeur = e.target.value;
+                    setAutres((l) => l.map((d, j) => (j === i ? { ...d, valeur } : d)));
+                  }}
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => setAutres((l) => l.filter((_, j) => j !== i))}
+                >
+                  Retirer
+                </Button>
+              </div>
+            ))}
+            {autres.length < 5 && (
+              <div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setAutres((l) => [...l, { canal: "whatsapp", valeur: "" }])}
+                >
+                  Ajouter un destinataire
+                </Button>
+              </div>
+            )}
+          </div>
           <div>
             <Label htmlFor="duree">Durée éventuelle (ex. 2h)</Label>
             <Input id="duree" {...champ("dureeLimite")} />
@@ -436,6 +496,12 @@ function Contenu({
               <p>Seuil : {cible.seuil} tickets neufs</p>
               <p>Quantité cible : {cible.quantite_cible}</p>
               <p>Canal : {cible.canal} ({cible.destinataire || "—"})</p>
+              <p>
+                Autres destinataires :{" "}
+                {cible.destinataires_supplementaires?.length
+                  ? cible.destinataires_supplementaires.map((d) => d.valeur).join(", ")
+                  : "aucun"}
+              </p>
               <p>Fréquence : toutes les {cible.frequence_minutes} minutes</p>
               <p className="font-bold">
                 Avertissement : des tickets seront générés automatiquement

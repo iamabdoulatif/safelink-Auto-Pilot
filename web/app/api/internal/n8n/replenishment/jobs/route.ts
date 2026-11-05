@@ -32,6 +32,7 @@ type Regle = {
   stock_rearme: boolean;
   actif: boolean;
   simulation_reussie: boolean;
+  destinataires_supplementaires: unknown;
 };
 
 const VERROU_SQL = `SELECT id FROM ticket_generation_runs
@@ -46,7 +47,8 @@ const SELECT_REGLES = `SELECT s.id AS regle_id, s.tenant_id, s.utilisateur_id,
        s.router_connection_id, s.mikhmon_connection_id, s.profile_id,
        s.profil, p.valide AS profil_valide, r.actif AS routeur_actif,
        s.seuil, s.quantite_generation, s.quantite_cible, s.canal,
-       s.stock_rearme, s.actif, s.simulation_reussie
+       s.stock_rearme, s.actif, s.simulation_reussie,
+       s.destinataires_supplementaires
      FROM auto_replenishment_settings s
      JOIN configurations_routeurs r
        ON r.id = s.router_connection_id AND r.actif = true
@@ -132,13 +134,15 @@ export async function POST(req: Request) {
         `INSERT INTO ticket_generation_runs
            (run_id, tenant_id, utilisateur_id, mikhmon_connection_id,
             router_connection_id, profil, quantite_demandee, seuil,
-            quantite_cible, canal_envoi, simulation, statut)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)`,
+            quantite_cible, canal_envoi, simulation, statut,
+            destinataires_supplementaires)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)`,
         [runId, regle.tenant_id, regle.utilisateur_id,
           regle.mikhmon_connection_id, regle.router_connection_id,
           regle.profil, enSurveillance ? 1 : regle.quantite_generation,
           regle.seuil, regle.quantite_cible, regle.canal, mode.simulation,
-          mode.simulation ? "simulation" : "demande"],
+          mode.simulation ? "simulation" : "demande",
+          JSON.stringify(regle.destinataires_supplementaires ?? [])],
       );
       await db.query(
         `UPDATE auto_replenishment_settings

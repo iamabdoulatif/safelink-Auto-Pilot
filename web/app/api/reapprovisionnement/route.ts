@@ -1,5 +1,8 @@
 import { db } from "@/lib/db";
 import { session } from "@/lib/session";
+import { validerDestinataires } from "@/lib/destinataires-supplementaires";
+import type { DestinataireSupplementaire } from "@/lib/destinataires-supplementaires";
+import { verifierDestinataires } from "@/lib/envois-supplementaires";
 import {
   listerProfilsHotspot,
   lireMotDePasseLecture,
@@ -26,6 +29,7 @@ type LigneRegle = {
   frequence_minutes: number;
   canal: string;
   destinataire: string;
+  destinataires_supplementaires: DestinataireSupplementaire[];
   duree_limite: string | null;
   volume_limite_octets: number | null;
   actif: boolean;
@@ -122,7 +126,8 @@ export async function GET() {
       `SELECT s.id, s.tenant_id, s.utilisateur_id, s.router_connection_id,
          s.mikhmon_connection_id, s.profile_id, r.nom AS routeur_nom,
          s.profil, s.seuil, s.quantite_generation, s.quantite_cible,
-         s.frequence_minutes, s.canal, s.destinataire, s.duree_limite,
+         s.frequence_minutes, s.canal, s.destinataire,
+         s.destinataires_supplementaires, s.duree_limite,
          s.volume_limite_octets, s.actif, s.simulation_reussie,
          s.stock_rearme, s.dernier_stock, s.derniere_verif_le,
          s.derniere_erreur
@@ -199,6 +204,10 @@ export async function POST(req: Request) {
     return Response.json({ error: "destinataire trop long (128 maximum)." },
       { status: 400 });
   }
+  const autres = validerDestinataires(b["destinatairesSupplementaires"]);
+  if ("erreur" in autres) {
+    return Response.json({ error: autres.erreur }, { status: 400 });
+  }
   if (volume !== null &&
     (!Number.isInteger(volume) || (volume as number) <= 0)) {
     return Response.json({ error: "volumeLimiteOctets doit être un entier." },
@@ -212,6 +221,10 @@ export async function POST(req: Request) {
   const routeurId = routerConnectionId as number;
 
   try {
+    const refusAutres = await verifierDestinataires(ctx.tenantId, autres.liste);
+    if (refusAutres) {
+      return Response.json({ error: refusAutres }, { status: 400 });
+    }
     const { rows: routeurs } = await db.query(
       `SELECT id FROM configurations_routeurs
        WHERE id = $1 AND tenant_id = $2`,
@@ -282,8 +295,9 @@ export async function POST(req: Request) {
          (tenant_id, utilisateur_id, router_connection_id,
           mikhmon_connection_id, profile_id, profil, seuil,
           quantite_generation, quantite_cible, frequence_minutes, canal,
-          destinataire, duree_limite, volume_limite_octets)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
+          destinataire, duree_limite, volume_limite_octets,
+          destinataires_supplementaires)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)
        ON CONFLICT (tenant_id, router_connection_id, profil) DO UPDATE SET
          mikhmon_connection_id = EXCLUDED.mikhmon_connection_id,
          profile_id = EXCLUDED.profile_id, seuil = EXCLUDED.seuil,
@@ -293,11 +307,13 @@ export async function POST(req: Request) {
          canal = EXCLUDED.canal, destinataire = EXCLUDED.destinataire,
          duree_limite = EXCLUDED.duree_limite,
          volume_limite_octets = EXCLUDED.volume_limite_octets,
+         destinataires_supplementaires = EXCLUDED.destinataires_supplementaires,
          updated_at = now()
        RETURNING id`,
       [ctx.tenantId, ctx.utilisateurId, routerConnectionId, mikhmonId,
       profilIdEnregistre, profil, seuil, quantiteGeneration, quantiteCible,
-        frequence, canal, destinataire, dureeLimite, volume],
+        frequence, canal, destinataire, dureeLimite, volume,
+        JSON.stringify(autres.liste)],
     );
     const regleId = (rows[0] as { id: number }).id;
     return Response.json({
