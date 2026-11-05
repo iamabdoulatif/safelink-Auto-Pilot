@@ -2,13 +2,10 @@ import { Suspense } from "react";
 import { connection } from "next/server";
 import { db } from "@/lib/db";
 import { sessionPage } from "@/lib/session";
-import { cn } from "@/lib/utils";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ActionsParc } from "@/components/actions-parc";
 import { AjouterParc } from "@/components/ajouter-parc";
-import { MaterielRouteur } from "@/components/materiel-routeur";
+import { CarteRouteur, Pastille } from "@/components/carte-routeur";
 
 // Une ligne lue par la requête : les compteurs Postgres arrivent en texte,
 // l'horodatage en Date ou en texte selon le pilote.
@@ -21,54 +18,6 @@ type LigneRouteur = {
   critiques: string;
   majeurs: string;
 };
-
-// Les trois couleurs du parc : rouge = critique, ambre = à surveiller,
-// vert = sous contrôle. Un pastille + un libellé, jamais de la couleur seule.
-const COULEURS_PASTILLE = {
-  rouge: "bg-status-critique",
-  ambre: "bg-status-majeur",
-  vert: "bg-status-ok",
-} as const;
-
-function Pastille({ couleur }: { couleur: keyof typeof COULEURS_PASTILLE }) {
-  return (
-    <span
-      aria-hidden="true"
-      className={cn(
-        "inline-block size-2 shrink-0 rounded-full",
-        COULEURS_PASTILLE[couleur],
-      )}
-    />
-  );
-}
-
-function StatutRouteur({ critiques, majeurs }: { critiques: number; majeurs: number }) {
-  if (critiques > 0) {
-    return (
-      <Badge variant="destructive">
-        <Pastille couleur="rouge" />
-        {critiques} critique{critiques > 1 ? "s" : ""}
-      </Badge>
-    );
-  }
-  if (majeurs > 0) {
-    return (
-      <Badge
-        variant="outline"
-        className="border-status-majeur/30 bg-status-majeur/10 text-status-majeur"
-      >
-        <Pastille couleur="ambre" />
-        {majeurs} majeur{majeurs > 1 ? "s" : ""}
-      </Badge>
-    );
-  }
-  return (
-    <Badge variant="secondary">
-      <Pastille couleur="vert" />
-      Sous contrôle
-    </Badge>
-  );
-}
 
 // Partie dynamique : connection() marque ce travail comme "au moment de la
 // requête". Suspense, dans le parent, découpe la coquille statique juste ici.
@@ -111,7 +60,7 @@ async function ListeRouteurs() {
 
   return (
     <div className="flex flex-col gap-4">
-      <Card>
+      <Card className="hero-entree">
         <CardContent className="grid grid-cols-2 divide-x px-0 py-3 sm:grid-cols-4">
           <div className="flex flex-col items-center gap-0.5 px-2">
             <span className="inline-flex items-center gap-1.5 font-display text-2xl font-semibold tabular-nums">
@@ -150,61 +99,15 @@ async function ListeRouteurs() {
         </CardContent>
       </Card>
       <div className="grid gap-4 sm:grid-cols-2">
-        {rows.map((r) => {
-          const critiques = Number(r.critiques);
-          const majeurs = Number(r.majeurs);
-          return (
-            <Card
-              key={r.id}
-              className="transition-colors hover:border-foreground/25"
-            >
-              <CardHeader className="flex-row items-center justify-between gap-2">
-                <CardTitle className="truncate font-display text-xl">{r.nom}</CardTitle>
-                <StatutRouteur critiques={critiques} majeurs={majeurs} />
-              </CardHeader>
-              <CardContent className="flex flex-col gap-1 text-sm">
-                {/* Suspense par carte : un routeur lent ne bloque pas le parc. */}
-                <Suspense fallback={<Skeleton className="h-14 w-full" />}>
-                  <MaterielRouteur
-                    tenantId={tenantId}
-                    routeurId={r.id}
-                    urlBase={r.url_base}
-                    modeleConnu={r.modele}
-                  />
-                </Suspense>
-                <p className="text-muted-foreground">
-                  {/* La date du dernier releve REUSSI : sans elle, un ecran vert
-                  peut afficher l'etat d'il y a trois jours. */}
-                  Dernier relevé : {r.dernier_releve
-                    ? new Date(r.dernier_releve).toLocaleString("fr-FR")
-                    : "jamais"}
-                </p>
-                {(critiques > 0 || majeurs > 0) && (
-                  <p className="mt-1 font-medium">
-                    {critiques > 0 && (
-                      <span className="text-status-critique">
-                        {critiques} critique{critiques > 1 ? "s" : ""}
-                      </span>
-                    )}
-                    {critiques > 0 && majeurs > 0 && <span> · </span>}
-                    {majeurs > 0 && (
-                      <span className="text-status-majeur">
-                        {majeurs} majeur{majeurs > 1 ? "s" : ""}
-                      </span>
-                    )}
-                  </p>
-                )}
-                <div className="mt-2">
-                  <ActionsParc
-                    id={r.id}
-                    nom={r.nom}
-                    urlBase={r.url_base}
-                  />
-                </div>
-              </CardContent>
-            </Card>
-          );
-        })}
+        {rows.map((r, i) => (
+          <CarteRouteur
+            key={r.id}
+            routeur={r}
+            tenantId={tenantId}
+            avecActions
+            delai={80 + i * 70}
+          />
+        ))}
       </div>
     </div>
   );
@@ -223,7 +126,7 @@ function Chargement() {
 export default function TableauDeBord() {
   return (
     <main className="mx-auto flex max-w-5xl flex-col gap-4 p-4 sm:p-6">
-      <div className="flex flex-wrap items-end justify-between gap-3">
+      <div className="hero-entree flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Parc de routeurs</h1>
           <p className="mt-1 max-w-2xl text-sm text-muted-foreground">

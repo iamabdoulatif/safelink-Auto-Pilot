@@ -17,6 +17,7 @@ import {
   Router,
   Send,
   Settings,
+  ShieldCheck,
   Ticket,
   UserRound,
 } from "lucide-react";
@@ -125,8 +126,10 @@ function Marque() {
 
 function Nom() {
   return (
-    <Link href="/" className="flex items-center gap-2">
-      <Marque />
+    <Link href="/accueil" className="flex items-center gap-2" aria-label="SafeLink Auto-Pilot — page de présentation">
+      <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-accent text-accent-foreground">
+        <Marque />
+      </span>
       <span className="text-sm font-semibold tracking-tight">
         SafeLink{" "}
         <span className="font-normal opacity-65">Auto-Pilot</span>
@@ -135,12 +138,29 @@ function Nom() {
   );
 }
 
-function ListeLiens({ chemin, fermer }: { chemin: string; fermer?: boolean }) {
+function ListeLiens({
+  chemin,
+  fermer,
+  superAdmin = false,
+}: {
+  chemin: string;
+  fermer?: boolean;
+  superAdmin?: boolean;
+}) {
   const actif = (href: string) =>
     href === "/" ? chemin === "/" : chemin === href || chemin.startsWith(href + "/");
+  const groupes: Groupe[] = superAdmin
+    ? [
+        ...GROUPES,
+        {
+          nom: "Administration",
+          liens: [{ href: "/admin/utilisateurs", titre: "Utilisateurs", icone: ShieldCheck }],
+        },
+      ]
+    : GROUPES;
   return (
     <div className="flex flex-col gap-4">
-      {GROUPES.map((g) => (
+      {groupes.map((g) => (
         <div key={g.nom} className="flex flex-col gap-0.5">
           <p className="px-2.5 pb-1 text-xs font-medium text-sidebar-foreground/55">
             {g.nom}
@@ -153,9 +173,9 @@ function ListeLiens({ chemin, fermer }: { chemin: string; fermer?: boolean }) {
                   href={l.href}
                   aria-current={actif(l.href) ? "page" : undefined}
                   className={cn(
-                    "flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-[13px] transition-colors",
+                    "flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-[13px] transition-all duration-200 hover:translate-x-0.5",
                     actif(l.href)
-                      ? "bg-sidebar-accent font-medium text-sidebar-accent-foreground"
+                      ? "bg-accent font-medium text-accent-foreground"
                       : "text-sidebar-foreground/65 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground",
                   )}
                 >
@@ -180,7 +200,7 @@ function ListeLiens({ chemin, fermer }: { chemin: string; fermer?: boolean }) {
   );
 }
 
-export function NavPrincipale() {
+export function NavPrincipale({ superAdmin = false }: { superAdmin?: boolean }) {
   const chemin = usePathname();
   return (
     <>
@@ -206,7 +226,7 @@ export function NavPrincipale() {
               <Nom />
             </SheetTitle>
             <div className="overflow-y-auto pb-4">
-              <ListeLiens chemin={chemin} fermer />
+              <ListeLiens chemin={chemin} fermer superAdmin={superAdmin} />
             </div>
           </SheetContent>
         </Sheet>
@@ -217,7 +237,7 @@ export function NavPrincipale() {
           <Nom />
         </div>
         <nav aria-label="Navigation principale" className="flex-1">
-          <ListeLiens chemin={chemin} />
+          <ListeLiens chemin={chemin} superAdmin={superAdmin} />
         </nav>
       </aside>
     </>

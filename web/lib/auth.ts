@@ -24,29 +24,67 @@ export function validerMotDePasse(clair: unknown): string | null {
   return null;
 }
 
-export type CompteCree = { tenantId: string; utilisateurId: string };
+export type CompteCree = { tenantId: string; utilisateurId: string; numero?: string };
+
+// Profil exigé à l'inscription : nom, prénom, pays et numéro, tous
+// obligatoires. Le numéro garde son format international s'il est
+// donné (+...), les espaces et tirets sont retirés.
+export type ProfilInscription = {
+  nom: string;
+  prenom: string;
+  pays: string;
+  numero: string;
+};
+
+function texteObligatoire(brut: unknown, max: number): string | null {
+  if (typeof brut !== "string") return null;
+  const v = brut.trim().replace(/\s+/g, " ");
+  return v.length >= 1 && v.length <= max ? v : null;
+}
+
+export function validerProfil(
+  brut: Record<string, unknown>,
+): ProfilInscription | { erreur: string } {
+  const nom = texteObligatoire(brut["nom"], 60);
+  if (!nom) return { erreur: "Nom obligatoire (60 caractères maximum)." };
+  const prenom = texteObligatoire(brut["prenom"], 60);
+  if (!prenom) return { erreur: "Prénom obligatoire (60 caractères maximum)." };
+  const pays = texteObligatoire(brut["pays"], 60);
+  if (!pays) return { erreur: "Pays obligatoire (60 caractères maximum)." };
+  const numeroBrut = typeof brut["numero"] === "string" ? brut["numero"] : "";
+  const numero = numeroBrut.replace(/[\s.\-()]/g, "");
+  if (!/^\+?\d{8,15}$/.test(numero)) {
+    return { erreur: "Numéro obligatoire : 8 à 15 chiffres, indicatif international accepté (ex. +226 70 00 00 00)." };
+  }
+  return { nom, prenom, pays, numero };
+}
 
 // Inscrit un compte et son espace. Erreur "Courriel déjà utilisé." si pris.
 export async function inscrireCompte(
   courrielBrut: unknown,
   motDePasseBrut: unknown,
+  profilBrut: Record<string, unknown> = {},
 ): Promise<CompteCree | { erreur: string }> {
   const courriel = normaliserCourriel(courrielBrut);
   if (!courriel) return { erreur: "Courriel invalide." };
   const invalide = validerMotDePasse(motDePasseBrut);
   if (invalide) return { erreur: invalide };
+  const profil = validerProfil(profilBrut);
+  if ("erreur" in profil) return profil;
   const ctx: ContexteTenant = { tenantId: courriel, utilisateurId: courriel };
   await assurerEspace(ctx);
   const hash = hacherMotDePasse(motDePasseBrut as string);
   const { rows } = await db.query<{ id: string }>(
-    `INSERT INTO utilisateurs (tenant_id, courriel, hash_mot_de_passe)
-     VALUES ($1, $2, $3)
+    `INSERT INTO utilisateurs (tenant_id, courriel, hash_mot_de_passe, nom, prenom, pays, numero, numero_verifie)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, false)
      ON CONFLICT (courriel) DO NOTHING
      RETURNING id`,
-    [courriel, courriel, hash],
+    [courriel, courriel, hash, profil.nom, profil.prenom, profil.pays, profil.numero],
   );
   if (rows.length === 0) return { erreur: "Courriel déjà utilisé." };
-  return { tenantId: courriel, utilisateurId: courriel };
+  // Le numéro repart avec le compte : l'appelant en a besoin tout de
+  // suite pour envoyer le code de validation WhatsApp.
+  return { tenantId: courriel, utilisateurId: courriel, numero: profil.numero };
 }
 
 // Verifie un compte. Meme message que l'inscription en echec : on ne
