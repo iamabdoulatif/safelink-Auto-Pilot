@@ -62,6 +62,48 @@ Dans les deux cas : l'imprimante doit apparaître dans le client
 PrintNode, puis dans le tableau de bord PrintNode (menu Printers).
 Note son **identifiant numérique** (printerId), il sert à l'étape 4.
 
+### Imprimante Wi-Fi sur le réseau MikroTik (Raspberry Pi, Mac ou PC)
+
+Le routeur ne peut pas remplacer l'ordinateur : le client PrintNode doit
+tourner sur une machine allumée qui peut joindre l'imprimante. Une seule
+imprimante est utilisée à la fois par SafeLink.
+
+Préparer le réseau :
+
+1. Connecte l'imprimante au Wi-Fi depuis l'outil Epson ou son manuel.
+2. Utilise un réseau séparé du Hotspot des clients, joignable par
+   l'ordinateur et avec une adresse fixe. Ces changements du routeur se font
+   après sauvegarde et plan approuvé ; adressage IP et pare-feu d'entrée sont
+   appliqués à la main.
+
+Raspberry Pi (Raspberry Pi OS 64 bits, Bookworm ou Trixie) :
+
+1. Installe CUPS, le service d'impression Linux, puis ajoute l'imprimante
+   (remplace `ADRESSE_IP` par son adresse) :
+
+   ```bash
+   sudo apt install cups
+   ```
+
+   ```bash
+   sudo lpadmin -p L3250 -E -v ipp://ADRESSE_IP/ipp/print -m everywhere
+   ```
+
+   Commande générique, pas encore essayée sur la L3250. En cas d'échec, teste
+   le pilote Epson du paquet `printer-driver-escpr`.
+2. Vérifie avec une page de test, puis installe le client aarch64 en suivant
+   les instructions fournies avec lui, démarrage automatique compris.
+
+Mac : ajoute la L3250 Wi-Fi dans Réglages Système → Imprimantes et
+scanners, lance PrintNode à l'ouverture de session et empêche la veille.
+
+PC Windows 10 ou 11 : ajoute la L3250 Wi-Fi dans Paramètres → Bluetooth et
+appareils → Imprimantes et scanners, puis installe le client.
+
+Changer de montage : chaque ordinateur crée son propre identifiant
+d'imprimante. Dans SafeLink, remplace l'identifiant et laisse la clé vide pour
+garder la clé enregistrée, puis clique sur **Enregistrer et tester**.
+
 ## Étape 3 — Adresse publique (production uniquement)
 
 PrintNode est en ligne : il doit pouvoir appeler l'application pour

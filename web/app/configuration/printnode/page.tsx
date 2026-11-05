@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 // Page « Configuration PrintNode » : clé API chiffrée, imprimante cible,
 // format papier, activation. L'enregistrement teste réellement la clé
@@ -119,6 +120,11 @@ function Contenu({ initiale }: { initiale: Promise<{ data?: Config }> }) {
               value={cle}
               onChange={(e) => setCle(e.target.value)}
               autoComplete="new-password"
+              placeholder={
+                actuelle?.cleConfiguree
+                  ? "Laisser vide pour garder la clé actuelle"
+                  : undefined
+              }
             />
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
@@ -127,7 +133,10 @@ function Contenu({ initiale }: { initiale: Promise<{ data?: Config }> }) {
               <Input
                 id="pid"
                 value={printerId}
-                onChange={(e) => setPrinterId(e.target.value)}
+                onChange={(e) => {
+                  setPrinterId(e.target.value);
+                  setNom(""); // nouvelle imprimante : le test renseigne son nom
+                }}
                 inputMode="numeric"
               />
             </div>
@@ -211,8 +220,8 @@ function Contenu({ initiale }: { initiale: Promise<{ data?: Config }> }) {
         <CardHeader>
           <CardTitle>Tutoriel — impression automatique</CardTitle>
           <CardDescription>
-            Le PC relié à l&apos;imprimante doit faire tourner le client
-            PrintNode. Sans lui, aucune impression ne part.
+            Un ordinateur allumé doit faire tourner le client PrintNode :
+            Raspberry Pi, Mac ou PC. Le routeur ne peut pas le remplacer.
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-3 text-sm">
@@ -239,8 +248,12 @@ function Contenu({ initiale }: { initiale: Promise<{ data?: Config }> }) {
               .
             </li>
             <li>
-              Sur le PC de l&apos;imprimante, télécharge et installe le
-              client :{" "}
+              Connecte l&apos;imprimante en Wi-Fi au réseau MikroTik, sur
+              un réseau séparé du Hotspot des clients. L&apos;ordinateur
+              doit pouvoir la joindre sur ce réseau.
+            </li>
+            <li>
+              Installe le client depuis la{" "}
               <a
                 className="underline"
                 href="https://www.printnode.com/en/download"
@@ -249,28 +262,51 @@ function Contenu({ initiale }: { initiale: Promise<{ data?: Config }> }) {
               >
                 page de téléchargement PrintNode
               </a>
-              . <strong>Windows</strong> : lance l&apos;installeur, le
-              client démarre avec Windows. <strong>macOS</strong> : ouvre
-              le fichier téléchargé, glisse PrintNode dans Applications,
-              puis lance-le (autorise-le si macOS le demande).
+              , selon ton montage :
+              <Tabs defaultValue="raspberry" className="mt-2">
+                <TabsList>
+                  <TabsTrigger value="raspberry">Raspberry Pi</TabsTrigger>
+                  <TabsTrigger value="mac">Mac</TabsTrigger>
+                  <TabsTrigger value="pc">PC Windows</TabsTrigger>
+                </TabsList>
+                <TabsContent value="raspberry" className="text-muted-foreground">
+                  Fonctionne sans laisser ton ordinateur allumé. Prends le
+                  client Raspberry Pi OS 64 bits, ajoute l&apos;imprimante
+                  dans CUPS (le service d&apos;impression Linux), puis
+                  règle le client pour qu&apos;il démarre avec le Raspberry
+                  Pi. Commandes : docs/tutoriel-printnode.md.
+                </TabsContent>
+                <TabsContent value="mac" className="text-muted-foreground">
+                  Ajoute la L3250 Wi-Fi dans Réglages Système → Imprimantes
+                  et scanners, ouvre le client et lance-le à
+                  l&apos;ouverture de session. Le Mac doit rester sur ce
+                  réseau et ne pas se mettre en veille.
+                </TabsContent>
+                <TabsContent value="pc" className="text-muted-foreground">
+                  Windows 10 ou 11 : ajoute la L3250 Wi-Fi dans Paramètres →
+                  Bluetooth et appareils → Imprimantes et scanners, puis
+                  lance l&apos;installeur du client. Le PC doit rester
+                  allumé et sur ce réseau.
+                </TabsContent>
+              </Tabs>
             </li>
             <li>
-              Connecte-toi dans le client avec ton compte PrintNode,
-              branche et allume l&apos;imprimante : elle apparaît dans le
-              client et dans PrintNode (menu Printers), avec son
-              identifiant numérique.
+              Connecte-toi dans le client avec ton compte PrintNode.
+              L&apos;imprimante apparaît dans PrintNode (menu Printers) avec
+              son identifiant numérique, différent sur chaque ordinateur.
+              Imprime une page de test depuis PrintNode.
             </li>
             <li>
               Reviens ici : colle la clé API, saisis l&apos;identifiant de
               l&apos;imprimante, choisis le format papier, laisse
               l&apos;activation cochée, puis « Enregistrer et tester ».
-              L&apos;application vérifie l&apos;imprimante et crée le
-              webhook automatiquement.
+              Une seule imprimante est utilisée à la fois. Pour changer de
+              montage, remplace l&apos;identifiant et laisse la clé vide.
             </li>
             <li>
-              Génère ensuite des tickets normalement : le PDF part tout
-              seul vers l&apos;imprimante. Le PC doit rester allumé, le
-              client PrintNode ouvert et l&apos;imprimante en ligne.
+              Génère ensuite des tickets normalement : le PDF part vers
+              l&apos;imprimante. Si l&apos;ordinateur est déconnecté,
+              PrintNode garde le travail jusqu&apos;à 14 jours.
             </li>
           </ol>
           <p className="text-muted-foreground">

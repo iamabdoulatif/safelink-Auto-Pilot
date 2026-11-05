@@ -223,15 +223,18 @@ export async function lireConfigPrintNode(
 // Enregistre (ou remplace) la configuration, cle chiffree.
 export async function enregistrerConfigPrintNode(
   ctx: ContexteTenant,
-  cle: string,
+  cleSaisie: string,
   printerId: number,
   nom: string,
   format: string,
   actif: boolean,
 ): Promise<{ config: ConfigPrintNode } | { erreur: string }> {
   verifierContexte(ctx);
-  const invalide = validerEntreePrintNode(cle, printerId, nom, format);
+  const invalide = validerEntreePrintNode(cleSaisie, printerId, nom, format);
   if (invalide) return { erreur: invalide };
+  // Cle laissee vide : on garde celle deja enregistree, pour changer
+  // d'imprimante (Raspberry Pi, Mac, PC) sans la recoller.
+  const cle = cleSaisie || (await lireClePrintNode(ctx));
   if (!cle) return { erreur: "Clé API PrintNode obligatoire." };
   let nomVerifie: string;
   try {
