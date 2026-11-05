@@ -174,6 +174,15 @@ export async function genererLot(d: DemandeLot): Promise<ResultatLot> {
   }
 
   // 3) Charge signee vers n8n (serveur a serveur, jamais dans une URL).
+  // Nom imprime sur les tickets : nom_ticket, sinon le nom du routeur.
+  const { rows: noms } = await db.query(
+    `SELECT nom_ticket FROM configurations_routeurs
+     WHERE id = $1 AND tenant_id = $2`,
+    [d.routerConnectionId, d.tenantId],
+  );
+  const nomTicket = (noms[0] as { nom_ticket: string | null } | undefined)
+    ?.nom_ticket || d.routeurNom || "";
+
   const charge = {
     userId: d.userId,
     tenantId: d.tenantId,
@@ -201,6 +210,7 @@ export async function genererLot(d: DemandeLot): Promise<ResultatLot> {
     whatsappSecret: d.secretWhatsApp || "",
     printNodeApiKey: d.clePrintNode || "",
     routeurNom: d.routeurNom || "",
+    nomTicket,
     forcerGeneration: d.forcerGeneration === true,
     callbackUrl: APP_URL ? APP_URL + "/api/n8n/retour" : "",
   };

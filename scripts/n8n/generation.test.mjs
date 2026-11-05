@@ -77,6 +77,62 @@ async function executer(cfg, routeur) {
   return sorties[0].json;
 }
 
+describe("Format de ticket Mikhmon", () => {
+  const ON_LOGIN = ':put (",rem,500,5d,500,,Disable,"); {:local comment}';
+  function routeurMikhmon(onLogin = ON_LOGIN) {
+    const base = fauxRouteur([]);
+    return {
+      ...base,
+      async httpRequest(o) {
+        if (o.url.includes("/user/profile")) {
+          return [{ name: "05-JOURS", "on-login": onLogin }];
+        }
+        return base.httpRequest(o);
+      },
+    };
+  }
+  const cfg = (extra = {}) =>
+    configurer("RUN-M", { profile: "05-JOURS", prefix: "", nomTicket: "YAHYA", ...extra });
+
+  it("identifiant = mot de passe, préfixe du profil + 6 chiffres", async () => {
+    const r = await executer(cfg(), routeurMikhmon());
+    assert.equal(r.tickets.length, 3);
+    for (const t of r.tickets) {
+      assert.match(t.username, /^5j[2-9]{6}$/);
+      assert.equal(t.password, t.username);
+    }
+  });
+
+  it("commentaire vc- reconnu par Mikhmon et clé d'idempotence", async () => {
+    const routeur = routeurMikhmon();
+    await executer(cfg(), routeur);
+    for (const u of routeur.utilisateurs) {
+      assert.match(u.comment, /^vc-\d{3}-\d{2}\.\d{2}\.\d{2}-cle:RUN-M$/);
+      assert.equal(u.password, u.name);
+    }
+    const rejeu = await executer(cfg(), routeur);
+    assert.equal(rejeu.tickets.length, 0);
+  });
+
+  it("le PDF reprend le template : couleur, validité, prix, nom", async () => {
+    const r = await executer(cfg(), routeurMikhmon());
+    assert.ok(r.html.includes('class="voucher-header bg-500"'));
+    assert.ok(r.html.includes(">05-JOURS<"));
+    assert.ok(r.html.includes(">500 F<"));
+    assert.ok(r.html.includes("YAHYA"));
+    assert.ok(r.html.includes("[3]"));
+    assert.ok(r.html.includes("Code Ticket"));
+    assert.ok(!r.html.includes("Mot de passe"));
+  });
+
+  it("prix absent : ticket gris sans prix, nom profil en validité", async () => {
+    const r = await executer(cfg(), routeurMikhmon(""));
+    assert.ok(r.html.includes("bg-default"));
+    assert.ok(r.html.includes(">05-JOURS<"));
+    assert.ok(!r.html.includes(' F</span>'));
+  });
+});
+
 describe("Générer les tickets (simulation)", () => {
   it("idempotence : un run rejoue ne recree aucun ticket", async () => {
     const utilisateurs = [

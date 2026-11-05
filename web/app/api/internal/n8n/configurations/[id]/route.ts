@@ -28,6 +28,7 @@ type LigneConnexion = {
   id: number;
   tenant_id: string;
   nom: string;
+  nom_ticket: string | null;
   variante_mikhmon: string;
   url_mikhmon: string;
   hote: string | null;
@@ -88,7 +89,7 @@ export async function GET(
   }
 
   const { rows: connexions } = await db.query(
-    `SELECT id, tenant_id, nom, variante_mikhmon, url_mikhmon, hote, port,
+    `SELECT id, tenant_id, nom, nom_ticket, variante_mikhmon, url_mikhmon, hote, port,
        identifiant_mikhmon, mot_de_passe_mikhmon_chiffre, adresse_routeros,
        utilisateur_lecture, utilisateur_correction,
        mot_de_passe_lecture_chiffre, mot_de_passe_correction_chiffre,
@@ -216,6 +217,8 @@ export async function GET(
       tenantId: run.tenant_id,
       simulation: run.simulation,
       routeur: {
+        nom: connexion.nom,
+        nomTicket: connexion.nom_ticket || connexion.nom,
         adresse: connexion.adresse_routeros,
         utilisateurLecture: connexion.utilisateur_lecture,
         motDePasseLecture,
