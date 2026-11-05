@@ -1,5 +1,6 @@
 import { createHash, createHmac, randomInt, timingSafeEqual } from "node:crypto";
 import { db } from "@/lib/db";
+import { configEnvoiOtp } from "@/lib/parametres-plateforme";
 
 // Code de validation WhatsApp : 6 chiffres, 10 minutes, 5 tentatives.
 // Seul le haché SHA-256 (courriel + code) est stocké ; le code en clair
@@ -32,12 +33,9 @@ export async function envoyerCodeWhatsApp(
     [courriel, hacherCode(courriel, code), String(DUREE_CODE_MINUTES)],
   );
 
-  const url = process.env.WHATSAPP_OTP_WEBHOOK_URL?.trim() ?? "";
+  // Webhook réglé dans l'espace superadmin, repli environnement.
+  const { url, secret } = await configEnvoiOtp();
   if (!url) return { envoye: false };
-  const secret =
-    process.env.WHATSAPP_OTP_SECRET?.trim() ||
-    process.env.N8N_WEBHOOK_SECRET?.trim() ||
-    "";
   const corps = JSON.stringify({
     numero,
     message: `SafeLink Auto-Pilot : votre code de validation est ${code}. Il expire dans ${DUREE_CODE_MINUTES} minutes. Ne le partagez pas.`,

@@ -154,7 +154,10 @@ function ListeLiens({
         ...GROUPES,
         {
           nom: "Administration",
-          liens: [{ href: "/admin/utilisateurs", titre: "Utilisateurs", icone: ShieldCheck }],
+          liens: [
+            { href: "/admin/utilisateurs", titre: "Utilisateurs", icone: ShieldCheck },
+            { href: "/admin/parametres", titre: "Paramètres plateforme", icone: Settings },
+          ],
         },
       ]
     : GROUPES;

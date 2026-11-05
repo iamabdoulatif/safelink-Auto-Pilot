@@ -1,6 +1,7 @@
 import { attributCookieSession } from "@/lib/session-cookie";
 import { cookiePourCompte } from "@/lib/auth";
 import { verifierCodeWhatsApp } from "@/lib/verification-whatsapp";
+import { lienCommunaute as lireLienCommunaute } from "@/lib/parametres-plateforme";
 import { normaliserCourriel } from "@/lib/auth";
 import { db } from "@/lib/db";
 
@@ -37,7 +38,7 @@ export async function POST(req: Request) {
       tenantId: rows[0].tenant_id,
       utilisateurId: courriel,
     });
-    const lienCommunaute = process.env.LIEN_COMMUNAUTE?.trim() || null;
+    const lienCommunaute = await lireLienCommunaute();
     return Response.json(
       { data: { tenantId: rows[0].tenant_id, utilisateurId: courriel, lienCommunaute } },
       {
