@@ -4,8 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 
-// Animation Three.js du hero : routeur MikroTik, tickets Hotspot,
-// interface Mikhmon et câble RJ45 construits en code, sans image externe.
+// Animation Three.js du hero : routeur MikroTik, tickets Hotspot et
+// interface Mikhmon construits en code, sans image externe.
 type ModuleThree = typeof import("three");
 
 export function RouteurMikrotik3D() {
@@ -38,7 +38,7 @@ export function RouteurMikrotik3D() {
       <div
         ref={conteneurRef}
         role="img"
-        aria-label="Animation 3D d'un routeur MikroTik branché en RJ45, avec tickets Hotspot et interface Mikhmon"
+        aria-label="Animation d'un routeur MikroTik, avec tickets Hotspot et interface Mikhmon"
         className="h-80 w-full cursor-grab active:cursor-grabbing sm:h-96"
       />
       {!pret && !erreur ? (
@@ -48,24 +48,21 @@ export function RouteurMikrotik3D() {
           <div className="relative mt-1 h-1 overflow-hidden rounded-full bg-sidebar-accent">
             <div className="barre-chargement absolute inset-y-0 w-2/5 rounded-full bg-accent" />
           </div>
-          <p className="text-xs text-sidebar-foreground/70">Chargement du routeur 3D…</p>
+          <p className="text-xs text-sidebar-foreground/70">Chargement du routeur…</p>
         </div>
       ) : null}
       {erreur ? (
         <p className="absolute inset-0 flex items-center justify-center px-6 text-center text-sm text-sidebar-foreground/80">
-          Le modèle 3D n’a pas pu démarrer sur ce navigateur.
+          Le modèle n’a pas pu démarrer sur ce navigateur.
         </p>
       ) : null}
       <div className="pointer-events-none absolute top-3 left-3 flex max-w-full flex-wrap gap-2 pr-3">
-        <Badge variant="secondary">MikroTik 3D</Badge>
+        <Badge variant="secondary">MikroTik</Badge>
         <Badge variant="outline" className="border-sidebar-border text-sidebar-foreground">
-          Tickets 3D
+          Tickets
         </Badge>
         <Badge variant="outline" className="border-sidebar-border text-sidebar-foreground">
-          Mikhmon 3D
-        </Badge>
-        <Badge variant="outline" className="border-sidebar-border text-sidebar-foreground">
-          RJ45 branché
+          Mikhmon
         </Badge>
       </div>
     </div>
@@ -203,15 +200,6 @@ function initialiserScene(
       routeur.panneau.groupe.rotation.y =
         routeur.panneau.baseRotationY + Math.sin(temps * 0.5) * 0.035 * vitesse;
     }
-    if (routeur.courbeRJ45 && routeur.impulsionRJ45) {
-      const progression = mouvementReduit ? 0.45 : (temps * 0.22) % 1;
-      routeur.impulsionRJ45.position.copy(routeur.courbeRJ45.getPointAt(progression));
-      const matiere = routeur.impulsionRJ45.material as InstanceType<
-        ModuleThree["MeshStandardMaterial"]
-      >;
-      matiere.emissiveIntensity = 1.4 + Math.sin(temps * 5) * 0.45 * vitesse;
-    }
-
     renderer?.render(scene, camera);
     if (premierRendu) {
       premierRendu = false;
@@ -337,9 +325,6 @@ function creerRouteur(THREE: ModuleThree) {
   groupe.add(creerAntenne(THREE, -2.05, -1.05, 0.12));
   groupe.add(creerAntenne(THREE, 2.05, -1.05, -0.12));
 
-  const cableRJ45 = creerCableRJ45(THREE, matiereSombre, metal);
-  groupe.add(cableRJ45.groupe);
-
   const panneau = creerPanneauMikhmon(THREE);
   groupe.add(panneau.groupe);
 
@@ -361,8 +346,6 @@ function creerRouteur(THREE: ModuleThree) {
     anneaux: anneaux.elements,
     tickets,
     panneau,
-    courbeRJ45: cableRJ45.courbe,
-    impulsionRJ45: cableRJ45.impulsion,
   };
 }
 
@@ -392,81 +375,6 @@ function creerAntenne(THREE: ModuleThree, x: number, z: number, inclinaison: num
   groupe.rotation.z = inclinaison;
   groupe.rotation.x = -0.1;
   return groupe;
-}
-
-function creerCableRJ45(
-  THREE: ModuleThree,
-  matiereSombre: InstanceType<ModuleThree["MeshStandardMaterial"]>,
-  metal: InstanceType<ModuleThree["MeshStandardMaterial"]>,
-) {
-  const groupe = new THREE.Group();
-  const portX = 1.16;
-
-  // Fiche RJ45 réellement enfoncée dans le 5e port du routeur.
-  const fiche = new THREE.Mesh(
-    new THREE.BoxGeometry(0.34, 0.26, 0.52),
-    new THREE.MeshStandardMaterial({
-      color: 0xf3f3f3,
-      roughness: 0.22,
-      metalness: 0.02,
-      transparent: true,
-      opacity: 0.82,
-    }),
-  );
-  fiche.position.set(portX, -0.03, 1.82);
-  fiche.castShadow = true;
-  groupe.add(fiche);
-
-  const clip = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.07, 0.34), matiereSombre);
-  clip.position.set(portX, 0.13, 1.86);
-  clip.rotation.x = -0.18;
-  groupe.add(clip);
-
-  [-0.09, -0.03, 0.03, 0.09].forEach((decalage, index) => {
-    const couleur = [0xb9ff66, 0xf3f3f3, 0x191a23, 0xc24e2d][index] ?? 0xb9ff66;
-    const fil = new THREE.Mesh(
-      new THREE.BoxGeometry(0.035, 0.16, 0.03),
-      new THREE.MeshStandardMaterial({ color: couleur, roughness: 0.45 }),
-    );
-    fil.position.set(portX + decalage, -0.03, 1.6);
-    groupe.add(fil);
-  });
-
-  const contacts = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.035, 0.05), metal);
-  contacts.position.set(portX, 0.07, 1.58);
-  groupe.add(contacts);
-
-  const manchon = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.085, 0.14, 0.42, 20),
-    matiereSombre,
-  );
-  manchon.rotation.x = Math.PI / 2;
-  manchon.position.set(portX, -0.03, 2.24);
-  manchon.castShadow = true;
-  groupe.add(manchon);
-
-  const courbe = new THREE.CatmullRomCurve3([
-    new THREE.Vector3(portX, -0.03, 2.42),
-    new THREE.Vector3(1.85, -0.3, 2.75),
-    new THREE.Vector3(2.85, -0.58, 2.15),
-    new THREE.Vector3(3.9, -0.62, 2.65),
-  ]);
-  const cable = new THREE.Mesh(new THREE.TubeGeometry(courbe, 42, 0.048, 12), matiereSombre);
-  cable.castShadow = true;
-  groupe.add(cable);
-
-  const impulsion = new THREE.Mesh(
-    new THREE.SphereGeometry(0.075, 18, 18),
-    new THREE.MeshStandardMaterial({
-      color: 0xb9ff66,
-      emissive: 0xb9ff66,
-      emissiveIntensity: 1.6,
-      roughness: 0.2,
-    }),
-  );
-  groupe.add(impulsion);
-
-  return { groupe, courbe, impulsion };
 }
 
 function creerPanneauMikhmon(THREE: ModuleThree) {
