@@ -33,7 +33,7 @@ export function dechiffrer(opaque: string): string {
   }
   const iv = Buffer.from(morceaux[1], "base64");
   const paquet = Buffer.from(morceaux[2], "base64");
-  if (iv.length !== 12 || paquet.length < 17) {
+  if (iv.length !== 12 || paquet.length < 16) {
     throw new Error("Secret illisible (donnees corrompues).");
   }
   const d = createDecipheriv("aes-256-gcm", cle(), iv);

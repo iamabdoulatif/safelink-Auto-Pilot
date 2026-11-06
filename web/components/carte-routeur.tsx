@@ -1,10 +1,12 @@
 import { Suspense } from "react";
+import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ActionsParc } from "@/components/actions-parc";
 import { MaterielRouteur } from "@/components/materiel-routeur";
+import { imagePourModele } from "@/lib/images-mikrotik";
 
 // Carte d'un routeur du parc, partagée entre le tableau de bord de
 // l'utilisateur (avec ses actions) et la vue superadmin (lecture seule).
@@ -58,7 +60,7 @@ export type RouteurCarte = {
   majeurs: string;
 };
 
-export function CarteRouteur({
+export async function CarteRouteur({
   routeur,
   tenantId,
   avecActions = false,
@@ -71,14 +73,28 @@ export function CarteRouteur({
 }) {
   const critiques = Number(routeur.critiques);
   const majeurs = Number(routeur.majeurs);
+  // Photographie officielle du modèle, depuis le catalogue en base ;
+  // visuel générique tant que le modèle n'est pas encore connu.
+  const image = await imagePourModele(routeur.modele);
   return (
     <Card
       className="hero-entree transition-colors hover:border-foreground/25"
       style={{ animationDelay: `${delai}ms` }}
     >
+      <div className="relative -mt-4 h-44 overflow-hidden bg-[#f4f4f2] sm:h-48">
+        <Image
+          src={image ? `/images-mikrotik/${image.id}` : "/images/routeur-mikrotik-panoramique.webp"}
+          alt={`Routeur MikroTik ${image?.nomProduit ?? routeur.modele ?? ""}`.trim()}
+          fill
+          sizes="(max-width: 640px) 100vw, 50vw"
+          className="object-cover object-center"
+        />
+        <div className="absolute top-3 right-3 shadow-sm">
+          <StatutRouteur critiques={critiques} majeurs={majeurs} />
+        </div>
+      </div>
       <CardHeader className="flex-row items-center justify-between gap-2">
         <CardTitle className="truncate font-display text-xl">{routeur.nom}</CardTitle>
-        <StatutRouteur critiques={critiques} majeurs={majeurs} />
       </CardHeader>
       <CardContent className="flex flex-col gap-1 text-sm">
         {/* Suspense par carte : un routeur lent ne bloque pas le parc. */}

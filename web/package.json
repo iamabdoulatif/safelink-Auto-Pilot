@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "db:migrer": "node scripts/migrer-base.mjs"
+    "db:migrer": "node scripts/migrer-base.mjs",
+    "images:mikrotik": "node scripts/importer-images-mikrotik.mjs"
   },
   "dependencies": {
     "@tailwindcss/turbopack": "^4.3.4",
