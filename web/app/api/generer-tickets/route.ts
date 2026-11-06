@@ -16,6 +16,8 @@ import {
   EchecDeclenchement,
   genererLot,
 } from "@/lib/tickets";
+import { resoudreEnvois } from "@/lib/envois-supplementaires";
+import { destinatairesZonePourRouteur } from "@/lib/zones-wifi";
 import type { CanalLivraison } from "@/lib/tickets";
 
 // Generation de tickets Hotspot, en deux temps (validation humaine) :
@@ -40,7 +42,7 @@ type ConfigRouteurLot = {
 
 export async function POST(req: Request) {
   const ctx = await session();
-  if (!(await peutAgir(ctx, "contributeur"))) {
+  if (!(await peutAgir(ctx, "gerant"))) {
     return Response.json(
       { error: "Votre rôle dans cet espace ne permet pas cette action." },
       { status: 403 },
@@ -218,6 +220,12 @@ export async function POST(req: Request) {
       }
     }
 
+    // Copie WhatsApp systématique vers la zone du routeur (admin,
+    // gérant, vendeurs), en plus du canal principal choisi.
+    const destinatairesSupplementaires = await resoudreEnvois(
+      ctx.tenantId,
+      await destinatairesZonePourRouteur(ctx.tenantId, entree.routerConnectionId),
+    );
     try {
       // runId = cle d'idempotence n8n : rejouer = retrouver, pas recreer.
       const lot = await genererLot({
@@ -239,6 +247,7 @@ export async function POST(req: Request) {
         routerUser: routeur.utilisateur_correction,
         routerPassword: secretRouteur,
         jetonTelegram,
+        destinatairesSupplementaires,
         forcerGeneration: true, // récapitulatif validé : saute le portillon
       });
       const run = await mettreAJourRun(ctx, reservation.run.runId,

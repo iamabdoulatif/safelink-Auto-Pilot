@@ -33,6 +33,8 @@ type Regle = {
   actif: boolean;
   simulation_reussie: boolean;
   destinataires_supplementaires: unknown;
+  approbation_requise: boolean;
+  approbation_canal: string;
 };
 
 const VERROU_SQL = `SELECT id FROM ticket_generation_runs
@@ -48,7 +50,8 @@ const SELECT_REGLES = `SELECT s.id AS regle_id, s.tenant_id, s.utilisateur_id,
        s.profil, p.valide AS profil_valide, r.actif AS routeur_actif,
        s.seuil, s.quantite_generation, s.quantite_cible, s.canal,
        s.stock_rearme, s.actif, s.simulation_reussie,
-       s.destinataires_supplementaires
+       s.destinataires_supplementaires, s.approbation_requise,
+       s.approbation_canal
      FROM auto_replenishment_settings s
      JOIN configurations_routeurs r
        ON r.id = s.router_connection_id AND r.actif = true
@@ -135,14 +138,16 @@ export async function POST(req: Request) {
            (run_id, tenant_id, utilisateur_id, mikhmon_connection_id,
             router_connection_id, profil, quantite_demandee, seuil,
             quantite_cible, canal_envoi, simulation, statut,
-            destinataires_supplementaires)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)`,
+            destinataires_supplementaires, approbation_requise,
+            approbation_canal)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)`,
         [runId, regle.tenant_id, regle.utilisateur_id,
           regle.mikhmon_connection_id, regle.router_connection_id,
           regle.profil, enSurveillance ? 1 : regle.quantite_generation,
           regle.seuil, regle.quantite_cible, regle.canal, mode.simulation,
           mode.simulation ? "simulation" : "demande",
-          JSON.stringify(regle.destinataires_supplementaires ?? [])],
+          JSON.stringify(regle.destinataires_supplementaires ?? []),
+          regle.approbation_requise === true, regle.approbation_canal],
       );
       await db.query(
         `UPDATE auto_replenishment_settings
@@ -160,6 +165,8 @@ export async function POST(req: Request) {
         threshold: regle.seuil,
         targetQuantity: enSurveillance ? 0 : regle.quantite_generation,
         deliveryChannel: regle.canal,
+        approbationRequise: regle.approbation_requise === true,
+        approbationCanal: regle.approbation_canal,
         statut: mode.simulation ? "simulation" : "demande",
         surveillance: enSurveillance,
         dateCreation: creeLe,

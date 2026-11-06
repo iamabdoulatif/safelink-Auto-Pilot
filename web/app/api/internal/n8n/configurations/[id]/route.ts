@@ -1,5 +1,9 @@
 import type { DestinataireSupplementaire } from "@/lib/destinataires-supplementaires";
 import { resoudreEnvois } from "@/lib/envois-supplementaires";
+import {
+  destinatairesZonePourRouteur,
+  fusionnerDestinataires,
+} from "@/lib/zones-wifi";
 import type { EnvoiSupplementaire } from "@/lib/envois-supplementaires";
 import { db } from "@/lib/db";
 import { verifierAppelInterne } from "@/lib/n8n-interne";
@@ -73,11 +77,12 @@ export async function GET(
        mikhmon_connection_id, profil, quantite_demandee, seuil,
        quantite_cible, canal_envoi, destinataire, whatsapp_recipient,
        printnode_printer_id, statut, simulation,
-       destinataires_supplementaires
+       destinataires_supplementaires, approbation_requise, approbation_canal
      FROM ticket_generation_runs WHERE run_id = $1`,
     [id],
   );
   const lignes = runs as (LigneRun & {
+    approbation_requise: boolean; approbation_canal: string;
     whatsapp_recipient: string | null;
     printnode_printer_id: string | null;
     destinataires_supplementaires: DestinataireSupplementaire[] | null;
@@ -120,11 +125,16 @@ export async function GET(
   let printnode: Record<string, unknown> | null = null;
   let supplementaires: EnvoiSupplementaire[] = [];
   try {
+    // Copie systématique : destinataires de la règle + numéros de la
+    // zone Wi-Fi du routeur (admin, gérant, vendeurs, en WhatsApp).
+    const deLaZone = await destinatairesZonePourRouteur(
+      run.tenant_id, run.router_connection_id);
     supplementaires = await resoudreEnvois(
       run.tenant_id,
-      lignes[0].destinataires_supplementaires ?? [],
+      fusionnerDestinataires(
+        lignes[0].destinataires_supplementaires ?? [], deLaZone),
     );
-    if (run.canal_envoi === "telegram") {
+    if (run.canal_envoi === "telegram" || run.approbation_canal === "telegram") {
       const { rows } = await db.query(
         `SELECT chat_id, jeton_chiffre, bot_verifie, statut_connexion
          FROM configurations_telegram WHERE tenant_id = $1`,
@@ -149,7 +159,7 @@ export async function GET(
         };
       }
     }
-    if (run.canal_envoi === "whatsapp") {
+    if (run.canal_envoi === "whatsapp" || run.approbation_canal === "whatsapp") {
       const { rows } = await db.query(
         `SELECT webhook_url, secret_chiffre, destinataire_defaut,
            statut_connexion FROM configurations_whatsapp
@@ -208,6 +218,28 @@ export async function GET(
       { status: 500 });
   }
 
+  // Destinataire d'approbation : Telegram = chat de l'espace ;
+  // WhatsApp = numero admin de la zone (repli gerant, puis defaut).
+  let approbation: Record<string, unknown> | null = null;
+  if (run.approbation_requise) {
+    let destinataireApprobation = "";
+    if (run.approbation_canal === "telegram") {
+      destinataireApprobation = String(
+        (telegram as { chatId?: string } | null)?.chatId ?? "");
+    } else {
+      const deLaZone = await destinatairesZonePourRouteur(
+        run.tenant_id, run.router_connection_id);
+      destinataireApprobation = deLaZone[0]?.valeur
+        ?? String((whatsapp as { destinataire?: string } | null)
+          ?.destinataire ?? "");
+    }
+    approbation = {
+      requise: true,
+      canal: run.approbation_canal,
+      destinataire: destinataireApprobation,
+    };
+  }
+
   let motDePasseMikhmon: string;
   let motDePasseLecture: string | null;
   let motDePasseEcriture: string;
@@ -257,6 +289,7 @@ export async function GET(
         telegram,
         whatsapp,
         printnode,
+        approbation,
         supplementaires,
       },
     },

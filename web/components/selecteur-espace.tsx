@@ -9,8 +9,8 @@ type Espace = { tenantId: string; role: Role };
 
 const LIBELLES: Record<Role, string> = {
   admin: "Admin",
-  contributeur: "Contributeur",
-  utilisateur: "Utilisateur",
+  gerant: "Gérant",
+  vendeur: "Vendeur",
 };
 
 // Sélecteur d'espace : visible seulement si la personne appartient à

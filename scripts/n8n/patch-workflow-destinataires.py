@@ -28,7 +28,7 @@ for (let i = 0; i < items.length; i++) {
       if (!pdf) pdf = await this.helpers.getBinaryDataBuffer(i, 'data');
       const telegram = d.canal === 'telegram';
       const champs = telegram
-        ? { chat_id: d.destinataire, caption: 'Profil ' + cfg.profile + ' · ' + cfg.generatedCount + ' tickets créés' }
+        ? { chat_id: d.destinataire, caption: '🎟️ Tickets Wi-Fi générés\n\n📡 Routeur : ' + (cfg.routeurNom || cfg.routerBaseUrl || 'Routeur') + '\n👤 Profil : ' + (cfg.profile || '-') + '\n✅ Tickets créés : ' + (cfg.generatedCount ?? 0) + '\n📦 Stock : ' + (cfg.stockAvant ?? '—') + ' → ' + (cfg.stockApres ?? '—') + (cfg.generatedAt ? '\n🕐 ' + String(cfg.generatedAt).slice(8, 10) + '/' + String(cfg.generatedAt).slice(5, 7) + '/' + String(cfg.generatedAt).slice(0, 4) + ' à ' + String(cfg.generatedAt).slice(11, 16) + ' UTC' : '') }
         : { to: d.destinataire, filename: 'tickets-mikhmon.pdf' };
       const limite = 'safelink' + Date.now() + i;
       const parties = Object.keys(champs).map((c) => Buffer.from('--' + limite + '\r\nContent-Disposition: form-data; name="' + c + '"\r\n\r\n' + champs[c] + '\r\n', 'utf8'));

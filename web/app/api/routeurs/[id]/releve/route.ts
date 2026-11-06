@@ -17,7 +17,7 @@ export async function POST(req: Request,
 
   // Isolation stricte : on ne releve que les routeurs de son espace.
   const { tenantId, utilisateurId } = await session();
-  if (!(await peutAgir({ tenantId, utilisateurId }, "contributeur"))) {
+  if (!(await peutAgir({ tenantId, utilisateurId }, "gerant"))) {
     return Response.json(
       { error: "Votre rôle dans cet espace ne permet pas cette action." },
       { status: 403 },

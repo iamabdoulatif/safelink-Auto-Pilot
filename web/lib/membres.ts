@@ -50,7 +50,7 @@ export async function listerMembres(tenantId: string): Promise<Membre[]> {
     `SELECT m.courriel, m.role, m.invite_par, m.created_at,
        EXISTS (SELECT 1 FROM utilisateurs u WHERE u.courriel = m.courriel) AS compte
      FROM membres_espace m WHERE m.tenant_id = $1
-     ORDER BY CASE m.role WHEN 'admin' THEN 0 WHEN 'contributeur' THEN 1 ELSE 2 END, m.courriel`,
+     ORDER BY CASE m.role WHEN 'admin' THEN 0 WHEN 'gerant' THEN 1 ELSE 2 END, m.courriel`,
     [tenantId],
   );
   return rows

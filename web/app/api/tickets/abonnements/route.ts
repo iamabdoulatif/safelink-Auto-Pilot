@@ -56,7 +56,7 @@ const CANAUX = [
 
 export async function POST(req: Request) {
   const { tenantId, utilisateurId } = await session();
-  if (!(await peutAgir({ tenantId, utilisateurId }, "contributeur"))) {
+  if (!(await peutAgir({ tenantId, utilisateurId }, "gerant"))) {
     return Response.json(
       { error: "Votre rôle dans cet espace ne permet pas cette action." },
       { status: 403 },

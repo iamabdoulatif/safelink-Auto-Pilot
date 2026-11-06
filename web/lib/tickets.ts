@@ -1,6 +1,7 @@
 import { createHmac } from "node:crypto";
 import { db } from "@/lib/db";
 import { canonicaliser } from "@/lib/signature";
+import type { EnvoiSupplementaire } from "@/lib/envois-supplementaires";
 
 // Declenchement de la generation : la route manuelle et la ronde
 // automatique passent par ici, avec la meme charge et le meme suivi.
@@ -84,6 +85,10 @@ export type DemandeLot = {
   dureeLimite?: string; // ex. "2h", vide = sans limite
   volumeLimiteOctets?: number; // vide = sans limite
   prefixe?: string;
+  // Copies supplémentaires déjà résolues (zone Wi-Fi : admin, gérant,
+  // vendeurs en WhatsApp). Transmises dans la charge signée, comme le
+  // fait la route interne des jobs pour le réappro automatique.
+  destinatairesSupplementaires?: EnvoiSupplementaire[];
   jetonTelegram?: string; // bot personnalise dechiffre, ou "" (central)
   secretWhatsApp?: string; // dechiffre, ou "" (sans secret)
   clePrintNode?: string; // dechiffre, ou "" (env n8n sinon)
@@ -210,6 +215,7 @@ export async function genererLot(d: DemandeLot): Promise<ResultatLot> {
     whatsappSecret: d.secretWhatsApp || "",
     printNodeApiKey: d.clePrintNode || "",
     routeurNom: d.routeurNom || "",
+    destinatairesSupplementaires: d.destinatairesSupplementaires ?? [],
     nomTicket,
     forcerGeneration: d.forcerGeneration === true,
     callbackUrl: APP_URL ? APP_URL + "/api/n8n/retour" : "",

@@ -7,7 +7,7 @@ import { listerProfilsHotspot } from "@/lib/connexions-routeur";
 // cote serveur, puis oublie : il n'est jamais stocke ni journalise.
 export async function POST(req: Request) {
   const ctx = await session();
-  if (!(await peutAgir(ctx, "contributeur"))) {
+  if (!(await peutAgir(ctx, "gerant"))) {
     return Response.json(
       { error: "Votre rôle dans cet espace ne permet pas cette action." },
       { status: 403 },

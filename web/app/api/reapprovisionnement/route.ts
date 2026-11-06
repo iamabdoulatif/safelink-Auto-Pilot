@@ -31,6 +31,8 @@ type LigneRegle = {
   canal: string;
   destinataire: string;
   destinataires_supplementaires: DestinataireSupplementaire[];
+  approbation_requise: boolean;
+  approbation_canal: string;
   duree_limite: string | null;
   volume_limite_octets: number | null;
   actif: boolean;
@@ -128,7 +130,8 @@ export async function GET() {
          s.mikhmon_connection_id, s.profile_id, r.nom AS routeur_nom,
          s.profil, s.seuil, s.quantite_generation, s.quantite_cible,
          s.frequence_minutes, s.canal, s.destinataire,
-         s.destinataires_supplementaires, s.duree_limite,
+         s.destinataires_supplementaires, s.approbation_requise,
+         s.approbation_canal, s.duree_limite,
          s.volume_limite_octets, s.actif, s.simulation_reussie,
          s.stock_rearme, s.dernier_stock, s.derniere_verif_le,
          s.derniere_erreur
@@ -155,7 +158,7 @@ export async function GET() {
 
 export async function POST(req: Request) {
   const ctx = await session();
-  if (!(await peutAgir(ctx, "contributeur"))) {
+  if (!(await peutAgir(ctx, "gerant"))) {
     return Response.json(
       { error: "Votre rôle dans cet espace ne permet pas cette action." },
       { status: 403 },
@@ -177,6 +180,9 @@ export async function POST(req: Request) {
   const canal = typeof b["canal"] === "string" ? b["canal"] : "telechargement";
   const destinataire = typeof b["destinataire"] === "string"
     ? b["destinataire"].trim() : "";
+  const approbationRequise = b["approbationRequise"] === true;
+  const approbationCanal = typeof b["approbationCanal"] === "string"
+    ? b["approbationCanal"] : "telegram";
   const dureeLimite = typeof b["dureeLimite"] === "string" &&
     b["dureeLimite"].trim() ? b["dureeLimite"].trim() : null;
   const volumeBrut = b["volumeLimiteOctets"];
@@ -202,6 +208,16 @@ export async function POST(req: Request) {
   }
   if (!(CANAUX as readonly string[]).includes(canal)) {
     return Response.json({ error: "canal inconnu." }, { status: 400 });
+  }
+  if (![120, 240, 480, 500].includes(quantiteGeneration)) {
+    return Response.json({
+      error: "quantiteGeneration doit valoir 120, 240, 480 ou 500.",
+    }, { status: 400 });
+  }
+  if (approbationRequise && approbationCanal !== "telegram"
+    && approbationCanal !== "whatsapp") {
+    return Response.json({ error: "approbationCanal inconnu." },
+      { status: 400 });
   }
   if ((canal === "telegram" || canal === "whatsapp") && !destinataire) {
     return Response.json({ error: "destinataire obligatoire pour ce canal." },
@@ -303,8 +319,9 @@ export async function POST(req: Request) {
           mikhmon_connection_id, profile_id, profil, seuil,
           quantite_generation, quantite_cible, frequence_minutes, canal,
           destinataire, duree_limite, volume_limite_octets,
-          destinataires_supplementaires)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)
+          destinataires_supplementaires, approbation_requise,
+          approbation_canal)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)
        ON CONFLICT (tenant_id, router_connection_id, profil) DO UPDATE SET
          mikhmon_connection_id = EXCLUDED.mikhmon_connection_id,
          profile_id = EXCLUDED.profile_id, seuil = EXCLUDED.seuil,
@@ -320,7 +337,7 @@ export async function POST(req: Request) {
       [ctx.tenantId, ctx.utilisateurId, routerConnectionId, mikhmonId,
       profilIdEnregistre, profil, seuil, quantiteGeneration, quantiteCible,
         frequence, canal, destinataire, dureeLimite, volume,
-        JSON.stringify(autres.liste)],
+        JSON.stringify(autres.liste), approbationRequise, approbationCanal],
     );
     const regleId = (rows[0] as { id: number }).id;
     return Response.json({
@@ -340,7 +357,7 @@ export async function POST(req: Request) {
 // Tant que l'utilisateur n'a pas active, aucune generation n'est possible.
 export async function PATCH(req: Request) {
   const ctx = await session();
-  if (!(await peutAgir(ctx, "contributeur"))) {
+  if (!(await peutAgir(ctx, "gerant"))) {
     return Response.json(
       { error: "Votre rôle dans cet espace ne permet pas cette action." },
       { status: 403 },

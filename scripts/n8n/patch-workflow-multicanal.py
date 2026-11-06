@@ -135,7 +135,7 @@ def main() -> None:
         "P5 : légende déjà présente."
     corps.append({
         "name": "caption",
-        "value": '="Routeur " + ($json.routeurNom || $json.routerBaseUrl) + " · Profil " + $json.profile + " · " + $json.generatedCount + " tickets créés · Stock " + $json.stockAvant + " → " + $json.stockApres + " · " + $json.generatedAt',
+        "value": "={{ '🎟️ Tickets Wi-Fi générés\\n\\n📡 Routeur : ' + ($json.routeurNom || $json.routerBaseUrl || 'Routeur') + '\\n👤 Profil : ' + ($json.profile || '-') + '\\n✅ Tickets créés : ' + ($json.generatedCount ?? 0) + '\\n📦 Stock : ' + ($json.stockAvant ?? '—') + ' → ' + ($json.stockApres ?? '—') + ($json.generatedAt ? '\\n🕐 ' + String($json.generatedAt).slice(8, 10) + '/' + String($json.generatedAt).slice(5, 7) + '/' + String($json.generatedAt).slice(0, 4) + ' à ' + String($json.generatedAt).slice(11, 16) + ' UTC' : '') }}",
     })
 
     # --- P6 : récapitulatif d'approbation ---

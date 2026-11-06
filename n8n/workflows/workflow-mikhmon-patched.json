@@ -59,7 +59,7 @@
     272
    ],
    "parameters": {
-    "jsCode": "const sortiesParams = [];\nfor (const entreeParams of $input.all()) {\nconst input = entreeParams.json.body ?? entreeParams.json;\nvar reponseJob = input && input.data ? input.data : null;\nif (reponseJob && reponseJob.runId) {\n  var travailJob = {};\n  try {\n    var lusJob = $('Signer la lecture config').all();\n    for (var kJob = 0; kJob < lusJob.length; kJob++) {\n      var candJob = (lusJob[kJob] && lusJob[kJob].json) || {};\n      if (String(candJob.runId) === String(reponseJob.runId)) { travailJob = candJob; break; }\n    }\n  } catch (eJob) {}\n  var routeurJob = reponseJob.routeur || {};\n  var mikhmonJob = reponseJob.mikhmon || {};\n  var lotJob = reponseJob.lot || {};\n  var livraisonJob = reponseJob.livraison || {};\n  var tgJob = livraisonJob.telegram || {};\n  var waJob = livraisonJob.whatsapp || {};\n  var pnJob = livraisonJob.printnode || {};\n  var racineJob = String(travailJob.appUrl || '');\n  if (!racineJob) { try { racineJob = String(($(\"Signer l'appel jobs\").first().json || {}).appUrl || \"\"); } catch (eRacine) {} }\n  if (!routeurJob.adresse || !routeurJob.motDePasseEcriture) throw new Error('Configuration routeur incomplète.');\n  input.routerBaseUrl = String(routeurJob.adresse).replace(/\\/$/, '');\n  input.routerUser = routeurJob.utilisateurEcriture;\n  input.routerPassword = routeurJob.motDePasseEcriture;\n  input.hotspotServer = mikhmonJob.serveurHotspot || 'all';\n  input.profile = lotJob.profil;\n  input.quantity = lotJob.quantite;\n  input.threshold = lotJob.seuil;\n  var canalJob = String(livraisonJob.canal || 'telechargement');\n  input.deliveryChannel = canalJob === 'telechargement' ? 'pdf' : canalJob;\n  input.recipient = livraisonJob.destinataire || tgJob.chatId || waJob.destinataire || '';\n  input.tenantId = reponseJob.tenantId;\n  input.routeurNom = routeurJob.nom || '';\n  input.nomTicket = routeurJob.nomTicket || '';\n  input.destinatairesSupplementaires = livraisonJob.supplementaires || [];\n  input.runId = reponseJob.runId;\n  input.cleIdempotence = reponseJob.runId;\n  input.simulation = reponseJob.simulation === true || travailJob.surveillance === true;\n  input.telegramBotToken = tgJob.jeton || '';\n  input.whatsappWebhookUrl = waJob.webhookUrl || '';\n  input.printNodeApiKey = pnJob.cle || '';\n  input.printNodePrinterId = pnJob.printerId || 0;\n  if (racineJob) input.callbackUrl = racineJob.replace(/\\/$/, '') + '/api/internal/n8n/callback';\n}\n// Normalisation des entrees imposees (/api/generer-tickets) : userId/tenantId,\n// mikhmonConnectionId, routerConnectionId, profile, quantity, deliveryChannel,\n// telegramChatId, runId, timestamp. runId = cle d'idempotence (cleIdempotence).\n// L'URL Mikhmon vient de la configuration applicative, jamais d'ici :\n// ce workflow n'appelle que RouterOS (/rest/ip/hotspot/user), source unique\n// de verite (tickets visibles automatiquement dans Mikhmon). AUCUN mot de\n// passe de ticket ne remonte vers l'application : seul le NOMBRE est signe.\nif (input.runId && !input.cleIdempotence) input.cleIdempotence = String(input.runId);\nif (input.quantity === undefined && input.quantite !== undefined) input.quantity = input.quantite;\nif (input.profile === undefined && input.profil !== undefined) input.profile = input.profil;\nif (input.deliveryChannel === undefined && input.canal !== undefined) input.deliveryChannel = input.canal;\nif (input.recipient === undefined && input.telegramChatId !== undefined) input.recipient = String(input.telegramChatId);\nif (input.userId === undefined && input.utilisateurId !== undefined) input.userId = String(input.utilisateurId);\nif (input.quantity === undefined && input.targetQuantity !== undefined) input.quantity = input.targetQuantity;\nif (input.recipient === undefined && input.whatsappRecipient !== undefined) input.recipient = String(input.whatsappRecipient);\nconst env = (name, fallback = '') => (($env && $env[name]) || fallback); // Entrees signees SafeLink d'abord, $env en repli (compose OK).\nconst asInt = (value, fallback) => { const n = Number(value); return Number.isFinite(n) ? Math.floor(n) : fallback; };\n\nconst rawBase = String(input.routerBaseUrl || env('ROUTEROS_BASE_URL', '')).replace(/\\/$/, '');\nif (!rawBase) throw new Error(\"ROUTEROS_BASE_URL est obligatoire (ex. http://host.docker.internal:9110 depuis n8n Docker).\");\nif (!/^https?:\\/\\/[^\\/\\s]+(\\/.*)?$/i.test(rawBase)) throw new Error('ROUTEROS_BASE_URL invalide : ' + rawBase);\nlet routerBaseUrl = rawBase;\nconst tenantId = String(input.tenantId || env('TENANT_ID', 'defaut') || 'defaut').slice(0, 64);\nconst cleIdempotence = String(input.cleIdempotence || '').slice(0, 128);\n\nconst profilesRaw = String(input.profiles ?? input.profile ?? env('MIKHMON_PROFILES', '') ?? env('MIKHMON_PROFILE', 'default'));\nconst profiles = [...new Set(profilesRaw.split(',').map(s => s.trim()).filter(Boolean))];\nif (!profiles.length) throw new Error('Aucun profil : renseignez profile ou MIKHMON_PROFILES (ex. \"default,vip\").');\n\nconst deliveryChannel = String(input.deliveryChannel || env('DELIVERY_CHANNEL', 'telegram')).toLowerCase();\nif (!['telegram', 'whatsapp', 'printnode', 'interface', 'pdf'].includes(deliveryChannel)) {\n  throw new Error('DELIVERY_CHANNEL inconnu : \"' + deliveryChannel + '\" (telegram, whatsapp, printnode, interface ou pdf).');\n}\n\nconst shared = {\n  routerBaseUrl,\n  routerUser: String(input.routerUser || env('ROUTEROS_USER', 'n8n-vouchers')),\n  routerPassword: String(input.routerPassword || env('ROUTEROS_PASSWORD', '')),\n  hotspotServer: String(input.hotspotServer || env('MIKHMON_HOTSPOT_SERVER', 'all')),\n  threshold: Math.max(0, asInt(input.threshold ?? env('TICKET_THRESHOLD', 50), 50)),\n  quantity: Math.max(1, Math.min(500, asInt(input.quantity ?? env('TICKET_QUANTITY', 50), 50))),\n  usernameLength: Math.max(3, Math.min(12, asInt(input.usernameLength ?? 4, 4))),\n  passwordLength: Math.max(3, Math.min(16, asInt(input.passwordLength ?? 4, 4))),\n  prefix: String(input.prefix ?? env('TICKET_PREFIX', '')),\n  limitUptime: String(input.limitUptime ?? env('TICKET_LIMIT_UPTIME', '')),\n  limitBytesTotal: String(input.limitBytesTotal ?? env('TICKET_LIMIT_BYTES_TOTAL', '')),\n  deliveryChannel,\n  recipient: String(input.recipient || env('DELIVERY_RECIPIENT', '')),\n  tenantId,\n  userId: String(input.userId || ''),\n  mikhmonConnectionId: input.mikhmonConnectionId === undefined || input.mikhmonConnectionId === null ? null : Number(input.mikhmonConnectionId),\n  routerConnectionId: input.routerConnectionId === undefined || input.routerConnectionId === null ? null : Number(input.routerConnectionId),\n  cleIdempotence: cleIdempotence,\n  routeurNom: String(input.routeurNom || ''),\n  nomTicket: String(input.nomTicket || ''),\n  destinatairesSupplementaires: Array.isArray(input.destinatairesSupplementaires) ? input.destinatairesSupplementaires : [],\n  runId: reponseJob && reponseJob.runId ? String(reponseJob.runId) : '',\n  simulation: input.simulation === true,\n  forcerGeneration: input.forcerGeneration === true,\n  callbackUrl: String(input.callbackUrl || ''),\n  pdfServiceUrl: String(input.pdfServiceUrl || env('PDF_SERVICE_URL', 'http://gotenberg:3000/forms/chromium/convert/html')).replace(/\\/$/, ''),\n  whatsappWebhookUrl: String(input.whatsappWebhookUrl || env('WHATSAPP_WEBHOOK_URL', '')),\n  printNodePrinterId: asInt(input.printNodePrinterId ?? env('PRINTNODE_PRINTER_ID', 0), 0),\n  printNodeApiKey: String(input.printNodeApiKey || env('PRINTNODE_API_KEY', '')),\n  telegramBotToken: String(input.telegramBotToken || env('TELEGRAM_BOT_TOKEN', ''))\n};\nsortiesParams.push(...profiles.map(profile => ({ json: { ...shared, profile } })));\n}\nreturn sortiesParams;"
+    "jsCode": "const sortiesParams = [];\nfor (const entreeParams of $input.all()) {\nconst input = entreeParams.json.body ?? entreeParams.json;\nvar reponseJob = input && input.data ? input.data : null;\nif (reponseJob && reponseJob.runId) {\n  var travailJob = {};\n  try {\n    var lusJob = $('Signer la lecture config').all();\n    for (var kJob = 0; kJob < lusJob.length; kJob++) {\n      var candJob = (lusJob[kJob] && lusJob[kJob].json) || {};\n      if (String(candJob.runId) === String(reponseJob.runId)) { travailJob = candJob; break; }\n    }\n  } catch (eJob) {}\n  var routeurJob = reponseJob.routeur || {};\n  var mikhmonJob = reponseJob.mikhmon || {};\n  var lotJob = reponseJob.lot || {};\n  var livraisonJob = reponseJob.livraison || {};\n  var tgJob = livraisonJob.telegram || {};\n  var waJob = livraisonJob.whatsapp || {};\n  var pnJob = livraisonJob.printnode || {};\n  var racineJob = String(travailJob.appUrl || '');\n  if (!racineJob) { try { racineJob = String(($(\"Signer l'appel jobs\").first().json || {}).appUrl || \"\"); } catch (eRacine) {} }\n  if (!routeurJob.adresse || !routeurJob.motDePasseEcriture) throw new Error('Configuration routeur incomplète.');\n  input.routerBaseUrl = String(routeurJob.adresse).replace(/\\/$/, '');\n  input.routerUser = routeurJob.utilisateurEcriture;\n  input.routerPassword = routeurJob.motDePasseEcriture;\n  input.hotspotServer = mikhmonJob.serveurHotspot || 'all';\n  input.profile = lotJob.profil;\n  input.quantity = lotJob.quantite;\n  input.threshold = lotJob.seuil;\n  var canalJob = String(livraisonJob.canal || 'telechargement');\n  input.deliveryChannel = canalJob === 'telechargement' ? 'pdf' : canalJob;\n  input.recipient = livraisonJob.destinataire || tgJob.chatId || waJob.destinataire || '';\n  input.tenantId = reponseJob.tenantId;\n  input.routeurNom = routeurJob.nom || '';\n  input.nomTicket = routeurJob.nomTicket || '';\n  input.destinatairesSupplementaires = livraisonJob.supplementaires || [];\n  input.runId = reponseJob.runId;\n  input.cleIdempotence = reponseJob.runId;\n  input.simulation = reponseJob.simulation === true || travailJob.surveillance === true;\n  input.telegramBotToken = tgJob.jeton || '';\n  var apprJob = livraisonJob.approbation || {};\n  input.approbationRequise = apprJob.requise === true;\n  input.approbationCanal = String(apprJob.canal || 'telegram');\n  input.approbationDestinataire = String(apprJob.destinataire || '');\n  input.whatsappWebhookUrl = waJob.webhookUrl || '';\n  input.printNodeApiKey = pnJob.cle || '';\n  input.printNodePrinterId = pnJob.printerId || 0;\n  if (racineJob) input.callbackUrl = racineJob.replace(/\\/$/, '') + '/api/internal/n8n/callback';\n}\n// Normalisation des entrees imposees (/api/generer-tickets) : userId/tenantId,\n// mikhmonConnectionId, routerConnectionId, profile, quantity, deliveryChannel,\n// telegramChatId, runId, timestamp. runId = cle d'idempotence (cleIdempotence).\n// L'URL Mikhmon vient de la configuration applicative, jamais d'ici :\n// ce workflow n'appelle que RouterOS (/rest/ip/hotspot/user), source unique\n// de verite (tickets visibles automatiquement dans Mikhmon). AUCUN mot de\n// passe de ticket ne remonte vers l'application : seul le NOMBRE est signe.\nif (input.runId && !input.cleIdempotence) input.cleIdempotence = String(input.runId);\nif (input.quantity === undefined && input.quantite !== undefined) input.quantity = input.quantite;\nif (input.profile === undefined && input.profil !== undefined) input.profile = input.profil;\nif (input.deliveryChannel === undefined && input.canal !== undefined) input.deliveryChannel = input.canal;\nif (input.recipient === undefined && input.telegramChatId !== undefined) input.recipient = String(input.telegramChatId);\nif (input.userId === undefined && input.utilisateurId !== undefined) input.userId = String(input.utilisateurId);\nif (input.quantity === undefined && input.targetQuantity !== undefined) input.quantity = input.targetQuantity;\nif (input.recipient === undefined && input.whatsappRecipient !== undefined) input.recipient = String(input.whatsappRecipient);\nconst env = (name, fallback = '') => (($env && $env[name]) || fallback); // Entrees signees SafeLink d'abord, $env en repli (compose OK).\nconst asInt = (value, fallback) => { const n = Number(value); return Number.isFinite(n) ? Math.floor(n) : fallback; };\n\nconst rawBase = String(input.routerBaseUrl || env('ROUTEROS_BASE_URL', '')).replace(/\\/$/, '');\nif (!rawBase) throw new Error(\"ROUTEROS_BASE_URL est obligatoire (ex. http://host.docker.internal:9110 depuis n8n Docker).\");\nif (!/^https?:\\/\\/[^\\/\\s]+(\\/.*)?$/i.test(rawBase)) throw new Error('ROUTEROS_BASE_URL invalide : ' + rawBase);\nlet routerBaseUrl = rawBase;\nconst tenantId = String(input.tenantId || env('TENANT_ID', 'defaut') || 'defaut').slice(0, 64);\nconst cleIdempotence = String(input.cleIdempotence || '').slice(0, 128);\n\nconst profilesRaw = String(input.profiles ?? input.profile ?? env('MIKHMON_PROFILES', '') ?? env('MIKHMON_PROFILE', 'default'));\nconst profiles = [...new Set(profilesRaw.split(',').map(s => s.trim()).filter(Boolean))];\nif (!profiles.length) throw new Error('Aucun profil : renseignez profile ou MIKHMON_PROFILES (ex. \"default,vip\").');\n\nconst deliveryChannel = String(input.deliveryChannel || env('DELIVERY_CHANNEL', 'telegram')).toLowerCase();\nif (!['telegram', 'whatsapp', 'printnode', 'interface', 'pdf'].includes(deliveryChannel)) {\n  throw new Error('DELIVERY_CHANNEL inconnu : \"' + deliveryChannel + '\" (telegram, whatsapp, printnode, interface ou pdf).');\n}\n\nconst shared = {\n  routerBaseUrl,\n  routerUser: String(input.routerUser || env('ROUTEROS_USER', 'n8n-vouchers')),\n  routerPassword: String(input.routerPassword || env('ROUTEROS_PASSWORD', '')),\n  hotspotServer: String(input.hotspotServer || env('MIKHMON_HOTSPOT_SERVER', 'all')),\n  threshold: Math.max(0, asInt(input.threshold ?? env('TICKET_THRESHOLD', 50), 50)),\n  quantity: Math.max(1, Math.min(500, asInt(input.quantity ?? env('TICKET_QUANTITY', 50), 50))),\n  usernameLength: Math.max(3, Math.min(12, asInt(input.usernameLength ?? 4, 4))),\n  passwordLength: Math.max(3, Math.min(16, asInt(input.passwordLength ?? 4, 4))),\n  prefix: String(input.prefix ?? env('TICKET_PREFIX', '')),\n  limitUptime: String(input.limitUptime ?? env('TICKET_LIMIT_UPTIME', '')),\n  limitBytesTotal: String(input.limitBytesTotal ?? env('TICKET_LIMIT_BYTES_TOTAL', '')),\n  deliveryChannel,\n  recipient: String(input.recipient || env('DELIVERY_RECIPIENT', '')),\n  tenantId,\n  userId: String(input.userId || ''),\n  mikhmonConnectionId: input.mikhmonConnectionId === undefined || input.mikhmonConnectionId === null ? null : Number(input.mikhmonConnectionId),\n  routerConnectionId: input.routerConnectionId === undefined || input.routerConnectionId === null ? null : Number(input.routerConnectionId),\n  cleIdempotence: cleIdempotence,\n  routeurNom: String(input.routeurNom || ''),\n  nomTicket: String(input.nomTicket || ''),\n  destinatairesSupplementaires: Array.isArray(input.destinatairesSupplementaires) ? input.destinatairesSupplementaires : [],\n  runId: reponseJob && reponseJob.runId ? String(reponseJob.runId) : '',\n  simulation: input.simulation === true,\n  forcerGeneration: input.forcerGeneration === true,\n  callbackUrl: String(input.callbackUrl || ''),\n  pdfServiceUrl: String(input.pdfServiceUrl || env('PDF_SERVICE_URL', 'http://gotenberg:3000/forms/chromium/convert/html')).replace(/\\/$/, ''),\n  whatsappWebhookUrl: String(input.whatsappWebhookUrl || env('WHATSAPP_WEBHOOK_URL', '')),\n  printNodePrinterId: asInt(input.printNodePrinterId ?? env('PRINTNODE_PRINTER_ID', 0), 0),\n  printNodeApiKey: String(input.printNodeApiKey || env('PRINTNODE_API_KEY', '')),\n  telegramBotToken: String(input.telegramBotToken || env('TELEGRAM_BOT_TOKEN', '')),\n  approbationRequise: input.approbationRequise === true,\n  approbationCanal: String(input.approbationCanal || 'telegram'),\n  approbationDestinataire: String(input.approbationDestinataire || '')\n};\nsortiesParams.push(...profiles.map(profile => ({ json: { ...shared, profile } })));\n}\nreturn sortiesParams;"
    }
   },
   {
@@ -72,7 +72,7 @@
     272
    ],
    "parameters": {
-    "jsCode": "const inputs = $input.all().map(i => i.json);\nfunction parseUptime(v) {\n  if (v === null || v === undefined) return 0;\n  if (typeof v === 'number') return Number.isFinite(v) && v > 0 ? v : 0;\n  const s = String(v).trim();\n  if (s === '' || s === '0' || s === '0s') return 0;\n  let m = s.match(/^(?:(\\d+)w)?(?:(\\d+)d)?(?:(\\d+)h)?(?:(\\d+)m)?(?:(\\d+)s)?$/i);\n  if (m && m[0] !== '') {\n    const g = i => parseInt(m[i] || '0', 10);\n    return (((g(1) * 7 + g(2)) * 24 + g(3)) * 60 + g(4)) * 60 + g(5);\n  }\n  m = s.match(/^(\\d+):(\\d{1,2}):(\\d{1,2})$/);\n  if (m) return (+m[1]) * 3600 + (+m[2]) * 60 + (+m[3]);\n  const n = Number(s);\n  return Number.isFinite(n) && n > 0 ? Math.floor(n) : 0;\n}\nfunction isDisabled(u) {\n  return u.disabled === true || String(u.disabled || '').toLowerCase() === 'true';\n}\nasync function assertPdfService(url, helpers) {\n  if (!url) throw new Error('PDF_SERVICE_URL est obligatoire.');\n  const base = url.replace(/\\/forms\\/.*$/, '');\n  try {\n    await helpers.httpRequest({ method: 'GET', url: base + '/health', timeout: 10000 });\n    return;\n  } catch (e) { /* repli : sonde directe de l'endpoint */ }\n  try {\n    await helpers.httpRequest({ method: 'GET', url, timeout: 10000 });\n    return;\n  } catch (e) {\n    const sc = e.statusCode || (e.response && (e.response.statusCode || e.response.status));\n    if (sc === 404 || sc === 405) return;\n    throw new Error('Service PDF injoignable : ' + url + ' (' + (e.message || e) + '). Demarrez Gotenberg.');\n  }\n}\nasync function validateConfig(cfg, telegramToken, helpers) {\n  if (!cfg.routerPassword) throw new Error('ROUTEROS_PASSWORD est obligatoire. Utilisez un compte RouterOS dédié (ex. app-fix).');\n  await assertPdfService(cfg.pdfServiceUrl, helpers);\n  if (cfg.deliveryChannel === 'telegram' && !telegramToken) throw new Error('TELEGRAM_BOT_TOKEN est obligatoire pour le canal telegram.');\n  if ((cfg.deliveryChannel === 'telegram' || cfg.deliveryChannel === 'whatsapp') && !cfg.recipient) throw new Error('Destinataire vide pour le canal ' + cfg.deliveryChannel + ' (DELIVERY_RECIPIENT).');\n  if (cfg.deliveryChannel === 'whatsapp' && !cfg.whatsappWebhookUrl) throw new Error(\"WHATSAPP_WEBHOOK_URL est obligatoire pour le canal whatsapp.\");\n  if (cfg.deliveryChannel === 'printnode' && (!cfg.printNodeApiKey || !cfg.printNodePrinterId)) throw new Error('PRINTNODE_API_KEY et PRINTNODE_PRINTER_ID sont obligatoires pour le canal printnode.');\n}\nconst out = [];\nfor (const cfg of inputs) {\n  const telegramToken = cfg.telegramBotToken || '';\n  await validateConfig(cfg, telegramToken, this.helpers);\n  const auth = 'Basic ' + Buffer.from(cfg.routerUser + ':' + cfg.routerPassword).toString('base64');\n  const response = await this.helpers.httpRequest({\n    method: 'GET',\n    url: cfg.routerBaseUrl + '/rest/ip/hotspot/user',\n    headers: { Authorization: auth, Accept: 'application/json' },\n    json: true,\n    timeout: 30000,\n    skipSslCertificateValidation: (['1', 'true', 'oui'].indexOf(String(($env && $env.ROUTEROS_TLS_INSECURE) || '').toLowerCase()) !== -1) /* Exception labo explicite uniquement, verifie par defaut. */\n  });\n  const profRes = await this.helpers.httpRequest({\n    method: 'GET',\n    url: cfg.routerBaseUrl + '/rest/ip/hotspot/user/profile',\n    headers: { Authorization: auth, Accept: 'application/json' },\n    json: true,\n    timeout: 30000,\n    skipSslCertificateValidation: (['1', 'true', 'oui'].indexOf(String(($env && $env.ROUTEROS_TLS_INSECURE) || '').toLowerCase()) !== -1) /* Exception labo explicite uniquement, verifie par defaut. */\n  });\n  const profs = Array.isArray(profRes) ? profRes : (profRes.data || profRes.results || []);\n  if (!profs.some(p => String(p.name) === cfg.profile)) throw new Error('Profil hotspot \"' + cfg.profile + '\" introuvable (creez-le dans /ip/hotspot/user/profile).');\n  const users = Array.isArray(response) ? response : (response.data || response.results || []);\n  const sameProfile = users.filter(u => String(u.profile || '') === cfg.profile);\n  const available = sameProfile.filter(u => !isDisabled(u) && parseUptime(u.uptime) === 0);\n  const shouldGenerate = available.length < cfg.threshold;\n  out.push({ json: { ...cfg, existingNames: users.map(u => String(u.name)), stockTotal: sameProfile.length, stockAvailable: available.length, shouldGenerate, checkedAt: new Date().toISOString() } });\n}\nreturn out;\n"
+    "jsCode": "const inputs = $input.all().map(i => i.json);\nfunction parseUptime(v) {\n  if (v === null || v === undefined) return 0;\n  if (typeof v === 'number') return Number.isFinite(v) && v > 0 ? v : 0;\n  const s = String(v).trim();\n  if (s === '' || s === '0' || s === '0s') return 0;\n  let m = s.match(/^(?:(\\d+)w)?(?:(\\d+)d)?(?:(\\d+)h)?(?:(\\d+)m)?(?:(\\d+)s)?$/i);\n  if (m && m[0] !== '') {\n    const g = i => parseInt(m[i] || '0', 10);\n    return (((g(1) * 7 + g(2)) * 24 + g(3)) * 60 + g(4)) * 60 + g(5);\n  }\n  m = s.match(/^(\\d+):(\\d{1,2}):(\\d{1,2})$/);\n  if (m) return (+m[1]) * 3600 + (+m[2]) * 60 + (+m[3]);\n  const n = Number(s);\n  return Number.isFinite(n) && n > 0 ? Math.floor(n) : 0;\n}\nfunction isDisabled(u) {\n  return u.disabled === true || String(u.disabled || '').toLowerCase() === 'true';\n}\nasync function assertPdfService(url, helpers) {\n  if (!url) throw new Error('PDF_SERVICE_URL est obligatoire.');\n  const base = url.replace(/\\/forms\\/.*$/, '');\n  try {\n    await helpers.httpRequest({ method: 'GET', url: base + '/health', timeout: 10000 });\n    return;\n  } catch (e) { /* repli : sonde directe de l'endpoint */ }\n  try {\n    await helpers.httpRequest({ method: 'GET', url, timeout: 10000 });\n    return;\n  } catch (e) {\n    const sc = e.statusCode || (e.response && (e.response.statusCode || e.response.status));\n    if (sc === 404 || sc === 405) return;\n    throw new Error('Service PDF injoignable : ' + url + ' (' + (e.message || e) + '). Demarrez Gotenberg.');\n  }\n}\nasync function validateConfig(cfg, telegramToken, helpers) {\n  if (!cfg.routerPassword) throw new Error('ROUTEROS_PASSWORD est obligatoire. Utilisez un compte RouterOS dédié (ex. app-fix).');\n  await assertPdfService(cfg.pdfServiceUrl, helpers);\n  if (cfg.deliveryChannel === 'telegram' && !telegramToken) throw new Error('TELEGRAM_BOT_TOKEN est obligatoire pour le canal telegram.');\n  if ((cfg.deliveryChannel === 'telegram' || cfg.deliveryChannel === 'whatsapp') && !cfg.recipient) throw new Error('Destinataire vide pour le canal ' + cfg.deliveryChannel + ' (DELIVERY_RECIPIENT).');\n  if (cfg.deliveryChannel === 'whatsapp' && !cfg.whatsappWebhookUrl) throw new Error(\"WHATSAPP_WEBHOOK_URL est obligatoire pour le canal whatsapp.\");\n  if (cfg.deliveryChannel === 'printnode' && (!cfg.printNodeApiKey || !cfg.printNodePrinterId)) throw new Error('PRINTNODE_API_KEY et PRINTNODE_PRINTER_ID sont obligatoires pour le canal printnode.');\n}\nconst out = [];\nfor (const cfg of inputs) {\n  const telegramToken = cfg.telegramBotToken || '';\n  await validateConfig(cfg, telegramToken, this.helpers);\n  const auth = 'Basic ' + Buffer.from(cfg.routerUser + ':' + cfg.routerPassword).toString('base64');\n  const response = await this.helpers.httpRequest({\n    method: 'GET',\n    url: cfg.routerBaseUrl + '/rest/ip/hotspot/user',\n    headers: { Authorization: auth, Accept: 'application/json' },\n    json: true,\n    timeout: 30000,\n    skipSslCertificateValidation: (['1', 'true', 'oui'].indexOf(String(($env && $env.ROUTEROS_TLS_INSECURE) || '').toLowerCase()) !== -1) /* Exception labo explicite uniquement, verifie par defaut. */\n  });\n  const profRes = await this.helpers.httpRequest({\n    method: 'GET',\n    url: cfg.routerBaseUrl + '/rest/ip/hotspot/user/profile',\n    headers: { Authorization: auth, Accept: 'application/json' },\n    json: true,\n    timeout: 30000,\n    skipSslCertificateValidation: (['1', 'true', 'oui'].indexOf(String(($env && $env.ROUTEROS_TLS_INSECURE) || '').toLowerCase()) !== -1) /* Exception labo explicite uniquement, verifie par defaut. */\n  });\n  const profs = Array.isArray(profRes) ? profRes : (profRes.data || profRes.results || []);\n  if (!profs.some(p => String(p.name) === cfg.profile)) throw new Error('Profil hotspot \"' + cfg.profile + '\" introuvable (creez-le dans /ip/hotspot/user/profile).');\n  const users = Array.isArray(response) ? response : (response.data || response.results || []);\n  const sameProfile = users.filter(u => String(u.profile || '') === cfg.profile);\n  const available = sameProfile.filter(u => !isDisabled(u) && parseUptime(u.uptime) === 0);\n  const shouldGenerate = available.length <= cfg.threshold; // Declenchement de 0 au seuil inclus : 0, 49 ou 50 (seuil 50) generent.\n  out.push({ json: { ...cfg, existingNames: users.map(u => String(u.name)), stockTotal: sameProfile.length, stockAvailable: available.length, shouldGenerate, checkedAt: new Date().toISOString() } });\n}\nreturn out;\n"
    },
    "onError": "continueErrorOutput"
   },
@@ -347,7 +347,7 @@
       },
       {
        "name": "caption",
-       "value": "=\"Routeur \" + ($json.routeurNom || $json.routerBaseUrl) + \" · Profil \" + $json.profile + \" · \" + $json.generatedCount + \" tickets créés · Stock \" + $json.stockAvant + \" → \" + $json.stockApres + \" · \" + $json.generatedAt"
+       "value": "={{ '🎟️ Tickets Wi-Fi générés\\n\\n📡 Routeur : ' + ($json.routeurNom || $json.routerBaseUrl || 'Routeur') + '\\n👤 Profil : ' + ($json.profile || '-') + '\\n✅ Tickets créés : ' + ($json.generatedCount ?? 0) + '\\n📦 Stock : ' + ($json.stockAvant ?? '—') + ' → ' + ($json.stockApres ?? '—') + ($json.generatedAt ? '\\n🕐 ' + String($json.generatedAt).slice(8, 10) + '/' + String($json.generatedAt).slice(5, 7) + '/' + String($json.generatedAt).slice(0, 4) + ' à ' + String($json.generatedAt).slice(11, 16) + ' UTC' : '') }}"
       }
      ]
     },
@@ -474,7 +474,7 @@
     672
    ],
    "parameters": {
-    "jsCode": "return $input.all().map(i => {\n  const cfg = i.json;\n  const approvalUrl = $execution.resumeUrl;\n  const approveUrl = approvalUrl + '?approved=true';\n  const rejectUrl = approvalUrl + '?approved=false';\n  const text = `🔐 DEMANDE D'APPROBATION\\n\\nProfil: ${cfg.profile}\\nQuantité demandée: ${cfg.quantity}\\nStock actuel: ${cfg.stockAvailable}\\nSeuil: ${cfg.threshold}\\nCanal: ${cfg.deliveryChannel}\\nDestinataire: ${cfg.recipient}\\nRouteur: ${cfg.routeurNom || cfg.routerBaseUrl || '?'}\\nDate: ${new Date().toISOString()}\\n\\nUtilisez un bouton ci-dessous pour approuver ou refuser.`;\n  return { json: { ...cfg, approvalUrl, approveUrl, rejectUrl, approvalMessage: text } };\n});"
+    "jsCode": "return $input.all().map(i => {\n  const cfg = i.json;\n  const approvalUrl = $execution.resumeUrl;\n  const approveUrl = approvalUrl + '?approved=true';\n  const rejectUrl = approvalUrl + '?approved=false';\n  const text = `🔐 DEMANDE D'APPROBATION\\n\\nVous allez assister à une génération de ${cfg.quantity} tickets pour ${cfg.profile}.\\nStock actuel : ${cfg.stockAvailable} · Seuil : ${cfg.threshold}\\nRouteur : ${cfg.routeurNom || cfg.routerBaseUrl || '?'}\\n\\nVous consentez à cette génération ?`;\n  return { json: { ...cfg, approvalUrl, approveUrl, rejectUrl, approvalMessage: text } };\n});"
    }
   },
   {
@@ -910,8 +910,145 @@
     340
    ],
    "parameters": {
-    "jsCode": "// Envoie le PDF deja cree aux autres destinataires de la regle. Une erreur ne\n// bloque ni le canal principal ni le compte rendu, et ne contient jamais l'URL\n// de Telegram, qui porte le jeton du bot.\nconst items = $input.all();\nconst sorties = [];\nfor (let i = 0; i < items.length; i++) {\n  const cfg = items[i].json;\n  const liste = Array.isArray(cfg.destinatairesSupplementaires) ? cfg.destinatairesSupplementaires : [];\n  const echecs = [];\n  let pdf = null;\n  for (const d of liste) {\n    try {\n      if (!d.url) throw new Error('canal non configure');\n      if (!pdf) pdf = await this.helpers.getBinaryDataBuffer(i, 'data');\n      const telegram = d.canal === 'telegram';\n      const champs = telegram\n        ? { chat_id: d.destinataire, caption: 'Profil ' + cfg.profile + ' · ' + cfg.generatedCount + ' tickets créés' }\n        : { to: d.destinataire, filename: 'tickets-mikhmon.pdf' };\n      const limite = 'safelink' + Date.now() + i;\n      const parties = Object.keys(champs).map((c) => Buffer.from('--' + limite + '\\r\\nContent-Disposition: form-data; name=\"' + c + '\"\\r\\n\\r\\n' + champs[c] + '\\r\\n', 'utf8'));\n      parties.push(Buffer.from('--' + limite + '\\r\\nContent-Disposition: form-data; name=\"' + (telegram ? 'document' : 'file') + '\"; filename=\"tickets-mikhmon.pdf\"\\r\\nContent-Type: application/pdf\\r\\n\\r\\n', 'utf8'));\n      parties.push(pdf, Buffer.from('\\r\\n--' + limite + '--\\r\\n', 'utf8'));\n      await this.helpers.httpRequest({ method: 'POST', url: d.url, headers: { 'Content-Type': 'multipart/form-data; boundary=' + limite }, body: Buffer.concat(parties), timeout: 60000 });\n    } catch (e) {\n      echecs.push(d.canal + ' ' + d.destinataire);\n    }\n  }\n  sorties.push({\n    json: { ...cfg, destinatairesSupplementaires: [], avertissementEnvoi: echecs.length ? 'Envoi non abouti pour : ' + echecs.join(', ') + '.' : '' },\n    binary: items[i].binary,\n    pairedItem: { item: i },\n  });\n}\nreturn sorties;\n"
+    "jsCode": "// Envoie le PDF deja cree aux autres destinataires de la regle. Une erreur ne\n// bloque ni le canal principal ni le compte rendu, et ne contient jamais l'URL\n// de Telegram, qui porte le jeton du bot.\nconst items = $input.all();\nconst sorties = [];\nfor (let i = 0; i < items.length; i++) {\n  const cfg = items[i].json;\n  const liste = Array.isArray(cfg.destinatairesSupplementaires) ? cfg.destinatairesSupplementaires : [];\n  const echecs = [];\n  let pdf = null;\n  for (const d of liste) {\n    try {\n      if (!d.url) throw new Error('canal non configure');\n      if (!pdf) pdf = await this.helpers.getBinaryDataBuffer(i, 'data');\n      const telegram = d.canal === 'telegram';\n      const champs = telegram\n        ? { chat_id: d.destinataire, caption: '🎟️ Tickets Wi-Fi générés\\n\\n📡 Routeur : ' + (cfg.routeurNom || cfg.routerBaseUrl || 'Routeur') + '\\n👤 Profil : ' + (cfg.profile || '-') + '\\n✅ Tickets créés : ' + (cfg.generatedCount ?? 0) + '\\n📦 Stock : ' + (cfg.stockAvant ?? '—') + ' → ' + (cfg.stockApres ?? '—') + (cfg.generatedAt ? '\\n🕐 ' + String(cfg.generatedAt).slice(8, 10) + '/' + String(cfg.generatedAt).slice(5, 7) + '/' + String(cfg.generatedAt).slice(0, 4) + ' à ' + String(cfg.generatedAt).slice(11, 16) + ' UTC' : '') }\n        : { to: d.destinataire, filename: 'tickets-mikhmon.pdf' };\n      const limite = 'safelink' + Date.now() + i;\n      const parties = Object.keys(champs).map((c) => Buffer.from('--' + limite + '\\r\\nContent-Disposition: form-data; name=\"' + c + '\"\\r\\n\\r\\n' + champs[c] + '\\r\\n', 'utf8'));\n      parties.push(Buffer.from('--' + limite + '\\r\\nContent-Disposition: form-data; name=\"' + (telegram ? 'document' : 'file') + '\"; filename=\"tickets-mikhmon.pdf\"\\r\\nContent-Type: application/pdf\\r\\n\\r\\n', 'utf8'));\n      parties.push(pdf, Buffer.from('\\r\\n--' + limite + '--\\r\\n', 'utf8'));\n      await this.helpers.httpRequest({ method: 'POST', url: d.url, headers: { 'Content-Type': 'multipart/form-data; boundary=' + limite }, body: Buffer.concat(parties), timeout: 60000 });\n    } catch (e) {\n      echecs.push(d.canal + ' ' + d.destinataire);\n    }\n  }\n  sorties.push({\n    json: { ...cfg, destinatairesSupplementaires: [], avertissementEnvoi: echecs.length ? 'Envoi non abouti pour : ' + echecs.join(', ') + '.' : '' },\n    binary: items[i].binary,\n    pairedItem: { item: i },\n  });\n}\nreturn sorties;\n"
    }
+  },
+  {
+   "parameters": {
+    "conditions": {
+     "options": {
+      "caseSensitive": true,
+      "leftValue": "",
+      "typeValidation": "loose",
+      "version": 2
+     },
+     "conditions": [
+      {
+       "leftValue": "={{$json.approbationRequise}}",
+       "operator": {
+        "type": "boolean",
+        "operation": "true",
+        "singleValue": true
+       },
+       "id": "cond-approbation"
+      }
+     ],
+     "combinator": "and"
+    },
+    "options": {},
+    "looseTypeValidation": true
+   },
+   "id": "a1100001-0001-4001-8001-000000000001",
+   "name": "Approbation requise ?",
+   "type": "n8n-nodes-base.if",
+   "typeVersion": 2.2,
+   "position": [
+    1056,
+    272
+   ]
+  },
+  {
+   "parameters": {
+    "jsCode": "return $input.all().map(function (entree) {\n  var cfg = entree.json || {};\n  var approvalUrl = $execution.resumeUrl;\n  var message = '🔐 DEMANDE D\\'APPROBATION\\n\\n'\n    + 'Vous allez assister à une génération de ' + cfg.quantity\n    + ' tickets pour ' + cfg.profile + '.\\n'\n    + 'Stock actuel : ' + cfg.stockAvailable + ' · Seuil : ' + cfg.threshold + '\\n'\n    + 'Routeur : ' + (cfg.routeurNom || cfg.routerBaseUrl || '?') + '\\n\\n'\n    + 'Vous consentez à cette génération ?';\n  var copie = {};\n  for (var k in cfg) copie[k] = cfg[k];\n  copie.approvalUrl = approvalUrl;\n  copie.approveUrl = approvalUrl + '?approved=true';\n  copie.rejectUrl = approvalUrl + '?approved=false';\n  copie.approvalMessage = message;\n  return { json: copie };\n});\n"
+   },
+   "id": "a1100002-0002-4002-8002-000000000002",
+   "name": "Préparer la demande d'approbation",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    1120,
+    400
+   ]
+  },
+  {
+   "parameters": {
+    "jsCode": "// Envoie la demande d'approbation sur le canal choisi dans le\n// dashboard. Telegram : boutons. WhatsApp : message avec les liens\n// (l'adaptateur ne sait pas faire de boutons). Un échec d'envoi\n// interrompt le run (sortie erreur), jamais de génération silencieuse.\nconst sorties = [];\nfor (const item of $input.all()) {\n  const cfg = item.json || {};\n  const canal = String(cfg.approbationCanal || 'telegram');\n  const destinataire = String(cfg.approbationDestinataire || cfg.recipient || '');\n  if (!destinataire) throw new Error('Destinataire d\\'approbation manquant pour le canal ' + canal + '.');\n  if (canal === 'whatsapp') {\n    const url = String(cfg.whatsappWebhookUrl || '');\n    if (!url) throw new Error('Adaptateur WhatsApp non configuré : approbation impossible.');\n    const texte = cfg.approvalMessage + '\\n\\n✅ Approuver : ' + cfg.approveUrl + '\\n❌ Refuser : ' + cfg.rejectUrl;\n    await this.helpers.httpRequest({ method: 'POST', url, body: { to: destinataire, text: texte, message: texte }, json: true, timeout: 30000 });\n  } else {\n    const jeton = String(cfg.telegramBotToken || '');\n    if (!jeton) throw new Error('Jeton Telegram manquant : approbation impossible.');\n    await this.helpers.httpRequest({ method: 'POST', url: 'https://api.telegram.org/bot' + jeton + '/sendMessage', body: { chat_id: destinataire, text: cfg.approvalMessage, reply_markup: { inline_keyboard: [[{ text: '✅ Approuver', url: cfg.approveUrl }, { text: '❌ Refuser', url: cfg.rejectUrl }]] } }, json: true, timeout: 30000 });\n  }\n  sorties.push({ json: { ...cfg, approbationEnvoyee: canal } });\n}\nreturn sorties;\n"
+   },
+   "id": "a1100003-0003-4003-8003-000000000003",
+   "name": "Envoyer la demande d'approbation",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    1248,
+    400
+   ],
+   "onError": "continueErrorOutput"
+  },
+  {
+   "parameters": {
+    "resume": "webhook",
+    "options": {
+     "webhookSuffix": "mikhmon-approval-auto"
+    }
+   },
+   "id": "a1100004-0004-4004-8004-000000000004",
+   "name": "Attendre l'approbation (auto)",
+   "type": "n8n-nodes-base.wait",
+   "typeVersion": 1.1,
+   "position": [
+    1376,
+    400
+   ]
+  },
+  {
+   "parameters": {
+    "jsCode": "return $input.all().map(i => {\n  const approval = i.json.query ?? i.json.body ?? i.json;\n  const approved = approval.approved === true || String(approval.approved).toLowerCase() === 'true' || String(approval.action).toLowerCase() === 'approve';\n  return { json: { ...i.json, approved, approvalDecisionAt: new Date().toISOString() } };\n});\n"
+   },
+   "id": "a1100005-0005-4005-8005-000000000005",
+   "name": "Valider la décision (auto)",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    1504,
+    400
+   ]
+  },
+  {
+   "parameters": {
+    "conditions": {
+     "options": {
+      "caseSensitive": true,
+      "leftValue": "",
+      "typeValidation": "loose",
+      "version": 2
+     },
+     "conditions": [
+      {
+       "leftValue": "={{$json.approved}}",
+       "operator": {
+        "type": "boolean",
+        "operation": "true",
+        "singleValue": true
+       },
+       "id": "cond-accordee"
+      }
+     ],
+     "combinator": "and"
+    },
+    "options": {},
+    "looseTypeValidation": true
+   },
+   "id": "a1100006-0006-4006-8006-000000000006",
+   "name": "Approbation accordée ?",
+   "type": "n8n-nodes-base.if",
+   "typeVersion": 2.2,
+   "position": [
+    1632,
+    400
+   ]
+  },
+  {
+   "parameters": {
+    "jsCode": "return $input.all().map(i => ({ json: { ...i.json, tickets: [], erreur: 'Génération refusée par le demandeur (approbation ' + (i.json.approbationCanal || 'telegram') + ').' } }));\n"
+   },
+   "id": "a1100007-0007-4007-8007-000000000007",
+   "name": "Génération refusée (auto)",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    1632,
+    544
+   ]
   }
  ],
  "connections": {
@@ -1327,7 +1464,7 @@
     ],
     [
      {
-      "node": "Générer les tickets dans RouterOS",
+      "node": "Approbation requise ?",
       "type": "main",
       "index": 0
      }
@@ -1449,6 +1586,104 @@
      }
     ]
    ]
+  },
+  "Approbation requise ?": {
+   "main": [
+    [
+     {
+      "node": "Préparer la demande d'approbation",
+      "type": "main",
+      "index": 0
+     }
+    ],
+    [
+     {
+      "node": "Générer les tickets dans RouterOS",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Préparer la demande d'approbation": {
+   "main": [
+    [
+     {
+      "node": "Envoyer la demande d'approbation",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Envoyer la demande d'approbation": {
+   "main": [
+    [
+     {
+      "node": "Attendre l'approbation (auto)",
+      "type": "main",
+      "index": 0
+     }
+    ],
+    [
+     {
+      "node": "Préparer l'erreur signée",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Attendre l'approbation (auto)": {
+   "main": [
+    [
+     {
+      "node": "Valider la décision (auto)",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Valider la décision (auto)": {
+   "main": [
+    [
+     {
+      "node": "Approbation accordée ?",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Approbation accordée ?": {
+   "main": [
+    [
+     {
+      "node": "Générer les tickets dans RouterOS",
+      "type": "main",
+      "index": 0
+     }
+    ],
+    [
+     {
+      "node": "Génération refusée (auto)",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Génération refusée (auto)": {
+   "main": [
+    [
+     {
+      "node": "Préparer le retour signé",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
   }
  },
  "nodeGroups": [],
@@ -1549,7 +1784,7 @@
    },
    {
     "parameters": {
-     "jsCode": "const cfg = $json;\nif (!cfg.routerPassword) throw new Error('ROUTEROS_PASSWORD est obligatoire. Utilisez un compte RouterOS dédié, pas le mot de passe Mikhmon par défaut.');\nconst auth = 'Basic ' + Buffer.from(cfg.routerUser + ':' + cfg.routerPassword).toString('base64');\nconst response = await this.helpers.httpRequest({\n  method: 'GET',\n  url: cfg.routerBaseUrl + '/rest/ip/hotspot/user',\n  headers: { Authorization: auth, Accept: 'application/json' },\n  json: true,\n  timeout: 30000,\n  skipSslCertificateValidation: true\n});\nconst users = Array.isArray(response) ? response : (response.data || response.results || []);\nconst sameProfile = users.filter(u => String(u.profile || '') === cfg.profile);\nconst available = sameProfile.filter(u => {\n  const disabled = String(u.disabled || '').toLowerCase() === 'true';\n  const uptime = String(u.uptime || '0s');\n  const used = uptime !== '0s' && uptime !== '0';\n  return !disabled && !used;\n});\nconst shouldGenerate = available.length < cfg.threshold;\nreturn [{ json: { ...cfg, stockTotal: sameProfile.length, stockAvailable: available.length, shouldGenerate, checkedAt: new Date().toISOString() } }];"
+     "jsCode": "const cfg = $json;\nif (!cfg.routerPassword) throw new Error('ROUTEROS_PASSWORD est obligatoire. Utilisez un compte RouterOS dédié, pas le mot de passe Mikhmon par défaut.');\nconst auth = 'Basic ' + Buffer.from(cfg.routerUser + ':' + cfg.routerPassword).toString('base64');\nconst response = await this.helpers.httpRequest({\n  method: 'GET',\n  url: cfg.routerBaseUrl + '/rest/ip/hotspot/user',\n  headers: { Authorization: auth, Accept: 'application/json' },\n  json: true,\n  timeout: 30000,\n  skipSslCertificateValidation: true\n});\nconst users = Array.isArray(response) ? response : (response.data || response.results || []);\nconst sameProfile = users.filter(u => String(u.profile || '') === cfg.profile);\nconst available = sameProfile.filter(u => {\n  const disabled = String(u.disabled || '').toLowerCase() === 'true';\n  const uptime = String(u.uptime || '0s');\n  const used = uptime !== '0s' && uptime !== '0';\n  return !disabled && !used;\n});\nconst shouldGenerate = available.length <= cfg.threshold; // Declenchement de 0 au seuil inclus : 0, 49 ou 50 (seuil 50) generent.\nreturn [{ json: { ...cfg, stockTotal: sameProfile.length, stockAvailable: available.length, shouldGenerate, checkedAt: new Date().toISOString() } }];"
     },
     "id": "d0ae73dd-77d5-4da6-b256-6464fc533297",
     "name": "Lire le stock du profil",

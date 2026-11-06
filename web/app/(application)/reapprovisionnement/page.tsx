@@ -58,6 +58,8 @@ type Regle = {
   canal: string;
   destinataire: string;
   destinataires_supplementaires: AutreDestinataire[];
+  approbation_requise: boolean;
+  approbation_canal: string;
   duree_limite: string | null;
   volume_limite_octets: number | null;
   actif: boolean;
@@ -112,6 +114,8 @@ function Contenu({
   const [routeurs, setRouteurs] = useState<RouteurChoix[]>(resolues.routeurs);
   const [form, setForm] = useState(VIDE);
   const [autres, setAutres] = useState<AutreDestinataire[]>([]);
+  const [approbationRequise, setApprobationRequise] = useState(false);
+  const [approbationCanal, setApprobationCanal] = useState("telegram");
   const [regleEnModification, setRegleEnModification] = useState<number | null>(null);
   const [cible, setCible] = useState<Regle | null>(null);
   const [erreur, setErreur] = useState<string | null>(null);
@@ -161,6 +165,8 @@ function Contenu({
           canal: form.canal,
           destinataire: form.destinataire,
           destinatairesSupplementaires: autres,
+          approbationRequise,
+          approbationCanal,
           dureeLimite: form.dureeLimite || undefined,
           volumeLimiteOctets: form.volumeLimiteOctets.trim() === ""
             ? undefined
@@ -194,6 +200,7 @@ function Contenu({
     setMessage(null);
     setRegleEnModification(regle.id);
     setAutres(regle.destinataires_supplementaires ?? []);
+    chargerApprobation(regle);
     setForm({
       routerConnectionId: String(regle.router_connection_id),
       profil: regle.profil,
@@ -210,10 +217,17 @@ function Contenu({
     });
   }
 
+  function chargerApprobation(regle: Regle) {
+    setApprobationRequise(regle.approbation_requise === true);
+    setApprobationCanal(regle.approbation_canal || "telegram");
+  }
+
   function annulerModification() {
     setRegleEnModification(null);
     setForm(VIDE);
     setAutres([]);
+    setApprobationRequise(false);
+    setApprobationCanal("telegram");
     setErreur(null);
     setMessage(null);
   }
@@ -512,8 +526,11 @@ function Contenu({
             </div>
             <div>
               <Label htmlFor="quantite">Quantité de génération</Label>
-              <Input id="quantite" inputMode="numeric"
-                {...champ("quantiteGeneration")} />
+              <select id="quantite" className="h-9 w-full rounded-lg border border-input bg-background px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50" {...champ("quantiteGeneration")}>
+                {[120, 240, 480, 500].map((q) => (
+                  <option key={q} value={q}>{q} tickets</option>
+                ))}
+              </select>
             </div>
             <div>
               <Label htmlFor="cible">Quantité cible</Label>
@@ -538,6 +555,30 @@ function Contenu({
           <div>
             <Label htmlFor="destinataire">Destinataire</Label>
             <Input id="destinataire" {...champ("destinataire")} />
+          </div>
+          <div className="flex flex-col gap-3 rounded-lg border p-3">
+            <label className="flex cursor-pointer items-center gap-2 text-sm font-medium">
+              <input
+                type="checkbox"
+                checked={approbationRequise}
+                onChange={(e) => setApprobationRequise(e.target.checked)}
+              />
+              <span>Demander mon approbation avant chaque génération</span>
+            </label>
+            {approbationRequise && (
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="canal-approbation">Canal d&apos;approbation</Label>
+                <select id="canal-approbation" className="h-9 w-full rounded-lg border border-input bg-background px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50" value={approbationCanal} onChange={(e) => setApprobationCanal(e.target.value)}>
+                  <option value="telegram">Telegram (boutons Approuver / Refuser)</option>
+                  <option value="whatsapp">WhatsApp (liens Approuver / Refuser)</option>
+                </select>
+                <p className="text-xs text-muted-foreground">
+                  Vous recevrez : « Vous allez assister à une génération de
+                  {" "}{form.quantiteGeneration} tickets pour {form.profil || "…"}. Vous
+                  consentez ? » La génération ne part qu&apos;après votre OK.
+                </p>
+              </div>
+            )}
           </div>
           <div className="flex flex-col gap-2">
             <Label>Autres destinataires du PDF (5 maximum)</Label>

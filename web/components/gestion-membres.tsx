@@ -19,14 +19,14 @@ export type MembreAffiche = {
 
 const LIBELLES: Record<Role, string> = {
   admin: "Admin",
-  contributeur: "Contributeur",
-  utilisateur: "Utilisateur",
+  gerant: "Gérant",
+  vendeur: "Vendeur",
 };
 
 const DESCRIPTIONS: Record<Role, string> = {
   admin: "Gère tout : routeurs, canaux, membres et validations.",
-  contributeur: "Génère, envoie et corrige les tickets au quotidien.",
-  utilisateur: "Consulte le parc, les diagnostics et l'historique.",
+  gerant: "Génère, envoie et configure les règles de tickets au quotidien.",
+  vendeur: "Consulte, et reçoit les tickets sur WhatsApp pour les vendre.",
 };
 
 const CLASSE_SELECT =
@@ -47,7 +47,7 @@ export function GestionMembres({
 }) {
   const router = useRouter();
   const [courriel, setCourriel] = useState("");
-  const [role, setRole] = useState<Role>("utilisateur");
+  const [role, setRole] = useState<Role>("vendeur");
   const [message, setMessage] = useState<string | null>(null);
   const [erreur, setErreur] = useState<string | null>(null);
   const [occupe, setOccupe] = useState(false);

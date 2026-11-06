@@ -14,7 +14,7 @@ export default async function PageMembres() {
     <main className="mx-auto flex w-full max-w-5xl flex-col gap-5 p-4 sm:p-6">
       <EntetePage
         titre="Membres de l'espace"
-        description="Qui peut faire quoi dans cet espace : les admins gèrent tout, les contributeurs génèrent et envoient les tickets, les utilisateurs consultent."
+        description="Qui peut faire quoi dans cet espace : les admins gèrent tout, les gérants génèrent et envoient les tickets, les vendeurs consultent et reçoivent les tickets à vendre."
       />
       <GestionMembres
         membres={membres.map((m) => ({
