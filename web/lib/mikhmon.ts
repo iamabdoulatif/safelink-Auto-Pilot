@@ -3,6 +3,11 @@
 // prouver qu'elle repond ; la variante (V3 ou SF v1) ne change que
 // l'interface, le code qui ecrit dans /ip/hotspot/user reste identique.
 export const VARIANTES_MIKHMON = ["v3", "sf-v1"] as const;
+
+// Deux versions de Mikhmon : seule SF v1 prend en compte les
+// vendeurs et le gérant (lots distincts, rapport par vendeur).
+// V3 : lot unique, rapport de zone sans détail par vendeur.
+export const VARIANTE_AVEC_VENDEURS = "sf-v1";
 export type VarianteMikhmon = (typeof VARIANTES_MIKHMON)[number];
 
 // Identifiants initiaux livrés par défaut : les refuser, et exiger

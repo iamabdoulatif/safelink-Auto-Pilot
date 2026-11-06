@@ -90,6 +90,7 @@ export type DemandeLot = {
   // fait la route interne des jobs pour le réappro automatique.
   destinatairesSupplementaires?: EnvoiSupplementaire[];
   vendeursZone?: string[]; // lots distincts par vendeur (rapport)
+  varianteMikhmon?: string; // sf-v1 = vendeurs et gerant, v3 = sans
   jetonTelegram?: string; // bot personnalise dechiffre, ou "" (central)
   secretWhatsApp?: string; // dechiffre, ou "" (sans secret)
   clePrintNode?: string; // dechiffre, ou "" (env n8n sinon)
@@ -218,6 +219,7 @@ export async function genererLot(d: DemandeLot): Promise<ResultatLot> {
     routeurNom: d.routeurNom || "",
     destinatairesSupplementaires: d.destinatairesSupplementaires ?? [],
     vendeursZone: d.vendeursZone ?? [],
+    varianteMikhmon: d.varianteMikhmon ?? "",
     nomTicket,
     forcerGeneration: d.forcerGeneration === true,
     callbackUrl: APP_URL ? APP_URL + "/api/n8n/retour" : "",

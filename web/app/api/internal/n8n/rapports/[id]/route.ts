@@ -20,7 +20,7 @@ export async function GET(
     `SELECT e.rapport_id, e.tenant_id, e.router_connection_id,
         e.periode_debut::text AS debut, e.periode_fin::text AS fin,
         e.canal, e.statut,
-        r.nom AS routeur_nom, r.adresse_routeros,
+        r.nom AS routeur_nom, r.variante_mikhmon, r.adresse_routeros,
         r.utilisateur_lecture, r.utilisateur_correction,
         r.mot_de_passe_lecture_chiffre, r.mot_de_passe_correction_chiffre,
         z.localisation, z.commune, z.numero_admin, z.numero_gerant,
@@ -101,6 +101,7 @@ export async function GET(
           ? l["numeros_vendeurs"] : [],
       },
       routeur: {
+        variante: l["variante_mikhmon"] ?? "v3",
         adresse: String(l["adresse_routeros"] ?? "").replace(/\/$/, ""),
         utilisateur,
         motDePasse,

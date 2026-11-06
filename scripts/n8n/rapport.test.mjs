@@ -28,7 +28,7 @@ const CONFIG = {
       numeroAdmin: "+22670000001", numeroGerant: "+22670000002",
       numerosVendeurs: ["+22670000003", "+22670000004"],
     },
-    routeur: { adresse: "https://routeur.test", utilisateur: "lecture", motDePasse: "x" },
+    routeur: { adresse: "https://routeur.test", utilisateur: "lecture", motDePasse: "x", variante: "sf-v1" },
     lotsVendeurs: [
       { lot: 101, numero_vendeur: "+22670000003" },
       { lot: 102, numero_vendeur: "+22670000004" },
@@ -106,6 +106,16 @@ describe("Rapport des ventes (cycle 00h à 00h)", () => {
     assert.match(parNumero.get("+22670000004"), /Vos ventes : 1 tickets · 10 000 F/);
     assert.match(parNumero.get("+22670000002"), /Par vendeur :/);
     assert.match(parNumero.get("+22670000004"), /Tickets vendus : 3/);
+  });
+
+  it("en V3 (sans vendeurs ni gérant), rapport de zone pour l'admin seul", async () => {
+    const cfgV3 = { data: { ...CONFIG.data, routeur: { ...CONFIG.data.routeur, variante: "v3" } } };
+    const calcule = await executer("Calculer le rapport des ventes", cfgV3, [], fauxRouteur());
+    assert.deepEqual(calcule.parVendeur, []);
+    const appels = [];
+    const j = await executer("Envoyer le rapport des ventes", calcule, appels, null);
+    assert.equal(j.rapportEnvois, 1);
+    assert.equal(appels[0].body.to, "+22670000001");
   });
 
   it("envoie le rapport complet sur Telegram si la zone l'a choisi", async () => {

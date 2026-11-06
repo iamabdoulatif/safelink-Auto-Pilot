@@ -20,6 +20,29 @@ function codeGenerer() {
 // Lots distincts par vendeur : chaque ticket reçoit le commentaire
 // du lot de son vendeur (vc-<lot>-<date>), format Mikhmon inchangé.
 describe("Lots distincts par vendeur", () => {
+  it("en V3, lot unique : la variante sans vendeurs ignore la liste", async () => {
+    const crees = [];
+    const routeur = { async httpRequest({ method, url, body }) {
+      if (method === "GET" && url.endsWith("/user/profile")) return [{ name: "01-JOUR", "on-login": "0,0,0,,5000," }];
+      if (method === "GET") return [];
+      crees.push(body); return { name: body.name };
+    } };
+    const cfg = {
+      routerBaseUrl: "https://routeur.test", routerUser: "u", routerPassword: "p",
+      quantity: 2, prefix: "", usernameLength: 8, passwordLength: 8,
+      profile: "01-JOUR", hotspotServer: "all", tenantId: "t",
+      cleIdempotence: "run-v3-1", limitUptime: "", limitBytesTotal: "",
+      vendeursZone: ["+22670000003"], varianteMikhmon: "v3", existingNames: [],
+    };
+    const $input = { all: () => [{ json: cfg }] };
+    const contexte = { helpers: { httpRequest: (o) => routeur.httpRequest(o) } };
+    const fn = new AsyncFunction("$input", "$env", "require", codeGenerer());
+    const j = (await fn.call(contexte, $input, {}, require))[0].json;
+    assert.equal(j.generatedCount, 2);
+    assert.deepEqual(j.lotsVendeurs, []);
+    assert.equal(crees[0].comment, crees[1].comment);
+  });
+
   it("répartit les tickets entre les vendeurs et rend le mapping", async () => {
     const crees = [];
     const routeur = { async httpRequest({ method, url, body }) {
@@ -35,7 +58,7 @@ describe("Lots distincts par vendeur", () => {
       routerPassword: "p", quantity: 4, prefix: "", usernameLength: 8,
       passwordLength: 8, profile: "01-JOUR", hotspotServer: "all",
       tenantId: "t", cleIdempotence: "run-lots-1", limitUptime: "",
-      limitBytesTotal: "", vendeursZone: ["+22670000003", "+22670000004"],
+      limitBytesTotal: "", vendeursZone: ["+22670000003", "+22670000004"], varianteMikhmon: "sf-v1",
       existingNames: [],
     };
     const $input = { all: () => [{ json: cfg }] };

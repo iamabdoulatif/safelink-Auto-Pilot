@@ -137,6 +137,9 @@ function FicheZone({ zoneInitiale }: { zoneInitiale: Zone }) {
         </CardTitle>
         <CardDescription>
           Où se trouve la zone, et qui reçoit les tickets générés sur ce routeur.
+          {zoneInitiale.varianteMikhmon !== "sf-v1" && (
+            <> Version V3 : sans vendeurs ni gérant — lot unique et rapport de zone pour l'admin seul.</>
+          )}
         </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-3">

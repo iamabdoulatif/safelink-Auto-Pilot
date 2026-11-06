@@ -35,6 +35,7 @@ const MESSAGE_SOURCE =
 type ConfigRouteurLot = {
   id: number;
   nom: string;
+  variante_mikhmon: string;
   adresse_routeros: string;
   utilisateur_correction: string;
   mot_de_passe_correction_chiffre: string;
@@ -113,7 +114,7 @@ export async function POST(req: Request) {
     }
 
     const { rows } = await db.query<ConfigRouteurLot>(
-      `SELECT id, nom, adresse_routeros, utilisateur_correction,
+      `SELECT id, nom, variante_mikhmon, adresse_routeros, utilisateur_correction,
          mot_de_passe_correction_chiffre
        FROM configurations_routeurs
        WHERE id = $1 AND tenant_id = $2`,
@@ -249,6 +250,7 @@ export async function POST(req: Request) {
         jetonTelegram,
         destinatairesSupplementaires,
         vendeursZone: await numerosVendeursZone(ctx.tenantId, entree.routerConnectionId),
+        varianteMikhmon: routeur.variante_mikhmon,
         forcerGeneration: true, // récapitulatif validé : saute le portillon
       });
       const run = await mettreAJourRun(ctx, reservation.run.runId,

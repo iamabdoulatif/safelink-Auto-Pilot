@@ -261,6 +261,7 @@ export async function GET(
       simulation: run.simulation,
       routeur: {
         nom: connexion.nom,
+        variante: connexion.variante_mikhmon,
         nomTicket: connexion.nom_ticket || connexion.nom,
         adresse: connexion.adresse_routeros,
         utilisateurLecture: connexion.utilisateur_lecture,
