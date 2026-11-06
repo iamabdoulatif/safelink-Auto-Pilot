@@ -8,7 +8,7 @@
     "start": "node index.js",
     "check:integrations": "node scripts/check-integrations.js",
     "check:workflows": "python3 scripts/n8n/verifier-workflows.py",
-    "test:n8n": "node --test scripts/n8n/aiguillage.test.mjs scripts/n8n/generation.test.mjs scripts/n8n/destinataires.test.mjs scripts/n8n/approbation.test.mjs",
+    "test:n8n": "node --test scripts/n8n/aiguillage.test.mjs scripts/n8n/generation.test.mjs scripts/n8n/destinataires.test.mjs scripts/n8n/approbation.test.mjs scripts/n8n/rapport.test.mjs",
     "test": "node scripts/test-base.mjs"
   },
   "keywords": [],

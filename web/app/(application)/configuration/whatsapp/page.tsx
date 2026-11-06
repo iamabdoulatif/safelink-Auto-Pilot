@@ -29,6 +29,12 @@ type Zone = {
   numeroAdmin: string;
   numeroGerant: string;
   numerosVendeurs: string[];
+  rapportActif: boolean;
+  rapportCanal: string;
+  rapportPlanification: string;
+  rapportDebut: string;
+  rapportFin: string;
+  rapportDateEnvoi: string;
 };
 
 type Config = {
@@ -61,6 +67,12 @@ function FicheZone({ zoneInitiale }: { zoneInitiale: Zone }) {
   const [numeroAdmin, setNumeroAdmin] = useState(zoneInitiale.numeroAdmin);
   const [numeroGerant, setNumeroGerant] = useState(zoneInitiale.numeroGerant);
   const [vendeurs, setVendeurs] = useState(zoneInitiale.numerosVendeurs.join("\n"));
+  const [rapportActif, setRapportActif] = useState(zoneInitiale.rapportActif);
+  const [rapportCanal, setRapportCanal] = useState(zoneInitiale.rapportCanal || "whatsapp");
+  const [rapportPlanification, setRapportPlanification] = useState(zoneInitiale.rapportPlanification || "decade");
+  const [rapportDebut, setRapportDebut] = useState(zoneInitiale.rapportDebut);
+  const [rapportFin, setRapportFin] = useState(zoneInitiale.rapportFin);
+  const [rapportDateEnvoi, setRapportDateEnvoi] = useState(zoneInitiale.rapportDateEnvoi);
   const [message, setMessage] = useState<string | null>(null);
   const [erreur, setErreur] = useState<string | null>(null);
   const [occupe, setOccupe] = useState(false);
@@ -83,6 +95,8 @@ function FicheZone({ zoneInitiale }: { zoneInitiale: Zone }) {
           numeroAdmin,
           numeroGerant,
           numerosVendeurs: vendeurs.split(/[\n,;]+/).map((v) => v.trim()).filter(Boolean),
+          rapportActif, rapportCanal, rapportPlanification,
+          rapportDebut, rapportFin, rapportDateEnvoi,
         }),
       });
       const j = (await r.json()) as { error?: string };
@@ -174,6 +188,52 @@ function FicheZone({ zoneInitiale }: { zoneInitiale: Zone }) {
             onChange={(e) => setVendeurs(e.target.value)}
             placeholder={"+226 70 00 00 00\n+226 76 00 00 00"}
           />
+        </div>
+        <div className="flex flex-col gap-3 rounded-lg border p-3">
+          <label className="flex cursor-pointer items-center gap-2 text-sm font-medium">
+            <input type="checkbox" checked={rapportActif} onChange={(e) => setRapportActif(e.target.checked)} />
+            <span>Envoyer le rapport des ventes de cette zone</span>
+          </label>
+          {rapportActif && (
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor={`canal-rapport-${zoneInitiale.routerConnectionId}`}>Canal du rapport</Label>
+                <select id={`canal-rapport-${zoneInitiale.routerConnectionId}`} className="h-9 rounded-lg border border-input bg-background px-2.5 text-sm outline-none focus-visible:border-ring" value={rapportCanal} onChange={(e) => setRapportCanal(e.target.value)}>
+                  <option value="whatsapp">WhatsApp (admin, gérant, vendeurs)</option>
+                  <option value="telegram">Telegram (chat de l'espace)</option>
+                </select>
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor={`cycle-rapport-${zoneInitiale.routerConnectionId}`}>Cycle de calcul (de 00h à 00h)</Label>
+                <select id={`cycle-rapport-${zoneInitiale.routerConnectionId}`} className="h-9 rounded-lg border border-input bg-background px-2.5 text-sm outline-none focus-visible:border-ring" value={rapportPlanification} onChange={(e) => setRapportPlanification(e.target.value)}>
+                  <option value="decade">Décade : 1er-10, 11-20, 21-fin du mois</option>
+                  <option value="hebdomadaire">Hebdomadaire : lundi à lundi</option>
+                  <option value="mensuel">Mensuel : 1er au 1er</option>
+                  <option value="personnalise">Période personnalisée ci-dessous</option>
+                </select>
+              </div>
+              {rapportPlanification === "personnalise" && (
+                <>
+                  <div className="flex flex-col gap-1.5">
+                    <Label htmlFor={`debut-rapport-${zoneInitiale.routerConnectionId}`}>Du</Label>
+                    <Input id={`debut-rapport-${zoneInitiale.routerConnectionId}`} type="date" value={rapportDebut} onChange={(e) => setRapportDebut(e.target.value)} />
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <Label htmlFor={`fin-rapport-${zoneInitiale.routerConnectionId}`}>Au (inclus)</Label>
+                    <Input id={`fin-rapport-${zoneInitiale.routerConnectionId}`} type="date" value={rapportFin} onChange={(e) => setRapportFin(e.target.value)} />
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <Label htmlFor={`envoi-rapport-${zoneInitiale.routerConnectionId}`}>Date d'envoi</Label>
+                    <Input id={`envoi-rapport-${zoneInitiale.routerConnectionId}`} type="date" value={rapportDateEnvoi} onChange={(e) => setRapportDateEnvoi(e.target.value)} />
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+          <p className="text-xs text-muted-foreground">
+            Le gérant et l'admin reçoivent le total et le détail par profil ;
+            chaque vendeur reçoit le point de sa zone, sur le canal choisi.
+          </p>
         </div>
         <div>
           <Button type="button" disabled={occupe} className="bg-signal text-white hover:bg-signal/90" onClick={() => void enregistrer()}>

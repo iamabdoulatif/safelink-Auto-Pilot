@@ -22,7 +22,23 @@ export type EntreeZoneWifi = {
   numeroAdmin: string;
   numeroGerant: string;
   numerosVendeurs: string[];
+  rapportActif: boolean;
+  rapportCanal: "telegram" | "whatsapp";
+  rapportPlanification: "decade" | "hebdomadaire" | "mensuel" | "personnalise";
+  rapportDebut: string;
+  rapportFin: string;
+  rapportDateEnvoi: string;
 };
+
+const DATE_OK = /^\d{4}-\d{2}-\d{2}$/;
+
+function champDate(brut: unknown): string | null {
+  if (brut === undefined || brut === null) return "";
+  if (typeof brut !== "string") return null;
+  const v = brut.trim();
+  if (!v) return "";
+  return DATE_OK.test(v) && !Number.isNaN(Date.parse(v)) ? v : null;
+}
 
 // Nettoie un numéro : espaces, tirets et points retirés, format
 // international exigé (même règle que les autres destinataires).
@@ -86,8 +102,31 @@ export function validerZoneWifi(
   if (!numeroAdmin && !numeroGerant && numerosVendeurs.length === 0) {
     return { erreur: "Renseignez au moins un numéro (admin, gérant ou vendeur)." };
   }
+  const rapportCanal = b["rapportCanal"] === "whatsapp" ? "whatsapp" : "telegram";
+  const planificationBrute = b["rapportPlanification"];
+  const rapportPlanification = planificationBrute === "decade"
+    || planificationBrute === "hebdomadaire"
+    || planificationBrute === "mensuel" || planificationBrute === "personnalise"
+    ? planificationBrute : "decade";
+  const rapportDebut = champDate(b["rapportDebut"]);
+  const rapportFin = champDate(b["rapportFin"]);
+  const rapportDateEnvoi = champDate(b["rapportDateEnvoi"]);
+  if (rapportDebut === null || rapportFin === null || rapportDateEnvoi === null) {
+    return { erreur: "Dates du rapport invalides (format AAAA-MM-JJ)." };
+  }
+  const rapportActif = b["rapportActif"] === true;
+  if (rapportActif && rapportPlanification === "personnalise"
+    && (!rapportDebut || !rapportFin || rapportDebut > rapportFin)) {
+    return {
+      erreur: "Période personnalisée : renseignez un début et une fin cohérents.",
+    };
+  }
   return {
-    zone: { localisation, commune, numeroAdmin, numeroGerant, numerosVendeurs },
+    zone: {
+      localisation, commune, numeroAdmin, numeroGerant, numerosVendeurs,
+      rapportActif, rapportCanal, rapportPlanification,
+      rapportDebut, rapportFin, rapportDateEnvoi,
+    },
   };
 }
 

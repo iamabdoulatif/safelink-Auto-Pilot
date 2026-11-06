@@ -25,6 +25,9 @@ describe("validerZoneWifi", () => {
         numeroAdmin: "+22670000001",
         numeroGerant: "+22670000002",
         numerosVendeurs: ["+22670000003"],
+        rapportActif: false, rapportCanal: "telegram",
+        rapportPlanification: "decade", rapportDebut: "",
+        rapportFin: "", rapportDateEnvoi: "",
       },
     });
   });
@@ -33,6 +36,20 @@ describe("validerZoneWifi", () => {
     assert.ok("erreur" in validerZoneWifi({ numeroAdmin: "123" }));
     assert.ok("erreur" in validerZoneWifi({ numerosVendeurs: ["abc"] }));
     assert.ok("erreur" in validerZoneWifi({ localisation: "Ici" }));
+  });
+
+  it("refuse une période personnalisée incohérente", () => {
+    assert.ok("erreur" in validerZoneWifi({
+      numeroAdmin: "+22670000001", rapportActif: true,
+      rapportPlanification: "personnalise",
+      rapportDebut: "2026-11-10", rapportFin: "2026-11-01",
+    }));
+    const ok = validerZoneWifi({
+      numeroAdmin: "+22670000001", rapportActif: true,
+      rapportPlanification: "personnalise",
+      rapportDebut: "2026-11-01", rapportFin: "2026-11-10",
+    });
+    assert.ok("zone" in ok && ok.zone.rapportDebut === "2026-11-01");
   });
 
   it("limite le nombre de vendeurs", () => {
