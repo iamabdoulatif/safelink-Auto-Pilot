@@ -1,4 +1,5 @@
 import { session } from "@/lib/session";
+import { peutAgir } from "@/lib/membres";
 import { db } from "@/lib/db";
 
 // Approbation dans l'application : l'humain valide (ou refuse) une demande
@@ -9,7 +10,13 @@ export async function POST(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const { tenantId } = await session();
+  const { tenantId, utilisateurId } = await session();
+  if (!(await peutAgir({ tenantId, utilisateurId }, "admin"))) {
+    return Response.json(
+      { error: "Votre rôle dans cet espace ne permet pas cette action." },
+      { status: 403 },
+    );
+  }
   const id = Number((await params).id);
   if (!Number.isInteger(id)) {
     return Response.json({ error: "Identifiant invalide." }, { status: 400 });

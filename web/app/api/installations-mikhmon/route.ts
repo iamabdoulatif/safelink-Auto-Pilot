@@ -1,4 +1,5 @@
 import { session } from "@/lib/session";
+import { peutAgir } from "@/lib/membres";
 import {
   creerInstallation,
   listerInstallations,
@@ -20,6 +21,12 @@ export async function GET() {
 
 export async function POST(req: Request) {
   const ctx = await session();
+  if (!(await peutAgir(ctx, "admin"))) {
+    return Response.json(
+      { error: "Votre rôle dans cet espace ne permet pas cette action." },
+      { status: 403 },
+    );
+  }
   let corps: unknown;
   try {
     corps = await req.json();

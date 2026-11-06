@@ -1,5 +1,6 @@
 import { db } from "@/lib/db";
 import { session } from "@/lib/session";
+import { peutAgir } from "@/lib/membres";
 import { validerDestinataires } from "@/lib/destinataires-supplementaires";
 import type { DestinataireSupplementaire } from "@/lib/destinataires-supplementaires";
 import { verifierDestinataires } from "@/lib/envois-supplementaires";
@@ -154,6 +155,12 @@ export async function GET() {
 
 export async function POST(req: Request) {
   const ctx = await session();
+  if (!(await peutAgir(ctx, "contributeur"))) {
+    return Response.json(
+      { error: "Votre rôle dans cet espace ne permet pas cette action." },
+      { status: 403 },
+    );
+  }
   let corps: unknown;
   try {
     corps = await req.json();
@@ -333,6 +340,12 @@ export async function POST(req: Request) {
 // Tant que l'utilisateur n'a pas active, aucune generation n'est possible.
 export async function PATCH(req: Request) {
   const ctx = await session();
+  if (!(await peutAgir(ctx, "contributeur"))) {
+    return Response.json(
+      { error: "Votre rôle dans cet espace ne permet pas cette action." },
+      { status: 403 },
+    );
+  }
   let corps: unknown;
   try {
     corps = await req.json();

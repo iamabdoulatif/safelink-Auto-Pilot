@@ -2,11 +2,20 @@ import {
   extraireChamps,
   testerConnexions,
 } from "@/lib/configuration-routeur";
+import { peutAgir } from "@/lib/membres";
+import { session } from "@/lib/session";
 
 // « Tester la connexion » : memes controles qu'« Enregistrer »
 // (forme, refus du mot de passe initial, preuves de vie), sans
 // rien ecrire en base. Aucun secret n'est journalise ni renvoye.
 export async function POST(req: Request) {
+  const { tenantId, utilisateurId } = await session();
+  if (!(await peutAgir({ tenantId, utilisateurId }, "admin"))) {
+    return Response.json(
+      { error: "Votre rôle dans cet espace ne permet pas cette action." },
+      { status: 403 },
+    );
+  }
   let corps: unknown;
   try {
     corps = await req.json();

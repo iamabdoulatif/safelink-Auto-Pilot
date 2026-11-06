@@ -1,4 +1,5 @@
 import { session } from "@/lib/session";
+import { peutAgir } from "@/lib/membres";
 import { testerConnexionRouteur } from "@/lib/connexions-routeur";
 
 // Teste la connexion RouterOS COTE SERVEUR avec le compte de lecture
@@ -6,6 +7,12 @@ import { testerConnexionRouteur } from "@/lib/connexions-routeur";
 // n'est jamais stocke ni journalise : seul le statut est memorise.
 export async function POST(req: Request) {
   const ctx = await session();
+  if (!(await peutAgir(ctx, "admin"))) {
+    return Response.json(
+      { error: "Votre rôle dans cet espace ne permet pas cette action." },
+      { status: 403 },
+    );
+  }
   let corps: unknown;
   try {
     corps = await req.json();

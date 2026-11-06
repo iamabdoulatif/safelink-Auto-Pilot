@@ -1,4 +1,5 @@
 import { session } from "@/lib/session";
+import { peutAgir } from "@/lib/membres";
 import { listerProfilsHotspot } from "@/lib/connexions-routeur";
 
 // Profils Hotspot disponibles (/ip/hotspot/profile, compte de lecture).
@@ -6,6 +7,12 @@ import { listerProfilsHotspot } from "@/lib/connexions-routeur";
 // cote serveur, puis oublie : il n'est jamais stocke ni journalise.
 export async function POST(req: Request) {
   const ctx = await session();
+  if (!(await peutAgir(ctx, "contributeur"))) {
+    return Response.json(
+      { error: "Votre rôle dans cet espace ne permet pas cette action." },
+      { status: 403 },
+    );
+  }
   let corps: unknown;
   try {
     corps = await req.json();

@@ -1,5 +1,6 @@
 import { db } from "@/lib/db";
 import { session } from "@/lib/session";
+import { peutAgir } from "@/lib/membres";
 import { chiffrer } from "@/lib/chiffrement";
 import {
   extraireChamps,
@@ -60,6 +61,12 @@ export async function GET() {
 // si le routeur ou Mikhmon ne repond pas.
 export async function POST(req: Request) {
   const { tenantId, utilisateurId } = await session();
+  if (!(await peutAgir({ tenantId, utilisateurId }, "admin"))) {
+    return Response.json(
+      { error: "Votre rôle dans cet espace ne permet pas cette action." },
+      { status: 403 },
+    );
+  }
   let corps: unknown;
   try {
     corps = await req.json();

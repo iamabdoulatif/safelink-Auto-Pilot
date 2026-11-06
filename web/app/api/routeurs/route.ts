@@ -1,5 +1,6 @@
 import { db } from "@/lib/db";
 import { session } from "@/lib/session";
+import { peutAgir } from "@/lib/membres";
 import { rosLecture, ErreurRouterOS } from "@/lib/routeros";
 
 // Inscrit un routeur : nom + base d'API, connectivite verifiee aussitot.
@@ -7,7 +8,13 @@ import { rosLecture, ErreurRouterOS } from "@/lib/routeros";
 // depart ne produirait que des releves "injoignable" et des stocks faux.
 // Isole par tenant, comme la lecture du parc.
 export async function POST(req: Request) {
-  const { tenantId } = await session();
+  const { tenantId, utilisateurId } = await session();
+  if (!(await peutAgir({ tenantId, utilisateurId }, "admin"))) {
+    return Response.json(
+      { error: "Votre rôle dans cet espace ne permet pas cette action." },
+      { status: 403 },
+    );
+  }
   let corps: unknown;
   try {
     corps = await req.json();

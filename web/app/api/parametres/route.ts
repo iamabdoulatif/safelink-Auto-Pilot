@@ -1,4 +1,5 @@
 import { session } from "@/lib/session";
+import { peutAgir } from "@/lib/membres";
 import {
   lireReglages,
   enregistrerReglages,
@@ -20,6 +21,12 @@ export async function GET() {
 
 export async function PUT(req: Request) {
   const { tenantId, utilisateurId } = await session();
+  if (!(await peutAgir({ tenantId, utilisateurId }, "admin"))) {
+    return Response.json(
+      { error: "Votre rôle dans cet espace ne permet pas cette action." },
+      { status: 403 },
+    );
+  }
   const ctx = { tenantId, utilisateurId };
   let corps: unknown;
   try {

@@ -1,4 +1,5 @@
 import { session } from "@/lib/session";
+import { peutAgir } from "@/lib/membres";
 import {
   lireConfigPrintNode,
   testerImprimante,
@@ -8,6 +9,12 @@ import {
 // Re-teste la cle et l'imprimante COTE SERVEUR (liste PrintNode reelle).
 export async function POST() {
   const { tenantId, utilisateurId } = await session();
+  if (!(await peutAgir({ tenantId, utilisateurId }, "admin"))) {
+    return Response.json(
+      { error: "Votre rôle dans cet espace ne permet pas cette action." },
+      { status: 403 },
+    );
+  }
   const ctx = { tenantId, utilisateurId };
   try {
     const config = await lireConfigPrintNode(ctx);

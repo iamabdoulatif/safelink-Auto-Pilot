@@ -1,4 +1,5 @@
 import { session } from "@/lib/session";
+import { peutAgir } from "@/lib/membres";
 import { testerInstallation } from "@/lib/mikhmon-installations";
 
 // Teste la connexion COTE SERVEUR (jamais depuis le navigateur) puis
@@ -8,6 +9,12 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { tenantId, utilisateurId } = await session();
+  if (!(await peutAgir({ tenantId, utilisateurId }, "admin"))) {
+    return Response.json(
+      { error: "Votre rôle dans cet espace ne permet pas cette action." },
+      { status: 403 },
+    );
+  }
   const id = Number((await params).id);
   if (!Number.isInteger(id)) {
     return Response.json({ error: "Identifiant invalide." }, { status: 400 });

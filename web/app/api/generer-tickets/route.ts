@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { db } from "@/lib/db";
 import { session } from "@/lib/session";
+import { peutAgir } from "@/lib/membres";
 import { dechiffrer } from "@/lib/chiffrement-serveur";
 import { lireInstallation } from "@/lib/mikhmon-installations";
 import { deriverUrlMikhmonPourAppelant } from "@/lib/derivation-url";
@@ -39,6 +40,12 @@ type ConfigRouteurLot = {
 
 export async function POST(req: Request) {
   const ctx = await session();
+  if (!(await peutAgir(ctx, "contributeur"))) {
+    return Response.json(
+      { error: "Votre rôle dans cet espace ne permet pas cette action." },
+      { status: 403 },
+    );
+  }
   let corps: unknown;
   try {
     corps = await req.json();

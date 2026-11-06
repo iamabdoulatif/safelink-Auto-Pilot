@@ -1,4 +1,5 @@
 import { session } from "@/lib/session";
+import { peutAgir } from "@/lib/membres";
 import {
   lireInstallation,
   modifierInstallation,
@@ -51,6 +52,12 @@ export async function GET(_req: Request, { params }: ContexteRoute) {
 
 export async function PATCH(req: Request, { params }: ContexteRoute) {
   const ctx = await session();
+  if (!(await peutAgir(ctx, "admin"))) {
+    return Response.json(
+      { error: "Votre rôle dans cet espace ne permet pas cette action." },
+      { status: 403 },
+    );
+  }
   const id = identifiant((await params).id);
   if (id === null) {
     return Response.json({ error: "Identifiant invalide." }, { status: 400 });
@@ -80,6 +87,12 @@ export async function PATCH(req: Request, { params }: ContexteRoute) {
 
 export async function DELETE(_req: Request, { params }: ContexteRoute) {
   const ctx = await session();
+  if (!(await peutAgir(ctx, "admin"))) {
+    return Response.json(
+      { error: "Votre rôle dans cet espace ne permet pas cette action." },
+      { status: 403 },
+    );
+  }
   const id = identifiant((await params).id);
   if (id === null) {
     return Response.json({ error: "Identifiant invalide." }, { status: 400 });

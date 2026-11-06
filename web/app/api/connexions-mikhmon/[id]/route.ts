@@ -1,4 +1,5 @@
 import { session } from "@/lib/session";
+import { peutAgir } from "@/lib/membres";
 import {
   lireInstallation,
   modifierInstallation,
@@ -37,6 +38,12 @@ export async function GET(req: Request) {
 // Modification (mot de passe toujours re-saisi, jamais complete).
 export async function PUT(req: Request) {
   const { tenantId, utilisateurId } = await session();
+  if (!(await peutAgir({ tenantId, utilisateurId }, "admin"))) {
+    return Response.json(
+      { error: "Votre rôle dans cet espace ne permet pas cette action." },
+      { status: 403 },
+    );
+  }
   const ctx = { tenantId, utilisateurId };
   const id = idDe(req.url);
   if (id === null) {
@@ -84,6 +91,12 @@ export async function PUT(req: Request) {
 // Desactivation (disabled=yes, jamais de suppression d'objet RouterOS).
 export async function DELETE(req: Request) {
   const { tenantId, utilisateurId } = await session();
+  if (!(await peutAgir({ tenantId, utilisateurId }, "admin"))) {
+    return Response.json(
+      { error: "Votre rôle dans cet espace ne permet pas cette action." },
+      { status: 403 },
+    );
+  }
   const id = idDe(req.url);
   if (id === null) {
     return Response.json({ error: "Identifiant invalide." }, { status: 400 });

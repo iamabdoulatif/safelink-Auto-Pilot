@@ -1,4 +1,5 @@
 import { session } from "@/lib/session";
+import { peutAgir } from "@/lib/membres";
 import {
   enregistrerConnexionRouteur,
   lireConnexionRouteur,
@@ -31,6 +32,12 @@ export async function GET(req: Request) {
 
 export async function PUT(req: Request) {
   const ctx = await session();
+  if (!(await peutAgir(ctx, "admin"))) {
+    return Response.json(
+      { error: "Votre rôle dans cet espace ne permet pas cette action." },
+      { status: 403 },
+    );
+  }
   let corps: unknown;
   try {
     corps = await req.json();

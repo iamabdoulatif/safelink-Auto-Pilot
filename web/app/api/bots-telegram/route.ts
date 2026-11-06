@@ -1,5 +1,6 @@
 import { db } from "@/lib/db";
 import { session } from "@/lib/session";
+import { peutAgir } from "@/lib/membres";
 import {
   enregistrerBotCentral,
   enregistrerBotPersonnalise,
@@ -22,6 +23,12 @@ export async function GET() {
 
 export async function POST(req: Request) {
   const ctx = await session();
+  if (!(await peutAgir(ctx, "admin"))) {
+    return Response.json(
+      { error: "Votre rôle dans cet espace ne permet pas cette action." },
+      { status: 403 },
+    );
+  }
   let corps: unknown;
   try {
     corps = await req.json();
@@ -91,6 +98,12 @@ export async function POST(req: Request) {
 // Ne touche pas au bot cote Telegram : seul le jeton local disparait.
 export async function DELETE() {
   const ctx = await session();
+  if (!(await peutAgir(ctx, "admin"))) {
+    return Response.json(
+      { error: "Votre rôle dans cet espace ne permet pas cette action." },
+      { status: 403 },
+    );
+  }
   try {
     const { rowCount } = await db.query(
       `DELETE FROM configurations_telegram WHERE tenant_id=$1`,

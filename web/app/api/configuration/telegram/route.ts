@@ -1,4 +1,5 @@
 import { session } from "@/lib/session";
+import { peutAgir } from "@/lib/membres";
 import {
   lireBot,
   enregistrerBotCentral,
@@ -43,6 +44,12 @@ export async function GET() {
 
 export async function POST(req: Request) {
   const { tenantId, utilisateurId } = await session();
+  if (!(await peutAgir({ tenantId, utilisateurId }, "admin"))) {
+    return Response.json(
+      { error: "Votre rôle dans cet espace ne permet pas cette action." },
+      { status: 403 },
+    );
+  }
   const ctx = { tenantId, utilisateurId };
   let corps: unknown;
   try {
@@ -84,6 +91,12 @@ export async function POST(req: Request) {
 // Re-teste le bot COTE SERVEUR (getMe + statut + date).
 export async function PUT() {
   const { tenantId, utilisateurId } = await session();
+  if (!(await peutAgir({ tenantId, utilisateurId }, "admin"))) {
+    return Response.json(
+      { error: "Votre rôle dans cet espace ne permet pas cette action." },
+      { status: 403 },
+    );
+  }
   try {
     const resultat = await testerBot({ tenantId, utilisateurId });
     if ("erreur" in resultat) {

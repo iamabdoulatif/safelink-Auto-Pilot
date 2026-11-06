@@ -82,6 +82,12 @@ export async function inscrireCompte(
     [courriel, courriel, hash, profil.nom, profil.prenom, profil.pays, profil.numero],
   );
   if (rows.length === 0) return { erreur: "Courriel déjà utilisé." };
+  // Le créateur est admin de son propre espace.
+  await db.query(
+    `INSERT INTO membres_espace (tenant_id, courriel, role)
+     VALUES ($1, $2, 'admin') ON CONFLICT DO NOTHING`,
+    [courriel, courriel],
+  );
   // Le numéro repart avec le compte : l'appelant en a besoin tout de
   // suite pour envoyer le code de validation WhatsApp.
   return { tenantId: courriel, utilisateurId: courriel, numero: profil.numero };

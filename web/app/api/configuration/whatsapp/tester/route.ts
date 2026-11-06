@@ -1,4 +1,5 @@
 import { session } from "@/lib/session";
+import { peutAgir } from "@/lib/membres";
 import {
   lireConfigWhatsApp,
   marquerTestWhatsApp,
@@ -8,6 +9,12 @@ import {
 // Teste la joignabilite du webhook COTE SERVEUR (GET, sans secret).
 export async function POST() {
   const { tenantId, utilisateurId } = await session();
+  if (!(await peutAgir({ tenantId, utilisateurId }, "admin"))) {
+    return Response.json(
+      { error: "Votre rôle dans cet espace ne permet pas cette action." },
+      { status: 403 },
+    );
+  }
   const ctx = { tenantId, utilisateurId };
   try {
     const config = await lireConfigWhatsApp(ctx);

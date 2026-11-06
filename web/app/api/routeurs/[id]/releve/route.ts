@@ -1,5 +1,6 @@
 import { db } from "@/lib/db";
 import { session } from "@/lib/session";
+import { peutAgir } from "@/lib/membres";
 import { collecter } from "@/lib/diagnostic/collecte";
 import { analyser } from "@/lib/diagnostic/regles";
 import { ErreurRouterOS } from "@/lib/routeros";
@@ -15,7 +16,13 @@ export async function POST(req: Request,
   }
 
   // Isolation stricte : on ne releve que les routeurs de son espace.
-  const { tenantId } = await session();
+  const { tenantId, utilisateurId } = await session();
+  if (!(await peutAgir({ tenantId, utilisateurId }, "contributeur"))) {
+    return Response.json(
+      { error: "Votre rôle dans cet espace ne permet pas cette action." },
+      { status: 403 },
+    );
+  }
   const { rows } = await db.query(
     "SELECT id, url_base FROM routeurs WHERE id = $1 AND actif = true AND tenant_id = $2",
     [routeurId, tenantId]);
