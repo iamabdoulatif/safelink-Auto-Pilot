@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -142,21 +142,27 @@ function ListeLiens({
   chemin,
   fermer,
   superAdmin = false,
+  adminPlateforme = false,
 }: {
   chemin: string;
   fermer?: boolean;
   superAdmin?: boolean;
+  adminPlateforme?: boolean;
 }) {
   const actif = (href: string) =>
     href === "/" ? chemin === "/" : chemin === href || chemin.startsWith(href + "/");
-  const groupes: Groupe[] = superAdmin
+  // Administration : visible pour un admin de plateforme ; les
+  // paramètres de la plateforme restent réservés au superadmin.
+  const groupes: Groupe[] = adminPlateforme
     ? [
         ...GROUPES,
         {
           nom: "Administration",
           liens: [
             { href: "/admin/utilisateurs", titre: "Utilisateurs", icone: ShieldCheck },
-            { href: "/admin/parametres", titre: "Paramètres plateforme", icone: Settings },
+            ...(superAdmin
+              ? [{ href: "/admin/parametres", titre: "Paramètres plateforme", icone: Settings }]
+              : []),
           ],
         },
       ]
@@ -216,35 +222,7 @@ function ListeLiens({
               </span>
             </button>
             {ouvert ? (
-              <ul className="flex flex-col gap-0.5 pb-1.5">
-                {g.liens.map((l) => {
-                  const Icone = l.icone;
-                  const lien = (
-                    <Link
-                      href={l.href}
-                      aria-current={actif(l.href) ? "page" : undefined}
-                      className={cn(
-                        "flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-[13px] transition-all duration-200 hover:translate-x-0.5",
-                        actif(l.href)
-                          ? "bg-accent font-medium text-accent-foreground"
-                          : "text-sidebar-foreground/65 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground",
-                      )}
-                    >
-                      <Icone aria-hidden="true" className="size-4 shrink-0" />
-                      <span className="truncate">{l.titre}</span>
-                    </Link>
-                  );
-                  return (
-                    <li key={l.href}>
-                      {fermer ? (
-                        <SheetClose asChild>{lien}</SheetClose>
-                      ) : (
-                        lien
-                      )}
-                    </li>
-                  );
-                })}
-              </ul>
+              <LiensGroupe liens={g.liens} chemin={chemin} fermer={fermer} />
             ) : null}
           </div>
         );
@@ -253,7 +231,99 @@ function ListeLiens({
   );
 }
 
-export function NavPrincipale({ superAdmin = false }: { superAdmin?: boolean }) {
+// Mesure synchrone côté client, effet simple côté serveur (le rendu
+// serveur ne montre pas encore la pilule, elle se place au montage).
+const useEffetMesure = typeof window !== "undefined" ? useLayoutEffect : useEffect;
+
+// Liens d'un groupe ouvert, avec la pilule glissante : un fond lime
+// qui suit le lien actif en glissant de l'un à l'autre (même effet
+// que la navigation de la vidéo de référence), sans librairie
+// d'animation — une transition CSS sur la position mesurée du lien.
+function LiensGroupe({
+  liens,
+  chemin,
+  fermer,
+}: {
+  liens: Lien[];
+  chemin: string;
+  fermer?: boolean;
+}) {
+  const actif = (href: string) =>
+    href === "/" ? chemin === "/" : chemin === href || chemin.startsWith(href + "/");
+  const listeRef = useRef<HTMLUListElement | null>(null);
+  const lienActifRef = useRef<HTMLAnchorElement | null>(null);
+  const [pilule, setPilule] = useState<{ haut: number; hauteur: number } | null>(null);
+  const [prete, setPrete] = useState(false);
+
+  useEffetMesure(() => {
+    const mesurer = () => {
+      const el = lienActifRef.current;
+      if (!el) {
+        setPilule(null);
+        return;
+      }
+      setPilule({ haut: el.offsetTop, hauteur: el.offsetHeight });
+      // La première mesure place la pilule sans animation ; les
+      // suivantes glissent.
+      requestAnimationFrame(() => setPrete(true));
+    };
+    mesurer();
+    const liste = listeRef.current;
+    if (!liste) return;
+    const observateur = new ResizeObserver(mesurer);
+    observateur.observe(liste);
+    return () => observateur.disconnect();
+  }, [chemin, liens]);
+
+  return (
+    <ul ref={listeRef} className="relative flex flex-col gap-0.5 pb-1.5">
+      {pilule ? (
+        <span
+          aria-hidden="true"
+          className={cn(
+            "absolute right-0 left-0 rounded-md bg-accent",
+            prete &&
+              "transition-[top,height] duration-300 ease-[cubic-bezier(0.65,0,0.35,1)] motion-reduce:transition-none",
+          )}
+          style={{ top: pilule.haut, height: pilule.hauteur }}
+        />
+      ) : null}
+      {liens.map((l) => {
+        const Icone = l.icone;
+        const estActif = actif(l.href);
+        const lien = (
+          <Link
+            href={l.href}
+            ref={estActif ? lienActifRef : undefined}
+            aria-current={estActif ? "page" : undefined}
+            className={cn(
+              "relative flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-[13px] transition-colors duration-200",
+              estActif
+                ? "font-medium text-accent-foreground"
+                : "text-sidebar-foreground/65 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground",
+            )}
+          >
+            <Icone aria-hidden="true" className="size-4 shrink-0" />
+            <span className="truncate">{l.titre}</span>
+          </Link>
+        );
+        return (
+          <li key={l.href}>
+            {fermer ? <SheetClose asChild>{lien}</SheetClose> : lien}
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
+export function NavPrincipale({
+  superAdmin = false,
+  adminPlateforme = false,
+}: {
+  superAdmin?: boolean;
+  adminPlateforme?: boolean;
+}) {
   const chemin = usePathname();
   return (
     <>
@@ -280,7 +350,7 @@ export function NavPrincipale({ superAdmin = false }: { superAdmin?: boolean }) 
             </SheetTitle>
             <SelecteurEspace />
             <div className="overflow-y-auto pb-4">
-              <ListeLiens chemin={chemin} fermer superAdmin={superAdmin} />
+              <ListeLiens chemin={chemin} fermer superAdmin={superAdmin} adminPlateforme={adminPlateforme} />
             </div>
           </SheetContent>
         </Sheet>
@@ -292,7 +362,7 @@ export function NavPrincipale({ superAdmin = false }: { superAdmin?: boolean }) 
         </div>
         <SelecteurEspace />
         <nav aria-label="Navigation principale" className="flex-1">
-          <ListeLiens chemin={chemin} superAdmin={superAdmin} />
+          <ListeLiens chemin={chemin} superAdmin={superAdmin} adminPlateforme={adminPlateforme} />
         </nav>
       </aside>
     </>
