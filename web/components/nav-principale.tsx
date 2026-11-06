@@ -1,9 +1,11 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   Activity,
+  ChevronDown,
   ClipboardCheck,
   History,
   LayoutDashboard,
@@ -20,8 +22,11 @@ import {
   ShieldCheck,
   Ticket,
   UserRound,
+  Users,
+  Wrench,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { SelecteurEspace } from "@/components/selecteur-espace";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -31,18 +36,20 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 
-// Navigation laterale : les 12 rubriques regroupees par theme.
-// Fixe a gauche sur ecran large, tiroir sur mobile. Le lien actif est
-// en pilule : on sait toujours ou l'on est.
+// Navigation laterale : les rubriques classees par groupe metier,
+// repliables pour aerer le tableau de bord. Fixe a gauche sur ecran
+// large, tiroir sur mobile. Le lien actif est en pilule : on sait
+// toujours ou l'on est, et son groupe reste ouvert.
 type Lien = { href: string; titre: string; icone: typeof Menu };
 type Groupe = { nom: string; liens: Lien[] };
 
 const GROUPES: Groupe[] = [
   {
-    nom: "Parc",
+    nom: "Pilotage",
     liens: [
       { href: "/", titre: "Tableau de bord", icone: LayoutDashboard },
       { href: "/diagnostics", titre: "Diagnostics", icone: Activity },
+      { href: "/historique", titre: "Historique", icone: History },
     ],
   },
   {
@@ -50,53 +57,46 @@ const GROUPES: Groupe[] = [
     liens: [
       { href: "/tickets/nouveau", titre: "Générer des tickets", icone: Ticket },
       {
-        href: "/reapprovisionnement",
-        titre: "Réapprovisionnement automatique",
-        icone: Repeat,
-      },
-      { href: "/profils-hotspot", titre: "Profils Hotspot", icone: LayoutGrid },
-      { href: "/historique", titre: "Historique", icone: History },
-      {
         href: "/tickets/approbations",
         titre: "Approbations",
         icone: ClipboardCheck,
       },
+      { href: "/profils-hotspot", titre: "Profils Hotspot", icone: LayoutGrid },
+      {
+        href: "/reapprovisionnement",
+        titre: "Réapprovisionnement automatique",
+        icone: Repeat,
+      },
     ],
   },
   {
-    nom: "Connexions",
+    nom: "Routeurs",
     liens: [
+      { href: "/routeurs", titre: "Mes routeurs", icone: Router },
       {
         href: "/connexions-mikhmon",
-        titre: "Mes connexions Mikhmon",
+        titre: "Connexions Mikhmon",
         icone: Radio,
       },
-      { href: "/routeurs", titre: "Mes routeurs", icone: Router },
-    ],
-  },
-  {
-    nom: "Notifications",
-    liens: [
       {
-        href: "/configuration/telegram",
-        titre: "Configuration Telegram",
-        icone: Send,
-      },
-      {
-        href: "/configuration/whatsapp",
-        titre: "Configuration WhatsApp",
-        icone: MessageCircle,
-      },
-      {
-        href: "/configuration/printnode",
-        titre: "Configuration PrintNode",
-        icone: Printer,
+        href: "/configuration/routeur",
+        titre: "Configuration routeur",
+        icone: Wrench,
       },
     ],
   },
   {
-    nom: "Compte",
+    nom: "Canaux de livraison",
     liens: [
+      { href: "/configuration/telegram", titre: "Telegram", icone: Send },
+      { href: "/configuration/whatsapp", titre: "WhatsApp", icone: MessageCircle },
+      { href: "/configuration/printnode", titre: "PrintNode", icone: Printer },
+    ],
+  },
+  {
+    nom: "Espace",
+    liens: [
+      { href: "/membres", titre: "Membres et rôles", icone: Users },
       { href: "/profil", titre: "Mon profil", icone: UserRound },
       { href: "/parametres", titre: "Paramètres du compte", icone: Settings },
       { href: "/deconnexion", titre: "Déconnexion", icone: LogOut },
@@ -161,44 +161,94 @@ function ListeLiens({
         },
       ]
     : GROUPES;
+  const groupeActif = groupes.find((g) => g.liens.some((l) => actif(l.href)))?.nom;
+  // Groupes ouverts : celui de la page courante, plus ceux que
+  // l'utilisateur déplie à la main. Les autres restent repliés.
+  const [ouverts, setOuverts] = useState<ReadonlySet<string>>(
+    () => new Set(groupeActif ? [groupeActif] : ["Pilotage"]),
+  );
+  // À chaque navigation, le groupe de la page courante se déplie :
+  // ajustement pendant le rendu, sans effet.
+  const [groupeActifVu, setGroupeActifVu] = useState(groupeActif);
+  if (groupeActif !== groupeActifVu) {
+    setGroupeActifVu(groupeActif);
+    if (groupeActif && !ouverts.has(groupeActif)) {
+      setOuverts(new Set([...ouverts, groupeActif]));
+    }
+  }
+  const basculer = (nom: string) =>
+    setOuverts((avant) => {
+      const apres = new Set(avant);
+      if (apres.has(nom)) apres.delete(nom);
+      else apres.add(nom);
+      return apres;
+    });
   return (
-    <div className="flex flex-col gap-4">
-      {groupes.map((g) => (
-        <div key={g.nom} className="flex flex-col gap-0.5">
-          <p className="px-2.5 pb-1 text-xs font-medium text-sidebar-foreground/55">
-            {g.nom}
-          </p>
-          <ul className="flex flex-col gap-0.5">
-            {g.liens.map((l) => {
-              const Icone = l.icone;
-              const lien = (
-                <Link
-                  href={l.href}
-                  aria-current={actif(l.href) ? "page" : undefined}
+    <div className="flex flex-col gap-1.5">
+      {groupes.map((g) => {
+        const ouvert = ouverts.has(g.nom);
+        const contientActif = g.liens.some((l) => actif(l.href));
+        return (
+          <div key={g.nom} className="flex flex-col">
+            <button
+              type="button"
+              onClick={() => basculer(g.nom)}
+              aria-expanded={ouvert}
+              className={cn(
+                "flex items-center justify-between rounded-md px-2.5 py-2 text-left text-xs font-medium transition-colors",
+                contientActif
+                  ? "text-sidebar-foreground"
+                  : "text-sidebar-foreground/55 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground",
+              )}
+            >
+              <span>{g.nom}</span>
+              <span className="flex items-center gap-1.5">
+                {!ouvert && contientActif ? (
+                  <span aria-hidden="true" className="size-1.5 rounded-full bg-accent" />
+                ) : null}
+                <ChevronDown
+                  aria-hidden="true"
                   className={cn(
-                    "flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-[13px] transition-all duration-200 hover:translate-x-0.5",
-                    actif(l.href)
-                      ? "bg-accent font-medium text-accent-foreground"
-                      : "text-sidebar-foreground/65 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground",
+                    "size-3.5 transition-transform duration-200",
+                    ouvert ? "" : "-rotate-90",
                   )}
-                >
-                  <Icone aria-hidden="true" className="size-4 shrink-0" />
-                  <span className="truncate">{l.titre}</span>
-                </Link>
-              );
-              return (
-                <li key={l.href}>
-                  {fermer ? (
-                    <SheetClose asChild>{lien}</SheetClose>
-                  ) : (
-                    lien
-                  )}
-                </li>
-              );
-            })}
-          </ul>
-        </div>
-      ))}
+                />
+              </span>
+            </button>
+            {ouvert ? (
+              <ul className="flex flex-col gap-0.5 pb-1.5">
+                {g.liens.map((l) => {
+                  const Icone = l.icone;
+                  const lien = (
+                    <Link
+                      href={l.href}
+                      aria-current={actif(l.href) ? "page" : undefined}
+                      className={cn(
+                        "flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-[13px] transition-all duration-200 hover:translate-x-0.5",
+                        actif(l.href)
+                          ? "bg-accent font-medium text-accent-foreground"
+                          : "text-sidebar-foreground/65 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground",
+                      )}
+                    >
+                      <Icone aria-hidden="true" className="size-4 shrink-0" />
+                      <span className="truncate">{l.titre}</span>
+                    </Link>
+                  );
+                  return (
+                    <li key={l.href}>
+                      {fermer ? (
+                        <SheetClose asChild>{lien}</SheetClose>
+                      ) : (
+                        lien
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+            ) : null}
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -228,6 +278,7 @@ export function NavPrincipale({ superAdmin = false }: { superAdmin?: boolean }) 
             <SheetTitle className="flex items-center">
               <Nom />
             </SheetTitle>
+            <SelecteurEspace />
             <div className="overflow-y-auto pb-4">
               <ListeLiens chemin={chemin} fermer superAdmin={superAdmin} />
             </div>
@@ -239,6 +290,7 @@ export function NavPrincipale({ superAdmin = false }: { superAdmin?: boolean }) 
         <div className="px-2">
           <Nom />
         </div>
+        <SelecteurEspace />
         <nav aria-label="Navigation principale" className="flex-1">
           <ListeLiens chemin={chemin} superAdmin={superAdmin} />
         </nav>
