@@ -3,8 +3,8 @@ import { notFound, redirect } from "next/navigation";
 import { connection } from "next/server";
 import { ArrowLeft } from "lucide-react";
 import { sessionPage } from "@/lib/session";
-import { estSuperAdmin } from "@/lib/superadmin";
 import {
+  estAdminPlateforme,
   listerRouteursUtilisateur,
   utilisateurExiste,
 } from "@/lib/admin-utilisateurs";
@@ -21,7 +21,7 @@ export default async function PageAdminUtilisateur({
 }) {
   await connection();
   const { utilisateurId } = await sessionPage();
-  if (!estSuperAdmin(utilisateurId)) redirect("/");
+  if (!(await estAdminPlateforme(utilisateurId))) redirect("/");
 
   const courriel = decodeURIComponent((await params).courriel);
   if (!(await utilisateurExiste(courriel))) notFound();

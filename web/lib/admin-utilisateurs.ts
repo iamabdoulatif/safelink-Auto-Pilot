@@ -1,4 +1,7 @@
 import { db } from "@/lib/db";
+import { estSuperAdmin } from "@/lib/superadmin";
+import { roleEffectif } from "@/lib/roles-plateforme";
+import type { RolePlateforme } from "@/lib/roles-plateforme";
 
 // Vue superadmin : un utilisateur inscrit = un espace (tenant), dont le
 // tenant_id est le courriel. Les compteurs suivent les mêmes règles que
@@ -7,6 +10,7 @@ export type UtilisateurAdmin = {
   courriel: string;
   nom: string | null;
   prenom: string | null;
+  role: RolePlateforme;
   inscritLe: Date | string;
   routeurs: number;
   critiques: number;
@@ -18,6 +22,7 @@ type LigneUtilisateur = {
   courriel: string;
   nom: string | null;
   prenom: string | null;
+  role_plateforme: string;
   inscrit_le: Date | string;
   routeurs: string;
   critiques: string;
@@ -27,7 +32,7 @@ type LigneUtilisateur = {
 
 export async function listerUtilisateurs(): Promise<UtilisateurAdmin[]> {
   const { rows } = await db.query<LigneUtilisateur>(
-    `SELECT u.courriel, u.nom, u.prenom, u.created_at AS inscrit_le,
+    `SELECT u.courriel, u.nom, u.prenom, u.role_plateforme, u.created_at AS inscrit_le,
        count(DISTINCT r.id) AS routeurs,
        count(c.id) FILTER (WHERE c.gravite = 'critique') AS critiques,
        count(c.id) FILTER (WHERE c.gravite = 'majeure') AS majeurs,
@@ -37,13 +42,14 @@ export async function listerUtilisateurs(): Promise<UtilisateurAdmin[]> {
      FROM utilisateurs u
      LEFT JOIN routeurs r ON r.tenant_id = u.tenant_id AND r.actif
      LEFT JOIN constats c ON c.routeur_id = r.id AND c.statut = 'ouvert'
-     GROUP BY u.id, u.courriel, u.nom, u.prenom, u.created_at, u.tenant_id
+     GROUP BY u.id, u.courriel, u.nom, u.prenom, u.role_plateforme, u.created_at, u.tenant_id
      ORDER BY u.courriel`,
   );
   return rows.map((r) => ({
     courriel: r.courriel,
     nom: r.nom,
     prenom: r.prenom,
+    role: roleEffectif(estSuperAdmin(r.courriel), r.role_plateforme),
     inscritLe: r.inscrit_le,
     routeurs: Number(r.routeurs),
     critiques: Number(r.critiques),
@@ -89,4 +95,46 @@ export async function utilisateurExiste(courriel: string): Promise<boolean> {
     [courriel],
   );
   return rows.length > 0;
+}
+
+// Rôle plateforme effectif d'un compte (null si le compte n'existe pas).
+export async function rolePlateformeDe(
+  courriel: string,
+): Promise<RolePlateforme | null> {
+  const { rows } = await db.query<{ role_plateforme: string }>(
+    `SELECT role_plateforme FROM utilisateurs WHERE courriel = $1`,
+    [courriel],
+  );
+  if (rows.length === 0) return null;
+  return roleEffectif(estSuperAdmin(courriel), rows[0].role_plateforme);
+}
+
+// Supervision des utilisateurs : superadmin, ou admin de plateforme.
+export async function estAdminPlateforme(courriel: string): Promise<boolean> {
+  const role = await rolePlateformeDe(courriel);
+  return role === "superadmin" || role === "admin";
+}
+
+// Attribue un rôle stocké (admin/contributeur) à un compte.
+export async function attribuerRolePlateforme(
+  courriel: string,
+  role: "admin" | "contributeur",
+): Promise<boolean> {
+  const { rowCount } = await db.query(
+    `UPDATE utilisateurs SET role_plateforme = $2 WHERE courriel = $1`,
+    [courriel, role],
+  );
+  return (rowCount ?? 0) > 0;
+}
+
+// Retrait définitif : le compte et ses appartenances aux espaces
+// disparaissent ; les données des espaces restent en base (elles
+// appartiennent au tenant, pas au compte).
+export async function retirerUtilisateur(courriel: string): Promise<boolean> {
+  await db.query(`DELETE FROM membres_espace WHERE courriel = $1`, [courriel]);
+  const { rowCount } = await db.query(
+    `DELETE FROM utilisateurs WHERE courriel = $1`,
+    [courriel],
+  );
+  return (rowCount ?? 0) > 0;
 }

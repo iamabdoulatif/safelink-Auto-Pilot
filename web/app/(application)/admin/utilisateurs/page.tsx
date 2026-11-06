@@ -3,7 +3,12 @@ import { redirect } from "next/navigation";
 import { connection } from "next/server";
 import { sessionPage } from "@/lib/session";
 import { estSuperAdmin } from "@/lib/superadmin";
-import { listerUtilisateurs } from "@/lib/admin-utilisateurs";
+import {
+  estAdminPlateforme,
+  listerUtilisateurs,
+} from "@/lib/admin-utilisateurs";
+import { ActionsUtilisateurAdmin } from "@/components/actions-utilisateur-admin";
+import type { RolePlateforme } from "@/lib/roles-plateforme";
 import { Pastille } from "@/components/carte-routeur";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -22,7 +27,8 @@ import {
 export default async function PageAdminUtilisateurs() {
   await connection();
   const { utilisateurId } = await sessionPage();
-  if (!estSuperAdmin(utilisateurId)) redirect("/");
+  if (!(await estAdminPlateforme(utilisateurId))) redirect("/");
+  const superAdmin = estSuperAdmin(utilisateurId);
 
   const utilisateurs = await listerUtilisateurs();
   const totalRouteurs = utilisateurs.reduce((s, u) => s + u.routeurs, 0);
@@ -94,6 +100,7 @@ export default async function PageAdminUtilisateurs() {
             <TableHeader>
               <TableRow>
                 <TableHead className="pl-4">Utilisateur</TableHead>
+                <TableHead>Rôle</TableHead>
                 <TableHead>Routeurs</TableHead>
                 <TableHead>État</TableHead>
                 <TableHead className="pr-4">Dernier relevé</TableHead>
@@ -109,9 +116,18 @@ export default async function PageAdminUtilisateurs() {
                     >
                       {u.prenom || u.nom ? `${u.prenom ?? ""} ${u.nom ?? ""}`.trim() : u.courriel}
                     </Link>
+                    <BadgeRole role={u.role} />
                     <span className="block text-xs text-muted-foreground">
                       {u.courriel} · inscrit le {new Date(u.inscritLe).toLocaleDateString("fr-FR")}
                     </span>
+                  </TableCell>
+                  <TableCell>
+                    <ActionsUtilisateurAdmin
+                      courriel={u.courriel}
+                      role={u.role}
+                      superAdmin={superAdmin}
+                      moi={utilisateurId}
+                    />
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
@@ -151,7 +167,7 @@ export default async function PageAdminUtilisateurs() {
               ))}
               {utilisateurs.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={4} className="py-8 text-center text-muted-foreground">
+                  <TableCell colSpan={5} className="py-8 text-center text-muted-foreground">
                     Aucun utilisateur inscrit pour le moment.
                   </TableCell>
                 </TableRow>
@@ -161,5 +177,34 @@ export default async function PageAdminUtilisateurs() {
         </CardContent>
       </Card>
     </main>
+  );
+}
+
+
+const LIBELLES_ROLE: Record<RolePlateforme, string> = {
+  superadmin: "Superadmin",
+  admin: "Admin",
+  contributeur: "Contributeur",
+};
+
+function BadgeRole({ role }: { role: RolePlateforme }) {
+  if (role === "superadmin") {
+    return (
+      <Badge className="ml-2 border-transparent bg-[var(--signal)] text-white">
+        {LIBELLES_ROLE[role]}
+      </Badge>
+    );
+  }
+  if (role === "admin") {
+    return (
+      <Badge variant="secondary" className="ml-2">
+        {LIBELLES_ROLE[role]}
+      </Badge>
+    );
+  }
+  return (
+    <Badge variant="outline" className="ml-2">
+      {LIBELLES_ROLE[role]}
+    </Badge>
   );
 }
