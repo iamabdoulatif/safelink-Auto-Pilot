@@ -17,7 +17,7 @@ import {
   genererLot,
 } from "@/lib/tickets";
 import { resoudreEnvois } from "@/lib/envois-supplementaires";
-import { destinatairesZonePourRouteur } from "@/lib/zones-wifi";
+import { destinatairesZonePourRouteur, numerosVendeursZone } from "@/lib/zones-wifi";
 import type { CanalLivraison } from "@/lib/tickets";
 
 // Generation de tickets Hotspot, en deux temps (validation humaine) :
@@ -248,6 +248,7 @@ export async function POST(req: Request) {
         routerPassword: secretRouteur,
         jetonTelegram,
         destinatairesSupplementaires,
+        vendeursZone: await numerosVendeursZone(ctx.tenantId, entree.routerConnectionId),
         forcerGeneration: true, // récapitulatif validé : saute le portillon
       });
       const run = await mettreAJourRun(ctx, reservation.run.runId,

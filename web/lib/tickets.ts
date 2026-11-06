@@ -89,6 +89,7 @@ export type DemandeLot = {
   // vendeurs en WhatsApp). Transmises dans la charge signée, comme le
   // fait la route interne des jobs pour le réappro automatique.
   destinatairesSupplementaires?: EnvoiSupplementaire[];
+  vendeursZone?: string[]; // lots distincts par vendeur (rapport)
   jetonTelegram?: string; // bot personnalise dechiffre, ou "" (central)
   secretWhatsApp?: string; // dechiffre, ou "" (sans secret)
   clePrintNode?: string; // dechiffre, ou "" (env n8n sinon)
@@ -216,6 +217,7 @@ export async function genererLot(d: DemandeLot): Promise<ResultatLot> {
     printNodeApiKey: d.clePrintNode || "",
     routeurNom: d.routeurNom || "",
     destinatairesSupplementaires: d.destinatairesSupplementaires ?? [],
+    vendeursZone: d.vendeursZone ?? [],
     nomTicket,
     forcerGeneration: d.forcerGeneration === true,
     callbackUrl: APP_URL ? APP_URL + "/api/n8n/retour" : "",

@@ -80,6 +80,24 @@ export async function POST(req: Request) {
       [runId, termine ? "termine" : "echoue", quantite,
         stockAvant, stockApres, erreur],
     );
+    const lotsVendeurs = Array.isArray(corps["lotsVendeurs"])
+      ? (corps["lotsVendeurs"] as { numero?: unknown; lot?: unknown }[])
+      : [];
+    if (termine && run.router_connection_id !== null) {
+      for (const lv of lotsVendeurs) {
+        if (typeof lv.numero === "string" && Number.isInteger(lv.lot)) {
+          await db.query(
+            `INSERT INTO lots_vendeurs
+               (tenant_id, router_connection_id, lot, numero_vendeur)
+             VALUES ($1,$2,$3,$4)
+             ON CONFLICT (tenant_id, router_connection_id, lot)
+             DO UPDATE SET numero_vendeur = EXCLUDED.numero_vendeur,
+               cree_le = CURRENT_DATE`,
+            [tenantId, run.router_connection_id, lv.lot, lv.numero],
+          );
+        }
+      }
+    }
     if (run.router_connection_id !== null) {
       if (run.simulation && termine) {
         // Simulation reussie de bout en bout : condition d'activation.

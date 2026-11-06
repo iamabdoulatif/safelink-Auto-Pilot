@@ -52,6 +52,19 @@ function promesseConfig(): Promise<{ data?: Config }> {
     .catch(() => ({}));
 }
 
+type RapportEnvoye = {
+  rapport_id: string; routeur_nom: string; debut: string; fin: string;
+  canal: string; statut: string; total_vendu: number | null;
+  tickets_vendus: number | null; envoye_le: string | null;
+};
+
+function promesseRapports(): Promise<RapportEnvoye[]> {
+  return fetch("/api/configuration/whatsapp/rapports", { cache: "no-store" })
+    .then((r) => r.json() as Promise<{ data?: { rapports: RapportEnvoye[] } }>)
+    .then((j) => j.data?.rapports ?? [])
+    .catch(() => []);
+}
+
 function promesseZones(): Promise<Zone[]> {
   return fetch("/api/configuration/whatsapp/zones", { cache: "no-store" })
     .then((r) => r.json() as Promise<{ data?: { zones: Zone[] } }>)
@@ -410,9 +423,36 @@ function Zones({ initiale }: { initiale: Promise<Zone[]> }) {
   );
 }
 
+function HistoriqueRapports({ initiale }: { initiale: Promise<RapportEnvoye[]> }) {
+  const rapports = use(initiale);
+  if (rapports.length === 0) return null;
+  const montant = (n: number | null) =>
+    n === null ? "—" : String(n).replace(/\B(?=(\d{3})+(?!\d))/g, " ") + " F";
+  return (
+    <div className="flex flex-col gap-3">
+      <h2 className="text-lg font-semibold tracking-tight">Derniers rapports envoyés</h2>
+      {rapports.map((r) => (
+        <Card key={r.rapport_id}>
+          <CardContent className="flex flex-wrap items-center gap-x-4 gap-y-1 py-3 text-sm">
+            <span className="font-medium">{r.routeur_nom}</span>
+            <Badge variant="outline">{r.canal}</Badge>
+            <span className="text-muted-foreground">
+              Période {r.debut} → {r.fin} (00h à 00h)
+            </span>
+            <span>{r.tickets_vendus ?? "—"} tickets</span>
+            <span className="font-medium">{montant(r.total_vendu)}</span>
+            <Badge>{r.statut}</Badge>
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  );
+}
+
 export default function ConfigurationWhatsApp() {
   const [initiale] = useState(promesseConfig);
   const [zonesInitiales] = useState(promesseZones);
+  const [rapportsInitiaux] = useState(promesseRapports);
   return (
     <main className="mx-auto flex max-w-3xl flex-col gap-4 p-4 sm:p-6">
       <div>
@@ -427,6 +467,9 @@ export default function ConfigurationWhatsApp() {
       </Suspense>
       <Suspense fallback={<Skeleton className="h-96 w-full" />}>
         <Zones initiale={zonesInitiales} />
+      </Suspense>
+      <Suspense fallback={<Skeleton className="h-24 w-full" />}>
+        <HistoriqueRapports initiale={rapportsInitiaux} />
       </Suspense>
     </main>
   );

@@ -29,6 +29,10 @@ const CONFIG = {
       numerosVendeurs: ["+22670000003", "+22670000004"],
     },
     routeur: { adresse: "https://routeur.test", utilisateur: "lecture", motDePasse: "x" },
+    lotsVendeurs: [
+      { lot: 101, numero_vendeur: "+22670000003" },
+      { lot: 102, numero_vendeur: "+22670000004" },
+    ],
     canaux: {
       telegramChatId: "99", telegramBotToken: "jeton",
       whatsappWebhookUrl: "https://adaptateur.test/hook",
@@ -80,9 +84,13 @@ describe("Rapport des ventes (cycle 00h à 00h)", () => {
     assert.equal(j.ticketsVendus, 3);
     assert.equal(j.totalVendu, 20000); // 2 x 5 000 + 1 x 10 000
     assert.equal(j.montantFormate, "20 000 F");
+    assert.deepEqual(j.parVendeur, [
+      { numero: "+22670000003", tickets: 2, montant: 10000 },
+      { numero: "+22670000004", tickets: 1, montant: 10000 },
+    ]);
     assert.deepEqual(j.parProfil, [
-      { profil: "01-JOUR", tickets: 2, prixUnitaire: 5000, montant: 10000 },
-      { profil: "05-JOURS", tickets: 1, prixUnitaire: 10000, montant: 10000 },
+      { profil: "01-JOUR", tickets: 2, prixUnitaire: 5000, montant: 10000, reste: 1 },
+      { profil: "05-JOURS", tickets: 1, prixUnitaire: 10000, montant: 10000, reste: 0 },
     ]);
   });
 
@@ -93,8 +101,10 @@ describe("Rapport des ventes (cycle 00h à 00h)", () => {
     assert.equal(j.rapportEnvois, 4);
     const parNumero = new Map(appels.map((a) => [a.body.to, a.body.text]));
     assert.match(parNumero.get("+22670000002"), /Total vendu : 20 000 F/);
-    assert.match(parNumero.get("+22670000002"), /01-JOUR : 2 tickets/);
-    assert.match(parNumero.get("+22670000003"), /Point de votre zone/);
+    assert.match(parNumero.get("+22670000002"), /01-JOUR : 2 vendus · 10 000 F · reste 1/);
+    assert.match(parNumero.get("+22670000003"), /Vos ventes : 2 tickets · 10 000 F/);
+    assert.match(parNumero.get("+22670000004"), /Vos ventes : 1 tickets · 10 000 F/);
+    assert.match(parNumero.get("+22670000002"), /Par vendeur :/);
     assert.match(parNumero.get("+22670000004"), /Tickets vendus : 3/);
   });
 

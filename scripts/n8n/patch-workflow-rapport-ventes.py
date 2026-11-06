@@ -61,6 +61,12 @@ var fin = String((cfg.periode || {}).fin || '');
 var parProfil = {};
 var totalVendu = 0;
 var ticketsVendus = 0;
+var neufs = {};
+for (var n = 0; n < users.length; n++) {
+  var nu = users[n];
+  var desactive = nu.disabled === true || String(nu.disabled || '').toLowerCase() === 'true';
+  if (!desactive && parseUptime(nu.uptime) <= 0) { var np = String(nu.profile || ''); neufs[np] = (neufs[np] || 0) + 1; }
+}
 for (var u = 0; u < users.length; u++) {
   var user = users[u];
   if (parseUptime(user.uptime) <= 0) continue;
@@ -80,7 +86,7 @@ for (var k in cfg) copie[k] = cfg[k];
 copie.appUrl = appUrl;
 copie.ticketsVendus = ticketsVendus;
 copie.totalVendu = totalVendu;
-copie.parProfil = Object.keys(parProfil).sort().map(function (nom) { return parProfil[nom]; });
+copie.parProfil = Object.keys(parProfil).sort().map(function (nom) { var l = parProfil[nom]; l.reste = neufs[nom] || 0; return l; });
 copie.montantFormate = fmt(totalVendu);
 return [{ json: copie }];
 """
@@ -94,7 +100,7 @@ for (const item of $input.all()) {
   const zone = cfg.zone || {};
   const fmt = (n) => String(Math.trunc(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' F';
   const periode = 'du ' + String((cfg.periode || {}).debut || '') + ' au ' + String((cfg.periode || {}).fin || '') + ' (00h à 00h)';
-  const detail = (cfg.parProfil || []).map((p) => '• ' + p.profil + ' : ' + p.tickets + ' tickets · ' + fmt(p.montant)).join('\n');
+  const detail = (cfg.parProfil || []).map((p) => '• ' + p.profil + ' : ' + p.tickets + ' vendus · ' + fmt(p.montant) + ' · reste ' + (p.reste ?? 0)).join('\n');
   const entete = '📊 Rapport des ventes — ' + (zone.nom || 'Zone Wi-Fi')
     + (zone.localisation || zone.commune ? '\n📍 ' + [zone.localisation, zone.commune].filter(Boolean).join(', ') : '')
     + '\n🗓️ Période ' + periode

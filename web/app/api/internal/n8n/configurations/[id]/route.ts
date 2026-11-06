@@ -3,6 +3,7 @@ import { resoudreEnvois } from "@/lib/envois-supplementaires";
 import {
   destinatairesZonePourRouteur,
   fusionnerDestinataires,
+  numerosVendeursZone,
 } from "@/lib/zones-wifi";
 import type { EnvoiSupplementaire } from "@/lib/envois-supplementaires";
 import { db } from "@/lib/db";
@@ -290,6 +291,8 @@ export async function GET(
         whatsapp,
         printnode,
         approbation,
+        vendeursZone: await numerosVendeursZone(
+          run.tenant_id, run.router_connection_id),
         supplementaires,
       },
     },

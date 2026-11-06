@@ -60,6 +60,11 @@ export async function GET(
       { status: 428 });
   }
 
+  const { rows: lots } = await db.query(
+    `SELECT lot, numero_vendeur FROM lots_vendeurs
+     WHERE tenant_id = $1 AND router_connection_id = $2`,
+    [l["tenant_id"], l["router_connection_id"]],
+  );
   const { rows: wa } = await db.query(
     `SELECT webhook_url, destinataire_defaut, statut_connexion
      FROM configurations_whatsapp WHERE tenant_id = $1`,
@@ -100,6 +105,7 @@ export async function GET(
         utilisateur,
         motDePasse,
       },
+      lotsVendeurs: lots,
       canaux: {
         telegramChatId: ligneTg?.["chat_id"] ?? "",
         telegramBotToken: jetonTelegram ?? "",

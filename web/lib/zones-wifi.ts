@@ -120,6 +120,23 @@ export async function enregistrerZoneWifi(
   return zone ? { zone } : { erreur: "Zone introuvable après enregistrement." };
 }
 
+// Numéros des vendeurs d'une zone (ordre de la fiche) : la
+// génération leur attribue un lot distinct à chacun.
+export async function numerosVendeursZone(
+  tenantId: string,
+  routerConnectionId: number | null,
+): Promise<string[]> {
+  if (routerConnectionId === null) return [];
+  const { rows } = await db.query(
+    `SELECT numeros_vendeurs FROM zones_wifi_destinataires
+     WHERE tenant_id = $1 AND router_connection_id = $2`,
+    [tenantId, routerConnectionId],
+  );
+  const lignes = rows as { numeros_vendeurs: string[] }[];
+  return lignes.length && Array.isArray(lignes[0].numeros_vendeurs)
+    ? lignes[0].numeros_vendeurs : [];
+}
+
 // Destinataires WhatsApp d'un routeur, pour une génération en cours.
 // Zone non renseignée = liste vide (aucune copie, aucun blocage).
 export async function destinatairesZonePourRouteur(
