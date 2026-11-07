@@ -52,9 +52,10 @@ export function lignesDuPlan(
     `POST /system/backup/save {"name":"${sauvegarde}"}`,
     `PUT /system/scheduler {"name":"${filet}","on-event":"/system/backup/load name=${sauvegarde}"} (filet, désactivé après vérification)`,
   ];
-  if (plan.profilId) {
-    lignes.push(`PATCH /ip/hotspot/user/profile/${plan.profilId} {"disabled":true}`);
-  }
+  // RouterOS ne sait pas désactiver un profil Hotspot (vérifié par
+  // /console/inspect : aucun argument disabled sur user/profile).
+  // On désactive donc chaque ticket : le profil reste présent mais
+  // inutilisable, et rien n'est supprimé.
   for (const id of plan.idsTickets) {
     lignes.push(`PATCH /ip/hotspot/user/${id} {"disabled":true}`);
   }

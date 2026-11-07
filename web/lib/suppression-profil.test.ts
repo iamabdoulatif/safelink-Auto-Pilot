@@ -31,6 +31,8 @@ describe("planSuppressionProfil", () => {
     const lignes = lignesDuPlan(plan, "avant-suppression-x", "safelink-filet-1");
     assert.match(lignes[0], /backup\/save/);
     assert.match(lignes[1], /scheduler/);
+    assert.match(lignes[2], /PATCH \/ip\/hotspot\/user\/\*a/);
+    assert.ok(lignes.every((l) => !l.includes("user/profile")));
     assert.ok(lignes.every((l) => !l.startsWith("DELETE")));
     assert.match(nomSauvegarde("01-JOUR", new Date("2026-11-06T00:00:00Z")),
       /^avant-suppression-01-JOUR-/);

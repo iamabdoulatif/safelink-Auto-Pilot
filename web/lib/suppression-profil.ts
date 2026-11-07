@@ -174,25 +174,27 @@ export async function appliquerSuppression(
     const filetId = String(
       filetsRelus.find((f) => String(f["name"] ?? "") === filet)?.[".id"] ?? "");
 
-    // 2) Désactivation : profil, puis un ticket à la fois.
-    await ros.set(`/ip/hotspot/user/profile/${apercu.plan.profilId}`,
-      { disabled: true });
+    // 2) Désactivation : un ticket à la fois. Le profil Hotspot
+    // n'a pas d'état disabled dans RouterOS (inspect à l'appui) :
+    // sans ticket actif, il est de fait inutilisable.
     let desactives = 0;
     for (const id of apercu.plan.idsTickets) {
       await ros.set(`/ip/hotspot/user/${id}`, { disabled: true });
       desactives++;
     }
 
-    // 3) Vérification : relire l'état réel et la joignabilité.
-    const profilsRelus = await ros.get<ObjetRos[]>("/ip/hotspot/user/profile");
-    const relu = profilsRelus.find(
-      (p) => String(p["name"] ?? "") === apercu.profil);
-    const profilDesactive = relu
-      && (relu["disabled"] === true || relu["disabled"] === "true");
-    if (!profilDesactive) {
-      await terminer("echec", "Profil toujours actif après désactivation.",
+    // 3) Vérification : aucun ticket du profil encore actif.
+    const usersRelus = await ros.get<ObjetRos[]>("/ip/hotspot/user");
+    const encoreActifs = usersRelus.filter(
+      (u) => String(u["profile"] ?? "") === apercu.profil
+        && u["disabled"] !== true && u["disabled"] !== "true").length;
+    if (encoreActifs > 0) {
+      await terminer("echec",
+        `${encoreActifs} tickets encore actifs après désactivation.`,
         desactives);
-      return { erreur: "Vérification échouée : profil toujours actif." };
+      return {
+        erreur: `Vérification échouée : ${encoreActifs} tickets encore actifs.`,
+      };
     }
     await ros.get("/system/resource");
 
@@ -210,7 +212,7 @@ export async function appliquerSuppression(
       [ctx.tenantId, routerConnectionId, apercu.profil],
     );
     await terminer("termine",
-      `Profil désactivé, ${desactives} tickets désactivés, sauvegarde ${sauvegarde}.`,
+      `Profil rendu inutilisable, ${desactives} tickets désactivés, sauvegarde ${sauvegarde}.`,
       desactives);
     return {
       ok: true, profil: apercu.profil,
