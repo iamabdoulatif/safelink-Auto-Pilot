@@ -86,6 +86,15 @@ async function reglesASimuler(): Promise<Regle[]> {
 export async function POST(req: Request) {
   const controle = await verifierAppelInterne(req, { exigerRunId: true });
   if ("reponse" in controle) return controle.reponse;
+  // Entretien au fil de l'eau (le cycle passe toutes les 15 min) :
+  // la routine de plus de 30 jours part en archive toute seule.
+  await db.query(
+    `UPDATE ticket_generation_runs SET archive = true
+     WHERE archive = false AND quantite_creee = 0
+       AND statut NOT IN ('echoue', 'en_attente', 'en_cours')
+       AND erreur IS NULL
+       AND created_at < now() - interval '30 days'`,
+  );
   const simulation = controle.appel.corps["simulation"] === true;
 
   let regles: Regle[];
