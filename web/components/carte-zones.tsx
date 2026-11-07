@@ -28,9 +28,22 @@ declare global {
 const CDN_CSS = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";
 const CDN_JS = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js";
 
+function echapper(html: string): string {
+  return html.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+function montant(n: number): string {
+  return String(Math.trunc(n)).replace(/\B(?=(\d{3})+(?!\d))/g, " ") + " F";
+}
+
 export function CarteZones({ zones }: { zones: ZoneCarte[] }) {
   const conteneur = useRef<HTMLDivElement>(null);
   const [echec, setEchec] = useState(false);
+  const paysDistincts = [...new Set(zones.map((z) => z.pays))].sort();
+  const [paysFiltre, setPaysFiltre] = useState<string>("tous");
+  const visibles = paysFiltre === "tous"
+    ? zones : zones.filter((z) => z.pays === paysFiltre);
 
   useEffect(() => {
     if (zones.length === 0 || !conteneur.current) return;
@@ -54,12 +67,18 @@ export function CarteZones({ zones }: { zones: ZoneCarte[] }) {
         attribution: "© OpenStreetMap",
       }).addTo(instance);
       const bornes: [number, number][] = [];
-      for (const z of zones) {
+      for (const z of visibles) {
         const point: [number, number] = [z.latitude, z.longitude];
         bornes.push(point);
+        const prix = (z.prixProfils ?? [])
+          .map((x) => `${echapper(x.profil)} : ${montant(x.prix)}`).join("<br>");
         L.marker(point).addTo(instance).bindPopup(
-          `<strong>${z.routeurNom}</strong><br>${z.commune || z.localisation || ""}`
-          + `<br>Propriétaire : ${z.proprietaire} (${z.pays})`,
+          `📶 <strong>${echapper(z.wifiNom || z.routeurNom)}</strong>`
+          + `<br>Zone : ${echapper(z.localisation || z.routeurNom)}`
+          + (z.commune ? `, ${echapper(z.commune)}` : "")
+          + `<br>Pays : ${echapper(z.pays)}`
+          + (prix ? `<br>💰 Prix pratiqués :<br>${prix}` : "<br>Prix non renseignés")
+          + `<br>Propriétaire : ${echapper(z.proprietaire)}`,
         );
       }
       if (bornes.length === 1) instance.setView(bornes[0], 13);
@@ -72,7 +91,7 @@ export function CarteZones({ zones }: { zones: ZoneCarte[] }) {
       script.remove();
       css.remove();
     };
-  }, [zones]);
+  }, [visibles, zones]);
 
   if (zones.length === 0) {
     return (
@@ -85,7 +104,7 @@ export function CarteZones({ zones }: { zones: ZoneCarte[] }) {
   if (echec) {
     return (
       <ul className="flex flex-col gap-1 text-sm">
-        {zones.map((z) => (
+        {visibles.map((z) => (
           <li key={z.routeurNom + z.commune}>
             {z.routeurNom} ({z.commune || "—"}) :{" "}
             <a className="underline" target="_blank" rel="noreferrer"
@@ -97,5 +116,29 @@ export function CarteZones({ zones }: { zones: ZoneCarte[] }) {
       </ul>
     );
   }
-  return <div ref={conteneur} className="h-[420px] w-full rounded-lg border" />;
+  return (
+    <div className="flex flex-col gap-3">
+      {paysDistincts.length > 1 && (
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-sm text-muted-foreground">Pays :</span>
+          {["tous", ...paysDistincts].map((p) => (
+            <button
+              key={p} type="button"
+              onClick={() => setPaysFiltre(p)}
+              className={paysFiltre === p
+                ? "rounded-full bg-primary px-3 py-1 text-xs font-medium text-primary-foreground"
+                : "rounded-full border px-3 py-1 text-xs"}
+            >
+              {p === "tous" ? "Tous les pays" : p}
+            </button>
+          ))}
+        </div>
+      )}
+      <div ref={conteneur} className="h-[420px] w-full rounded-lg border" />
+      <p className="text-xs text-muted-foreground">
+        {visibles.length} épingle{visibles.length > 1 ? "s" : ""} : nom du Wi-Fi,
+        zone et prix pratiqués par l'opérateur. Cliquez une épingle pour le détail.
+      </p>
+    </div>
+  );
 }

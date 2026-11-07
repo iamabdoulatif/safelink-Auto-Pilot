@@ -37,6 +37,8 @@ type Zone = {
   rapportDateEnvoi: string;
   latitude: number | null;
   longitude: number | null;
+  wifiNom: string;
+  prixProfils: { profil: string; prix: number }[];
 };
 
 type Config = {
@@ -91,6 +93,9 @@ function FicheZone({ zoneInitiale }: { zoneInitiale: Zone }) {
   const [latitude, setLatitude] = useState(zoneInitiale.latitude?.toString() ?? "");
   const [longitude, setLongitude] = useState(zoneInitiale.longitude?.toString() ?? "");
   const [recherche, setRecherche] = useState("");
+  const [wifiNom, setWifiNom] = useState(zoneInitiale.wifiNom ?? "");
+  const [prixTexte, setPrixTexte] = useState(
+    (zoneInitiale.prixProfils ?? []).map((x) => `${x.profil} = ${x.prix}`).join("\n"));
   const [message, setMessage] = useState<string | null>(null);
   const [erreur, setErreur] = useState<string | null>(null);
   const [occupe, setOccupe] = useState(false);
@@ -117,6 +122,11 @@ function FicheZone({ zoneInitiale }: { zoneInitiale: Zone }) {
           rapportDebut, rapportFin, rapportDateEnvoi,
           latitude: latitude ? Number(latitude) : null,
           longitude: longitude ? Number(longitude) : null,
+          wifiNom,
+          prixProfils: prixTexte.split(/\n+/).map((ligne) => {
+            const [profil, prix] = ligne.split("=").map((x) => x?.trim() ?? "");
+            return { profil, prix: Number(prix) };
+          }).filter((x) => x.profil),
         }),
       });
       const j = (await r.json()) as { error?: string };
@@ -200,6 +210,16 @@ function FicheZone({ zoneInitiale }: { zoneInitiale: Zone }) {
               placeholder="+226 70 00 00 00"
               inputMode="tel"
             />
+          </div>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor={`wifi-${zoneInitiale.routerConnectionId}`}>Nom du Wi-Fi (SSID affiché aux clients)</Label>
+            <Input id={`wifi-${zoneInitiale.routerConnectionId}`} value={wifiNom} onChange={(e) => setWifiNom(e.target.value)} placeholder="Ex. SafeLink-Mosquée" maxLength={100} />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor={`prix-${zoneInitiale.routerConnectionId}`}>Prix pratiqués dans la zone (un par ligne : Profil = prix)</Label>
+            <textarea id={`prix-${zoneInitiale.routerConnectionId}`} className="min-h-16 rounded-lg border border-input bg-background px-2.5 py-2 text-sm outline-none focus-visible:border-ring" value={prixTexte} onChange={(e) => setPrixTexte(e.target.value)} placeholder={"01-HEURE = 100\n01-JOUR = 500\n05-JOURS = 2000"} />
           </div>
         </div>
         <div className="flex flex-col gap-3 rounded-lg border p-3">

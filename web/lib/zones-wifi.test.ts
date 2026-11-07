@@ -28,7 +28,8 @@ describe("validerZoneWifi", () => {
         rapportActif: false, rapportCanal: "telegram",
         rapportPlanification: "decade", rapportDebut: "",
         rapportFin: "", rapportDateEnvoi: "",
-        latitude: null, longitude: null,
+        latitude: null, longitude: null, wifiNom: "",
+        prixProfils: [],
       },
     });
   });
@@ -37,6 +38,28 @@ describe("validerZoneWifi", () => {
     assert.ok("erreur" in validerZoneWifi({ numeroAdmin: "123" }));
     assert.ok("erreur" in validerZoneWifi({ numerosVendeurs: ["abc"] }));
     assert.ok("erreur" in validerZoneWifi({ localisation: "Ici" }));
+  });
+
+  it("valide le nom du Wi-Fi et les prix par profil", () => {
+    const ok = validerZoneWifi({
+      numeroAdmin: "+22670000001", wifiNom: "SafeLink-Mosquée",
+      prixProfils: [
+        { profil: "01-JOUR", prix: 500 },
+        { profil: "01-JOUR", prix: 500 },
+        { profil: "05-JOURS", prix: "2000" },
+      ],
+    });
+    assert.ok("zone" in ok);
+    if ("zone" in ok) {
+      assert.deepEqual(ok.zone.prixProfils, [
+        { profil: "01-JOUR", prix: 500 },
+        { profil: "05-JOURS", prix: 2000 },
+      ]);
+    }
+    assert.ok("erreur" in validerZoneWifi({
+      numeroAdmin: "+22670000001",
+      prixProfils: [{ profil: "01-JOUR", prix: -5 }],
+    }));
   });
 
   it("exige latitude et longitude ensemble, dans les limites", () => {

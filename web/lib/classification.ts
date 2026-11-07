@@ -17,6 +17,7 @@ export type LigneCommune = {
 export type ZoneCarte = {
   routeurNom: string; commune: string; localisation: string;
   latitude: number; longitude: number; proprietaire: string; pays: string;
+  wifiNom: string; prixProfils: { profil: string; prix: number }[];
 };
 
 export async function classificationParPays(): Promise<LignePays[]> {
@@ -68,6 +69,8 @@ export async function zonesGeolocalisees(): Promise<ZoneCarte[]> {
   const { rows } = await db.query(
     `SELECT r.nom AS "routeurNom", z.commune, z.localisation,
        z.latitude, z.longitude, z.tenant_id AS proprietaire,
+       z.wifi_nom AS "wifiNom",
+       COALESCE(z.prix_profils, '[]') AS "prixProfils",
        COALESCE(NULLIF(TRIM(u.pays), ''), 'Non renseigné') AS pays
      FROM zones_wifi_destinataires z
      JOIN configurations_routeurs r

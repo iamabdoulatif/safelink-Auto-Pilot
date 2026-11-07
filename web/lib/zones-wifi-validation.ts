@@ -30,7 +30,11 @@ export type EntreeZoneWifi = {
   rapportDateEnvoi: string;
   latitude: number | null;
   longitude: number | null;
+  wifiNom: string;
+  prixProfils: { profil: string; prix: number }[];
 };
+
+export const MAX_PRIX_PROFILS = 20;
 
 function champCoordonnee(brut: unknown, min: number, max: number): number | null | undefined {
   if (brut === undefined || brut === null || brut === "") return null;
@@ -129,6 +133,32 @@ export function validerZoneWifi(
       erreur: "Période personnalisée : renseignez un début et une fin cohérents.",
     };
   }
+  const wifiNom = champTexte(b["wifiNom"], 100);
+  if (wifiNom === null) {
+    return { erreur: "Nom du Wi-Fi invalide (100 caractères maximum)." };
+  }
+  const prixBruts = b["prixProfils"];
+  if (prixBruts !== undefined && !Array.isArray(prixBruts)) {
+    return { erreur: "Prix des profils invalides." };
+  }
+  const prixProfils: { profil: string; prix: number }[] = [];
+  for (const entree of (prixBruts ?? []) as unknown[]) {
+    const e = (entree ?? {}) as Record<string, unknown>;
+    const profil = typeof e["profil"] === "string" ? e["profil"].trim() : "";
+    const prix = typeof e["prix"] === "number" ? e["prix"] : Number(e["prix"]);
+    if (!profil || profil.length > 60) {
+      return { erreur: "Nom de profil invalide dans les prix." };
+    }
+    if (!Number.isInteger(prix) || prix < 0 || prix > 10000000) {
+      return { erreur: `Prix invalide pour ${profil} (entier entre 0 et 10 000 000).` };
+    }
+    if (!prixProfils.some((x) => x.profil === profil)) {
+      prixProfils.push({ profil, prix });
+    }
+  }
+  if (prixProfils.length > MAX_PRIX_PROFILS) {
+    return { erreur: `${MAX_PRIX_PROFILS} prix de profils au maximum.` };
+  }
   const latitude = champCoordonnee(b["latitude"], -90, 90);
   const longitude = champCoordonnee(b["longitude"], -180, 180);
   if (latitude === undefined || longitude === undefined
@@ -140,7 +170,7 @@ export function validerZoneWifi(
   return {
     zone: {
       localisation, commune, numeroAdmin, numeroGerant, numerosVendeurs,
-      latitude, longitude,
+      latitude, longitude, wifiNom, prixProfils,
       rapportActif, rapportCanal, rapportPlanification,
       rapportDebut, rapportFin, rapportDateEnvoi,
     },

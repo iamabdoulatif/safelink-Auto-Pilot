@@ -43,6 +43,8 @@ type LigneZone = {
   rapport_date_envoi: string | null;
   latitude: number | null;
   longitude: number | null;
+  wifi_nom: string | null;
+  prix_profils: { profil: string; prix: number }[] | null;
 };
 
 function versZone(l: LigneZone): ZoneWifi {
@@ -66,6 +68,8 @@ function versZone(l: LigneZone): ZoneWifi {
     rapportDateEnvoi: l.rapport_date_envoi ?? "",
     latitude: l.latitude ?? null,
     longitude: l.longitude ?? null,
+    wifiNom: l.wifi_nom ?? "",
+    prixProfils: Array.isArray(l.prix_profils) ? l.prix_profils : [],
   };
 }
 
@@ -75,7 +79,7 @@ const SELECT_ZONES = `SELECT r.id AS router_connection_id, r.nom AS routeur_nom,
     z.rapport_planification, z.rapport_debut::text AS rapport_debut,
     z.rapport_fin::text AS rapport_fin,
     z.rapport_date_envoi::text AS rapport_date_envoi,
-    z.latitude, z.longitude
+    z.latitude, z.longitude, z.wifi_nom, z.prix_profils
   FROM configurations_routeurs r
   LEFT JOIN zones_wifi_destinataires z
     ON z.router_connection_id = r.id AND z.tenant_id = r.tenant_id
@@ -106,19 +110,22 @@ export async function enregistrerZoneWifi(
        (tenant_id, router_connection_id, localisation, commune,
         numero_admin, numero_gerant, numeros_vendeurs, rapport_actif,
         rapport_canal, rapport_planification, rapport_debut, rapport_fin,
-        rapport_date_envoi, latitude, longitude, updated_at)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,now())
+        rapport_date_envoi, latitude, longitude, wifi_nom, prix_profils,
+        updated_at)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,now())
      ON CONFLICT (tenant_id, router_connection_id) DO UPDATE
      SET localisation=$3, commune=$4, numero_admin=$5, numero_gerant=$6,
          numeros_vendeurs=$7, rapport_actif=$8, rapport_canal=$9,
          rapport_planification=$10, rapport_debut=$11, rapport_fin=$12,
-         rapport_date_envoi=$13, latitude=$14, longitude=$15, updated_at=now()`,
+         rapport_date_envoi=$13, latitude=$14, longitude=$15,
+         wifi_nom=$16, prix_profils=$17, updated_at=now()`,
     [ctx.tenantId, routerConnectionId, entree.localisation, entree.commune,
       entree.numeroAdmin, entree.numeroGerant,
       JSON.stringify(entree.numerosVendeurs), entree.rapportActif,
       entree.rapportCanal, entree.rapportPlanification,
       entree.rapportDebut || null, entree.rapportFin || null,
-      entree.rapportDateEnvoi || null, entree.latitude, entree.longitude],
+      entree.rapportDateEnvoi || null, entree.latitude, entree.longitude,
+      entree.wifiNom, JSON.stringify(entree.prixProfils)],
   );
   const zones = await listerZonesWifi(ctx);
   const zone = zones.find((z) => z.routerConnectionId === routerConnectionId);
