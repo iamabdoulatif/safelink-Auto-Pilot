@@ -12,8 +12,12 @@ import {
 // le profil et ses tickets sont désactivés (jamais supprimés) :
 // l'effet est le même pour les clients, et c'est réversible à la
 // main. La règle SaaS est supprimée après vérification.
+// pg rend les bigint en texte : accepter "4" comme 4, refuser le reste.
 function entierPositif(v: unknown): number {
-  return Number.isInteger(v) && (v as number) > 0 ? (v as number) : NaN;
+  const n = typeof v === "string" && /^\d+$/.test(v.trim())
+    ? Number(v)
+    : v;
+  return Number.isInteger(n) && (n as number) > 0 ? (n as number) : NaN;
 }
 
 export async function POST(req: Request) {
