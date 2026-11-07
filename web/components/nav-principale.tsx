@@ -20,6 +20,7 @@ import {
   Send,
   Settings,
   ShieldCheck,
+  Map,
   Ticket,
   UserRound,
   Users,
@@ -160,6 +161,7 @@ function ListeLiens({
           nom: "Administration",
           liens: [
             { href: "/admin/utilisateurs", titre: "Utilisateurs", icone: ShieldCheck },
+            { href: "/admin/cartographie", titre: "Cartographie", icone: Map },
             ...(superAdmin
               ? [{ href: "/admin/parametres", titre: "Paramètres plateforme", icone: Settings }]
               : []),

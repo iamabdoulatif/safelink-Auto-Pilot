@@ -35,6 +35,8 @@ type Zone = {
   rapportDebut: string;
   rapportFin: string;
   rapportDateEnvoi: string;
+  latitude: number | null;
+  longitude: number | null;
 };
 
 type Config = {
@@ -86,6 +88,9 @@ function FicheZone({ zoneInitiale }: { zoneInitiale: Zone }) {
   const [rapportDebut, setRapportDebut] = useState(zoneInitiale.rapportDebut);
   const [rapportFin, setRapportFin] = useState(zoneInitiale.rapportFin);
   const [rapportDateEnvoi, setRapportDateEnvoi] = useState(zoneInitiale.rapportDateEnvoi);
+  const [latitude, setLatitude] = useState(zoneInitiale.latitude?.toString() ?? "");
+  const [longitude, setLongitude] = useState(zoneInitiale.longitude?.toString() ?? "");
+  const [recherche, setRecherche] = useState("");
   const [message, setMessage] = useState<string | null>(null);
   const [erreur, setErreur] = useState<string | null>(null);
   const [occupe, setOccupe] = useState(false);
@@ -110,6 +115,8 @@ function FicheZone({ zoneInitiale }: { zoneInitiale: Zone }) {
           numerosVendeurs: vendeurs.split(/[\n,;]+/).map((v) => v.trim()).filter(Boolean),
           rapportActif, rapportCanal, rapportPlanification,
           rapportDebut, rapportFin, rapportDateEnvoi,
+          latitude: latitude ? Number(latitude) : null,
+          longitude: longitude ? Number(longitude) : null,
         }),
       });
       const j = (await r.json()) as { error?: string };
@@ -194,6 +201,65 @@ function FicheZone({ zoneInitiale }: { zoneInitiale: Zone }) {
               inputMode="tel"
             />
           </div>
+        </div>
+        <div className="flex flex-col gap-3 rounded-lg border p-3">
+          <p className="text-sm font-medium">Localisation précise (OpenStreetMap)</p>
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <Input
+              value={recherche}
+              onChange={(e) => setRecherche(e.target.value)}
+              placeholder="Adresse à chercher : ex. Marché central, Ouagadougou"
+              aria-label="Adresse à chercher sur OpenStreetMap"
+            />
+            <Button
+              type="button" variant="outline"
+              onClick={async () => {
+                const q = (recherche || [localisation, commune].filter(Boolean).join(", ")).trim();
+                if (!q) { setErreur("Saisissez une adresse, ou la localisation et la commune."); return; }
+                try {
+                  const r = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(q)}`, { headers: { Accept: "application/json" } });
+                  const resultats = (await r.json()) as { lat: string; lon: string }[];
+                  if (!resultats.length) { setErreur("Adresse introuvable sur OpenStreetMap."); return; }
+                  setLatitude(resultats[0].lat); setLongitude(resultats[0].lon);
+                  setMessage("Position trouvée : vérifiez-la sur la mini-carte, puis enregistrez.");
+                } catch { setErreur("Recherche OpenStreetMap impossible."); }
+              }}
+            >
+              Chercher
+            </Button>
+            <Button
+              type="button" variant="outline"
+              onClick={() => {
+                if (!navigator.geolocation) { setErreur("Géolocalisation non disponible."); return; }
+                navigator.geolocation.getCurrentPosition(
+                  (pos) => { setLatitude(String(pos.coords.latitude)); setLongitude(String(pos.coords.longitude)); },
+                  () => setErreur("Position refusée par le navigateur."),
+                );
+              }}
+            >
+              Ma position
+            </Button>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor={`lat-${zoneInitiale.routerConnectionId}`}>Latitude</Label>
+              <Input id={`lat-${zoneInitiale.routerConnectionId}`} value={latitude} onChange={(e) => setLatitude(e.target.value)} placeholder="12.3714" inputMode="decimal" />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor={`lon-${zoneInitiale.routerConnectionId}`}>Longitude</Label>
+              <Input id={`lon-${zoneInitiale.routerConnectionId}`} value={longitude} onChange={(e) => setLongitude(e.target.value)} placeholder="-1.5197" inputMode="decimal" />
+            </div>
+          </div>
+          {latitude && longitude && Number.isFinite(Number(latitude)) && Number.isFinite(Number(longitude)) ? (
+            <iframe
+              title={`Carte ${zoneInitiale.routeurNom}`}
+              className="h-56 w-full rounded-lg border"
+              loading="lazy"
+              src={`https://www.openstreetmap.org/export/embed.html?bbox=${Number(longitude) - 0.01},${Number(latitude) - 0.01},${Number(longitude) + 0.01},${Number(latitude) + 0.01}&layer=mapnik&marker=${latitude},${longitude}`}
+            />
+          ) : (
+            <p className="text-xs text-muted-foreground">Pas encore de position précise : cherchez l'adresse ou utilisez votre position, puis enregistrez.</p>
+          )}
         </div>
         <div className="flex flex-col gap-1.5">
           <Label htmlFor={`ven-${zoneInitiale.routerConnectionId}`}>Numéros WhatsApp — Vendeurs (un par ligne, 5 maximum)</Label>

@@ -28,6 +28,7 @@ describe("validerZoneWifi", () => {
         rapportActif: false, rapportCanal: "telegram",
         rapportPlanification: "decade", rapportDebut: "",
         rapportFin: "", rapportDateEnvoi: "",
+        latitude: null, longitude: null,
       },
     });
   });
@@ -36,6 +37,19 @@ describe("validerZoneWifi", () => {
     assert.ok("erreur" in validerZoneWifi({ numeroAdmin: "123" }));
     assert.ok("erreur" in validerZoneWifi({ numerosVendeurs: ["abc"] }));
     assert.ok("erreur" in validerZoneWifi({ localisation: "Ici" }));
+  });
+
+  it("exige latitude et longitude ensemble, dans les limites", () => {
+    assert.ok("erreur" in validerZoneWifi({
+      numeroAdmin: "+22670000001", latitude: 12.37,
+    }));
+    assert.ok("erreur" in validerZoneWifi({
+      numeroAdmin: "+22670000001", latitude: 95, longitude: -1.5,
+    }));
+    const ok = validerZoneWifi({
+      numeroAdmin: "+22670000001", latitude: "12.3714", longitude: -1.5197,
+    });
+    assert.ok("zone" in ok && ok.zone.latitude === 12.3714);
   });
 
   it("refuse une période personnalisée incohérente", () => {

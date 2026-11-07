@@ -28,7 +28,15 @@ export type EntreeZoneWifi = {
   rapportDebut: string;
   rapportFin: string;
   rapportDateEnvoi: string;
+  latitude: number | null;
+  longitude: number | null;
 };
+
+function champCoordonnee(brut: unknown, min: number, max: number): number | null | undefined {
+  if (brut === undefined || brut === null || brut === "") return null;
+  const n = typeof brut === "number" ? brut : Number(brut);
+  return Number.isFinite(n) && n >= min && n <= max ? n : undefined;
+}
 
 const DATE_OK = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -121,9 +129,18 @@ export function validerZoneWifi(
       erreur: "Période personnalisée : renseignez un début et une fin cohérents.",
     };
   }
+  const latitude = champCoordonnee(b["latitude"], -90, 90);
+  const longitude = champCoordonnee(b["longitude"], -180, 180);
+  if (latitude === undefined || longitude === undefined
+    || (latitude === null) !== (longitude === null)) {
+    return {
+      erreur: "Coordonnées invalides : latitude et longitude ensemble, dans leurs limites.",
+    };
+  }
   return {
     zone: {
       localisation, commune, numeroAdmin, numeroGerant, numerosVendeurs,
+      latitude, longitude,
       rapportActif, rapportCanal, rapportPlanification,
       rapportDebut, rapportFin, rapportDateEnvoi,
     },

@@ -41,6 +41,8 @@ type LigneZone = {
   rapport_debut: string | null;
   rapport_fin: string | null;
   rapport_date_envoi: string | null;
+  latitude: number | null;
+  longitude: number | null;
 };
 
 function versZone(l: LigneZone): ZoneWifi {
@@ -62,6 +64,8 @@ function versZone(l: LigneZone): ZoneWifi {
     rapportDebut: l.rapport_debut ?? "",
     rapportFin: l.rapport_fin ?? "",
     rapportDateEnvoi: l.rapport_date_envoi ?? "",
+    latitude: l.latitude ?? null,
+    longitude: l.longitude ?? null,
   };
 }
 
@@ -70,7 +74,8 @@ const SELECT_ZONES = `SELECT r.id AS router_connection_id, r.nom AS routeur_nom,
     z.numero_gerant, z.numeros_vendeurs, z.rapport_actif, z.rapport_canal,
     z.rapport_planification, z.rapport_debut::text AS rapport_debut,
     z.rapport_fin::text AS rapport_fin,
-    z.rapport_date_envoi::text AS rapport_date_envoi
+    z.rapport_date_envoi::text AS rapport_date_envoi,
+    z.latitude, z.longitude
   FROM configurations_routeurs r
   LEFT JOIN zones_wifi_destinataires z
     ON z.router_connection_id = r.id AND z.tenant_id = r.tenant_id
@@ -101,19 +106,19 @@ export async function enregistrerZoneWifi(
        (tenant_id, router_connection_id, localisation, commune,
         numero_admin, numero_gerant, numeros_vendeurs, rapport_actif,
         rapport_canal, rapport_planification, rapport_debut, rapport_fin,
-        rapport_date_envoi, updated_at)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,now())
+        rapport_date_envoi, latitude, longitude, updated_at)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,now())
      ON CONFLICT (tenant_id, router_connection_id) DO UPDATE
      SET localisation=$3, commune=$4, numero_admin=$5, numero_gerant=$6,
          numeros_vendeurs=$7, rapport_actif=$8, rapport_canal=$9,
          rapport_planification=$10, rapport_debut=$11, rapport_fin=$12,
-         rapport_date_envoi=$13, updated_at=now()`,
+         rapport_date_envoi=$13, latitude=$14, longitude=$15, updated_at=now()`,
     [ctx.tenantId, routerConnectionId, entree.localisation, entree.commune,
       entree.numeroAdmin, entree.numeroGerant,
       JSON.stringify(entree.numerosVendeurs), entree.rapportActif,
       entree.rapportCanal, entree.rapportPlanification,
       entree.rapportDebut || null, entree.rapportFin || null,
-      entree.rapportDateEnvoi || null],
+      entree.rapportDateEnvoi || null, entree.latitude, entree.longitude],
   );
   const zones = await listerZonesWifi(ctx);
   const zone = zones.find((z) => z.routerConnectionId === routerConnectionId);
