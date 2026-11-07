@@ -756,7 +756,7 @@ function Contenu({
       </Dialog>
 
       <Dialog open={cibleSuppression !== null} onOpenChange={() => { setCibleSuppression(null); setApercu(null); }}>
-        <DialogContent className="max-h-[85vh] overflow-y-auto">
+        <DialogContent className="max-h-[88vh] w-[calc(100vw-2rem)] overflow-y-auto sm:max-w-2xl lg:max-w-3xl">
           <DialogHeader>
             <DialogTitle>Supprimer le profil et ses tickets ?</DialogTitle>
             <DialogDescription>
@@ -764,11 +764,11 @@ function Contenu({
             </DialogDescription>
           </DialogHeader>
           {cibleSuppression && (
-            <div className="flex flex-col gap-3 text-sm">
+            <div className="flex min-w-0 flex-col gap-3 text-sm break-words">
               <Alert variant="destructive">
                 <AlertTitle>⚠️ Avertissement — suppression du profil {cibleSuppression.profil}</AlertTitle>
                 <AlertDescription>
-                  <ul className="list-disc pl-4">
+                  <ul className="list-disc space-y-1 pl-4 break-words">
                     <li>La règle de réapprovisionnement de ce profil sera <strong>supprimée définitivement</strong>.</li>
                     <li>Le profil Hotspot et <strong>tous ses tickets</strong> (neufs et déjà utilisés) seront <strong>désactivés sur le routeur</strong> : plus aucune connexion possible avec ces tickets, sessions en cours coupées.</li>
                     <li>Par sécurité, rien n'est effacé sur RouterOS : un admin peut réactiver à la main dans Mikhmon. Une sauvegarde du routeur est créée avant, avec un filet de restauration.</li>
@@ -785,7 +785,7 @@ function Contenu({
                   </p>
                   <div className="flex flex-col gap-1">
                     <Label>Plan exact qui sera exécuté</Label>
-                    <pre className="max-h-40 overflow-y-auto rounded-lg border bg-muted/40 p-2 text-[11px] whitespace-pre-wrap">{apercu.lignes.join("\n")}</pre>
+                    <pre className="max-h-44 overflow-x-hidden overflow-y-auto rounded-lg border bg-muted/40 p-2 text-[11px] break-all whitespace-pre-wrap">{apercu.lignes.join("\n")}</pre>
                   </div>
                   <div className="flex flex-col gap-1.5">
                     <Label htmlFor="confirmation-suppression">
