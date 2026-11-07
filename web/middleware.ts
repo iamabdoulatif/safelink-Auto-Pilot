@@ -26,6 +26,8 @@ const PUBLIC: readonly string[] = [
   "/api/tickets/auto",
   "/api/bots-telegram/webhook",
   "/api/printnode/webhook",
+  "/api/mobile/v1/auth/",
+  "/api/mobile/v1/sante",
 ];
 
 function dechiffreB64Url(v: string): Uint8Array | null {
@@ -92,10 +94,16 @@ export async function middleware(req: NextRequest): Promise<NextResponse> {
   }
   const secret = process.env.SESSION_SECRET ?? "";
   const cookie = req.cookies.get(NOM_COOKIE)?.value ?? null;
-  if (!secret || !cookie || !(await cookieValide(secret, cookie))) {
-    return NextResponse.json({ error: "Authentification requise." }, { status: 401 });
+  if (secret && cookie && (await cookieValide(secret, cookie))) {
+    return NextResponse.next();
   }
-  return NextResponse.next();
+  // Client mobile : jeton Bearer signé (même format que le cookie).
+  const autorisation = req.headers.get("authorization") ?? "";
+  const jeton = /^Bearer\s+(\S+)$/i.exec(autorisation.trim())?.[1] ?? null;
+  if (secret && jeton && (await cookieValide(secret, jeton))) {
+    return NextResponse.next();
+  }
+  return NextResponse.json({ error: "Authentification requise." }, { status: 401 });
 }
 
 export const config = { matcher: ["/", "/api/:path*"] };

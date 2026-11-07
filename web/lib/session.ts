@@ -1,4 +1,4 @@
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import {
@@ -29,7 +29,12 @@ function secretSession(): string {
 
 export async function session(): Promise<Session> {
   const secret = secretSession();
-  const valeur = (await cookies()).get(NOM_COOKIE_SESSION)?.value ?? null;
+  let valeur = (await cookies()).get(NOM_COOKIE_SESSION)?.value ?? null;
+  if (!valeur) {
+    // Client mobile : Authorization: Bearer <jeton signé>.
+    const autorisation = (await headers()).get("authorization") ?? "";
+    valeur = /^Bearer\s+(\S+)$/i.exec(autorisation.trim())?.[1] ?? null;
+  }
   const ctx = secret ? resoudreContexte(valeur, secret) : null;
   if (!ctx) throw new ErreurAuthentification();
   // Une session ouverte avant le dernier changement de mot de passe est
