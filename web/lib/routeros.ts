@@ -78,6 +78,8 @@ function client(user?: string, pass?: string, base?: string) {
     remove: <T = unknown>(c: string)             => requete<T>(b, a, c, "DELETE"),
     // print avec arguments : /interface/ethernet/print { "stats": "" }
     print:  <T = unknown>(c: string, d: object)  => requete<T>(b, a, c + "/print", "POST", d),
+    // commande RouterOS (backup/save, export, scheduler...) en POST direct
+    appel:  <T = unknown>(c: string, d: object)  => requete<T>(b, a, c, "POST", d),
   };
 }
 

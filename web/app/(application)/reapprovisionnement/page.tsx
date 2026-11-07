@@ -24,6 +24,7 @@ import {
   Printer,
   RefreshCw,
   Send,
+  Trash2,
 } from "lucide-react";
 import {
   Table,
@@ -118,6 +119,13 @@ function Contenu({
   const [approbationCanal, setApprobationCanal] = useState("telegram");
   const [regleEnModification, setRegleEnModification] = useState<number | null>(null);
   const [cible, setCible] = useState<Regle | null>(null);
+  const [cibleSuppression, setCibleSuppression] = useState<Regle | null>(null);
+  const [apercu, setApercu] = useState<{
+    profil: string; routeurNom: string; sauvegarde: string;
+    lignes: string[];
+    plan: { total: number; neufs: number; utilises: number };
+  } | null>(null);
+  const [confirmationSuppression, setConfirmationSuppression] = useState("");
   const [erreur, setErreur] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [occupe, setOccupe] = useState(false);
@@ -255,6 +263,37 @@ function Contenu({
     } finally {
       setOccupe(false);
     }
+  }
+
+  async function demanderSuppression(regle: Regle) {
+    setErreur(null); setMessage(null);
+    setCibleSuppression(regle); setApercu(null); setConfirmationSuppression("");
+    try {
+      const r = await fetch("/api/reapprovisionnement/suppression", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ regleId: regle.id }),
+      });
+      const j = (await r.json()) as { data?: typeof apercu; error?: string };
+      if (!r.ok) { setErreur(j.error ?? "Aperçu impossible."); setCibleSuppression(null); return; }
+      setApercu(j.data ?? null);
+    } catch { setErreur("Aperçu impossible."); setCibleSuppression(null); }
+  }
+
+  async function confirmerSuppression() {
+    if (!cibleSuppression) return;
+    setOccupe(true); setErreur(null);
+    try {
+      const r = await fetch("/api/reapprovisionnement/suppression", {
+        method: "DELETE", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ regleId: cibleSuppression.id, confirmation: confirmationSuppression }),
+      });
+      const j = (await r.json()) as { data?: { ticketsDesactives: number; sauvegarde: string }; error?: string };
+      if (!r.ok) { setErreur(j.error ?? "Suppression impossible."); return; }
+      setMessage(`Profil supprimé : ${j.data?.ticketsDesactives ?? 0} tickets désactivés sur le routeur (sauvegarde ${j.data?.sauvegarde ?? ""}).`);
+      setCibleSuppression(null); setApercu(null);
+      await charger();
+    } catch { setErreur("Suppression impossible."); }
+    finally { setOccupe(false); }
   }
 
   const nbActives = regles.filter((x) => x.actif).length;
@@ -436,6 +475,15 @@ function Contenu({
                         >
                           <Pencil data-icon="inline-start" aria-hidden="true" />
                           Modifier
+                        </Button>
+                        <Button
+                          disabled={occupe}
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => void demanderSuppression(regle)}
+                        >
+                          <Trash2 data-icon="inline-start" aria-hidden="true" />
+                          Supprimer
                         </Button>
                         {regle.actif ? (
                           <Button
@@ -700,6 +748,70 @@ function Contenu({
               onClick={() => cible && void changerActivation(cible, true)}
             >
               Je confirme l&apos;activation
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={cibleSuppression !== null} onOpenChange={() => { setCibleSuppression(null); setApercu(null); }}>
+        <DialogContent className="max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Supprimer le profil et ses tickets ?</DialogTitle>
+            <DialogDescription>
+              Action définitive côté SaaS, désactivation côté routeur.
+            </DialogDescription>
+          </DialogHeader>
+          {cibleSuppression && (
+            <div className="flex flex-col gap-3 text-sm">
+              <Alert variant="destructive">
+                <AlertTitle>⚠️ Avertissement — suppression du profil {cibleSuppression.profil}</AlertTitle>
+                <AlertDescription>
+                  <ul className="list-disc pl-4">
+                    <li>La règle de réapprovisionnement de ce profil sera <strong>supprimée définitivement</strong>.</li>
+                    <li>Le profil Hotspot et <strong>tous ses tickets</strong> (neufs et déjà utilisés) seront <strong>désactivés sur le routeur</strong> : plus aucune connexion possible avec ces tickets, sessions en cours coupées.</li>
+                    <li>Par sécurité, rien n'est effacé sur RouterOS : un admin peut réactiver à la main dans Mikhmon. Une sauvegarde du routeur est créée avant, avec un filet de restauration.</li>
+                    <li>L'historique des générations reste conservé dans le dashboard.</li>
+                  </ul>
+                </AlertDescription>
+              </Alert>
+              {apercu ? (
+                <>
+                  <p>
+                    Routeur : {apercu.routeurNom} · Tickets concernés :{" "}
+                    <strong>{apercu.plan.total}</strong> ({apercu.plan.neufs} neufs,{" "}
+                    {apercu.plan.utilises} déjà utilisés) · Sauvegarde : {apercu.sauvegarde}
+                  </p>
+                  <div className="flex flex-col gap-1">
+                    <Label>Plan exact qui sera exécuté</Label>
+                    <pre className="max-h-40 overflow-y-auto rounded-lg border bg-muted/40 p-2 text-[11px] whitespace-pre-wrap">{apercu.lignes.join("\n")}</pre>
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <Label htmlFor="confirmation-suppression">
+                      Pour confirmer, retapez le nom du profil : {cibleSuppression.profil}
+                    </Label>
+                    <Input
+                      id="confirmation-suppression"
+                      value={confirmationSuppression}
+                      onChange={(e) => setConfirmationSuppression(e.target.value)}
+                      placeholder={cibleSuppression.profil}
+                      autoComplete="off"
+                    />
+                  </div>
+                </>
+              ) : (
+                <p className="text-muted-foreground">Lecture du routeur en cours…</p>
+              )}
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setCibleSuppression(null); setApercu(null); }}>Annuler</Button>
+            <Button
+              variant="destructive"
+              disabled={occupe || !apercu || confirmationSuppression !== cibleSuppression?.profil}
+              onClick={() => void confirmerSuppression()}
+            >
+              <Trash2 data-icon="inline-start" aria-hidden="true" />
+              Supprimer définitivement la règle et désactiver le profil
             </Button>
           </DialogFooter>
         </DialogContent>
