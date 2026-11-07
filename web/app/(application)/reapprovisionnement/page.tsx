@@ -776,6 +776,12 @@ function Contenu({
                   </ul>
                 </AlertDescription>
               </Alert>
+              {erreur && apercu && (
+                <Alert variant="destructive">
+                  <AlertTitle>Échec de la suppression</AlertTitle>
+                  <AlertDescription>{erreur}</AlertDescription>
+                </Alert>
+              )}
               {apercu ? (
                 <>
                   <p>

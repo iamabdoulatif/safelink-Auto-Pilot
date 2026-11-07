@@ -164,13 +164,15 @@ export async function appliquerSuppression(
   };
 
   try {
-    // 1) Sauvegarde, puis filet de restauration armé.
-    await ros.add("/system/backup/save", { name: sauvegarde });
-    const filets = await ros.add<ObjetRos>("/system/scheduler", {
+    // 1) Sauvegarde (commande RouterOS = POST, pas PUT), puis filet.
+    await ros.appel("/system/backup/save", { name: sauvegarde });
+    await ros.add("/system/scheduler", {
       name: filet, "start-time": "startup", interval: "5m",
       "on-event": `/system/backup/load name=${sauvegarde}`,
     });
-    const filetId = String((filets as ObjetRos)?.[".id"] ?? "");
+    const filetsRelus = await ros.get<ObjetRos[]>("/system/scheduler");
+    const filetId = String(
+      filetsRelus.find((f) => String(f["name"] ?? "") === filet)?.[".id"] ?? "");
 
     // 2) Désactivation : profil, puis un ticket à la fois.
     await ros.set(`/ip/hotspot/user/profile/${apercu.plan.profilId}`,
@@ -219,7 +221,8 @@ export async function appliquerSuppression(
       e instanceof Error ? e.message : "Échec RouterOS pendant la suppression.");
     return {
       erreur: "Échec pendant la désactivation : rien n'a été supprimé "
-        + "côté SaaS, le filet de restauration reste armé sur le routeur.",
+        + "côté SaaS. Détail : "
+        + (e instanceof Error ? e.message : "erreur inconnue"),
     };
   }
 }
