@@ -365,7 +365,7 @@ function Contenu({
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Table>
+          <Table className="min-w-[920px]">
             <TableHeader>
               <TableRow>
                 <TableHead>Routeur · Profil</TableHead>
@@ -466,11 +466,12 @@ function Contenu({
                       </div>
                     </TableCell>
                     <TableCell>
-                      <div className="flex flex-wrap justify-end gap-2">
+                      <div className="flex flex-nowrap items-center justify-end gap-2 whitespace-nowrap">
                         <Button
                           disabled={occupe}
                           variant="outline"
                           size="sm"
+                          className="shrink-0"
                           onClick={() => modifier(regle)}
                         >
                           <Pencil data-icon="inline-start" aria-hidden="true" />
@@ -480,6 +481,7 @@ function Contenu({
                           disabled={occupe}
                           variant="destructive"
                           size="sm"
+                          className="shrink-0"
                           onClick={() => void demanderSuppression(regle)}
                         >
                           <Trash2 data-icon="inline-start" aria-hidden="true" />
@@ -489,7 +491,7 @@ function Contenu({
                           <Button
                             disabled={occupe}
                             size="sm"
-                            className="bg-signal text-white hover:bg-signal/90"
+                            className="shrink-0 bg-signal text-white hover:bg-signal/90"
                             onClick={() => void changerActivation(regle, false)}
                           >
                             <Pause data-icon="inline-start" aria-hidden="true" />
@@ -499,7 +501,7 @@ function Contenu({
                           <Button
                             disabled={occupe}
                             size="sm"
-                            className="bg-accent text-accent-foreground hover:bg-accent/85"
+                            className="shrink-0 bg-accent text-accent-foreground hover:bg-accent/85"
                             onClick={() => setCible(regle)}
                           >
                             <Play data-icon="inline-start" aria-hidden="true" />
@@ -823,7 +825,7 @@ function Contenu({
 export default function PageReapprovisionnement() {
   const [initiales] = useState(promesseDonnees);
   return (
-    <main className="mx-auto flex max-w-4xl flex-col gap-6 p-4 sm:p-6">
+    <main className="mx-auto flex w-full max-w-6xl flex-col gap-6 p-4 sm:p-6">
       <Suspense
         fallback={
           <div className="flex flex-col gap-4">
