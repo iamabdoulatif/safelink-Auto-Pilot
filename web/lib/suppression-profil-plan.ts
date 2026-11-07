@@ -54,10 +54,17 @@ export function lignesDuPlan(
   ];
   // RouterOS ne sait pas désactiver un profil Hotspot (vérifié par
   // /console/inspect : aucun argument disabled sur user/profile).
-  // On désactive donc chaque ticket : le profil reste présent mais
-  // inutilisable, et rien n'est supprimé.
+  // Procédure : désactiver chaque ticket, vérifier, puis supprimer
+  // définitivement tickets et profil (exception propriétaire du
+  // 2026-11-07 dans AGENTS.md, sauvegarde et filet en place).
   for (const id of plan.idsTickets) {
     lignes.push(`PATCH /ip/hotspot/user/${id} {"disabled":true}`);
+  }
+  for (const id of plan.idsTickets) {
+    lignes.push(`DELETE /ip/hotspot/user/${id}`);
+  }
+  if (plan.profilId) {
+    lignes.push(`DELETE /ip/hotspot/user/profile/${plan.profilId}`);
   }
   return lignes;
 }

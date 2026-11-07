@@ -26,14 +26,15 @@ describe("planSuppressionProfil", () => {
     assert.equal(planSuppressionProfil("ABSENT", profils, users).profilId, null);
   });
 
-  it("le plan commence par sauvegarde et filet, sans aucun DELETE", () => {
+  it("le plan commence par sauvegarde et filet, désactive puis supprime", () => {
     const plan = planSuppressionProfil("01-JOUR", profils, users);
     const lignes = lignesDuPlan(plan, "avant-suppression-x", "safelink-filet-1");
     assert.match(lignes[0], /backup\/save/);
     assert.match(lignes[1], /scheduler/);
     assert.match(lignes[2], /PATCH \/ip\/hotspot\/user\/\*a/);
-    assert.ok(lignes.every((l) => !l.includes("user/profile")));
-    assert.ok(lignes.every((l) => !l.startsWith("DELETE")));
+    assert.ok(lignes.every((l) => !l.startsWith("PATCH /ip/hotspot/user/profile")));
+    assert.ok(lignes.some((l) => l.startsWith("DELETE /ip/hotspot/user/")));
+    assert.ok(lignes.at(-1)?.startsWith("DELETE /ip/hotspot/user/profile/"));
     assert.match(nomSauvegarde("01-JOUR", new Date("2026-11-06T00:00:00Z")),
       /^avant-suppression-01-JOUR-/);
   });

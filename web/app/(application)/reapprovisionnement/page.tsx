@@ -770,8 +770,8 @@ function Contenu({
                 <AlertDescription>
                   <ul className="list-disc space-y-1 pl-4 break-words">
                     <li>La règle de réapprovisionnement de ce profil sera <strong>supprimée définitivement</strong>.</li>
-                    <li><strong>Tous les tickets du profil</strong> (neufs et déjà utilisés) seront <strong>désactivés sur le routeur</strong> : plus aucune connexion possible, sessions en cours coupées. RouterOS ne permet pas de désactiver un profil Hotspot lui-même : il restera visible dans Mikhmon, mais sans aucun ticket utilisable.</li>
-                    <li>Par sécurité, rien n'est effacé sur RouterOS : un admin peut réactiver à la main dans Mikhmon. Une sauvegarde du routeur est créée avant, avec un filet de restauration.</li>
+                    <li><strong>Tous les tickets du profil</strong> (neufs et déjà utilisés) seront d'abord désactivés, puis <strong>supprimés définitivement du routeur</strong>, ainsi que le profil Hotspot lui-même : effacement irréversible, seule la sauvegarde créée avant permettra de restaurer.</li>
+                    <li>Une sauvegarde du routeur est créée avant, avec un filet de restauration en cas d'échec. Après suppression, les tickets n'existeront plus dans Mikhmon.</li>
                     <li>L'historique des générations reste conservé dans le dashboard.</li>
                   </ul>
                 </AlertDescription>
@@ -819,7 +819,7 @@ function Contenu({
               onClick={() => void confirmerSuppression()}
             >
               <Trash2 data-icon="inline-start" aria-hidden="true" />
-              Supprimer définitivement la règle et désactiver le profil
+              Supprimer définitivement la règle, le profil et ses tickets
             </Button>
           </DialogFooter>
         </DialogContent>

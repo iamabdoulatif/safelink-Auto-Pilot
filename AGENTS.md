@@ -36,6 +36,11 @@ journalises : ils vivent dans le routeur.
 - Ne jamais toucher aux regles input du pare-feu, a /ip/service, a l'adressage
 IP ou aux routes de facon automatique : proposer, ne pas appliquer.
 - Ne jamais supprimer un objet RouterOS : desactiver (disabled=yes).
+  Exception decidee par le proprietaire (2026-11-07) : les tickets Hotspot
+  (/ip/hotspot/user) et les profils devenus inutiles peuvent etre supprimes
+  definitivement, uniquement via la fonction de suppression du dashboard,
+  avec sauvegarde prealable, approbation explicite, filet de restauration,
+  journalisation et verification. Tout autre objet reste en desactivation.
 - Ne jamais faire dependre l'application d'un serveur MCP. Le MCP est un outil
 d'atelier ; le code livre parle au routeur en REST via lib/routeros.ts.
 - Ne jamais installer une dependance lourde sans me demander d'abord.

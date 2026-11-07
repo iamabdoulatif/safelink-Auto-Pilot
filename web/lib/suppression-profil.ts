@@ -198,7 +198,28 @@ export async function appliquerSuppression(
     }
     await ros.get("/system/resource");
 
-    // 4) Filet désarmé (jamais supprimé), règle SaaS supprimée.
+    // 4) Suppression définitive : un ticket à la fois, puis le
+    // profil devenu vide. Vérification : plus aucun ticket du profil.
+    for (const id of apercu.plan.idsTickets) {
+      await ros.remove(`/ip/hotspot/user/${id}`);
+    }
+    const apresSuppression = await ros.get<ObjetRos[]>("/ip/hotspot/user");
+    const restants = apresSuppression.filter(
+      (u) => String(u["profile"] ?? "") === apercu.profil).length;
+    if (restants > 0) {
+      await terminer("echec",
+        `${restants} tickets encore présents après suppression.`,
+        desactives);
+      return {
+        erreur: `Vérification échouée : ${restants} tickets encore présents.`,
+      };
+    }
+    if (apercu.plan.profilId) {
+      await ros.remove(
+        `/ip/hotspot/user/profile/${apercu.plan.profilId}`);
+    }
+
+    // 5) Filet désarmé (jamais supprimé), règle SaaS supprimée.
     if (filetId) {
       await ros.set(`/system/scheduler/${filetId}`, { disabled: true });
     }
@@ -212,7 +233,7 @@ export async function appliquerSuppression(
       [ctx.tenantId, routerConnectionId, apercu.profil],
     );
     await terminer("termine",
-      `Profil rendu inutilisable, ${desactives} tickets désactivés, sauvegarde ${sauvegarde}.`,
+      `${desactives} tickets supprimés définitivement et profil supprimé, sauvegarde ${sauvegarde}.`,
       desactives);
     return {
       ok: true, profil: apercu.profil,
