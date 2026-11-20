@@ -1,12 +1,12 @@
 // Controles Mikhmon : joignabilite et refus du mot de passe initial.
 // Mikhmon est une interface PHP devant le routeur : tester l'URL suffit a
-// prouver qu'elle repond ; la variante (V3 ou SF v1) ne change que
+// prouver qu'elle repond ; la variante (V3, SF v1 ou V2) ne change que
 // l'interface, le code qui ecrit dans /ip/hotspot/user reste identique.
-export const VARIANTES_MIKHMON = ["v3", "sf-v1"] as const;
+export const VARIANTES_MIKHMON = ["v3", "sf-v1", "v2"] as const;
 
-// Deux versions de Mikhmon : seule SF v1 prend en compte les
+// Trois versions de Mikhmon : seule SF v1 prend en compte les
 // vendeurs et le gérant (lots distincts, rapport par vendeur).
-// V3 : lot unique, rapport de zone sans détail par vendeur.
+// V3 et V2 (github.com/iamabdoulatif/mikhmonv2) : lot unique, rapport de zone sans détail par vendeur.
 export const VARIANTE_AVEC_VENDEURS = "sf-v1";
 export type VarianteMikhmon = (typeof VARIANTES_MIKHMON)[number];
 
@@ -35,7 +35,7 @@ export type EntreeMikhmon = {
 // Valide la forme (variante, URL, champs) sans toucher au reseau.
 export function validerMikhmon(e: EntreeMikhmon): string | null {
   if (!(VARIANTES_MIKHMON as readonly string[]).includes(e.variante)) {
-    return "Variante inconnue : v3 ou sf-v1.";
+    return "Variante inconnue : v3, sf-v1 ou v2.";
   }
   if (!/^https?:\/\/[^/\s]+(\/.*)?$/i.test(e.url) || e.url.length > 300) {
     return "URL Mikhmon invalide (http ou https).";

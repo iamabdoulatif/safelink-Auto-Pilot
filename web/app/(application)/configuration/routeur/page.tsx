@@ -153,6 +153,7 @@ function Contenu({ initiales }: { initiales: Promise<{ data?: ConfigMasquee[] }>
               >
                 <option value="v3">V3</option>
                 <option value="sf-v1">SF v1</option>
+                <option value="v2">V2</option>
               </select>
             </div>
             <div className="flex flex-col gap-1.5">

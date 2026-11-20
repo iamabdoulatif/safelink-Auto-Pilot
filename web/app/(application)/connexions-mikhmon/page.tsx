@@ -17,7 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 // Page « Mes connexions Mikhmon » : installations Mikhmon de l'espace
-// (nom, variante V3/SF v1, hôte, port, URL, rôle, identifiant, mot de
+// (nom, variante V3/SF v1/V2, hôte, port, URL, rôle, identifiant, mot de
 // passe, statut, date du dernier test). Les tests sont exécutés côté
 // serveur. Les identifiants par défaut mikhmon / 1234 sont refusés avec
 // avertissement : le changement est forcé avant enregistrement.
@@ -252,6 +252,7 @@ function Contenu({ initiales }: { initiales: Promise<{ data?: Installation[] }> 
               >
                 <option value="v3">V3</option>
                 <option value="sf-v1">SF v1</option>
+                <option value="v2">V2</option>
               </select>
             </div>
           </div>

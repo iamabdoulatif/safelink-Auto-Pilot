@@ -147,7 +147,7 @@ function FicheZone({ zoneInitiale }: { zoneInitiale: Zone }) {
       <CardHeader>
         <CardTitle className="flex flex-wrap items-center gap-2">
           {zoneInitiale.routeurNom}
-          <Badge variant="outline">{zoneInitiale.varianteMikhmon === "sf-v1" ? "Mikhmon SF v1" : "Mikhmon V3"}</Badge>
+          <Badge variant="outline">{zoneInitiale.varianteMikhmon === "sf-v1" ? "Mikhmon SF v1" : zoneInitiale.varianteMikhmon === "v2" ? "Mikhmon V2" : "Mikhmon V3"}</Badge>
           {renseignee
             ? <Badge>destinataires renseignés</Badge>
             : <Badge variant="secondary">à renseigner</Badge>}
