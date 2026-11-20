@@ -3,7 +3,7 @@ import { assurerEspace, verifierContexte } from "@/lib/acces-donnees";
 import type { ContexteTenant } from "@/lib/acces-donnees";
 import { chiffrer } from "@/lib/chiffrement-serveur";
 import { construireUrlMikhmon } from "@/lib/derivation-url";
-import { estInitialMikhmon, testerMikhmon } from "@/lib/mikhmon";
+import { VARIANTES_MIKHMON, estInitialMikhmon, testerMikhmon } from "@/lib/mikhmon";
 import type { VarianteMikhmon } from "@/lib/mikhmon";
 
 // Installations Mikhmon : une ligne de configurations_routeurs par
@@ -93,7 +93,9 @@ function versInstallation(l: Ligne): InstallationMikhmon {
   const url =
     calcule && "url" in calcule ? calcule.url : l.url_mikhmon;
   const variante =
-    l.variante_mikhmon === "sf-v1" ? "sf-v1" : "v3";
+    (VARIANTES_MIKHMON as readonly string[]).includes(l.variante_mikhmon)
+      ? (l.variante_mikhmon as VarianteMikhmon)
+      : "v3";
   const role = (ROLES_MIKHMON as readonly string[]).includes(l.role)
     ? (l.role as RoleMikhmon)
     : "Administrateur";
@@ -128,8 +130,8 @@ export function validerEntree(
   if (!e.nom.trim() || e.nom.trim().length > 100) {
     return { erreur: "Nom d'installation obligatoire (1 à 100 caractères)." };
   }
-  if (e.variante !== "v3" && e.variante !== "sf-v1") {
-    return { erreur: "Variante inconnue : V3 ou SF-v1." };
+  if (!(VARIANTES_MIKHMON as readonly string[]).includes(e.variante)) {
+    return { erreur: "Variante inconnue : V3, SF-v1 ou V2." };
   }
   if (!(ROLES_MIKHMON as readonly string[]).includes(e.role)) {
     return { erreur: "Rôle inconnu : Administrateur, Gérant ou Vendeur." };

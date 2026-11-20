@@ -22,7 +22,7 @@ CREATE TABLE IF NOT EXISTS configurations_routeurs (
                                   ON DELETE CASCADE,
   utilisateur_id        text        NOT NULL,
   nom                   text        NOT NULL,
-  variante_mikhmon      text        NOT NULL DEFAULT 'v3', -- v3 | sf-v1
+  variante_mikhmon      text        NOT NULL DEFAULT 'v3', -- v3 | sf-v1 | v2
   url_mikhmon           text        NOT NULL,
   identifiant_mikhmon   text        NOT NULL,
   -- Secrets chiffres (AES-256-GCM, format "v1:..."), jamais en clair.
