@@ -169,16 +169,30 @@ describe("Rapport des ventes (cycle 00h à 00h)", () => {
     assert.ok(j.tickets.every((t) => /^[0-9a-f]{64}$/.test(t.hash)));
   });
 
-  it("en V3 (sans vendeurs ni gérant), rapport de zone pour l'admin seul", async () => {
+  it("en V3/V2 (lot unique), admin + gérant + vendeurs reçoivent le rapport complet", async () => {
     const cfgV3 = { data: { ...CONFIG.data, routeur: { ...CONFIG.data.routeur, variante: "v3" } } };
     const calcule = await executer("Calculer le rapport des ventes", cfgV3, [], fauxRouteur());
-    assert.deepEqual(calcule.parVendeur, []);
+    assert.deepEqual(calcule.parVendeur, []); // pas de ventilation par vendeur en V3
     const appels = [];
     const j = await executer("Envoyer le rapport des ventes", calcule, appels, null);
-    assert.equal(j.rapportEnvois, 1);
-    assert.equal(appels.length, 2); // texte + document CSV
-    assert.equal(appels[0].body.to, "+22670000001");
-    assert.match(appels[1].body.toString("utf8"), /TOTAL;3;;20000;/);
+    assert.equal(j.rapportEnvois, 4); // admin + gérant + 2 vendeurs
+    assert.equal(appels.length, 8); // (texte + CSV) × 4
+    const destinataires = appels.filter((a) => a.body && a.body.to).map((a) => a.body.to);
+    assert.deepEqual([...new Set(destinataires)].sort(),
+      ["+22670000001", "+22670000002", "+22670000003", "+22670000004"]);
+    const csvs = appels.filter((a) => Buffer.isBuffer(a.body)).map((a) => a.body.toString("utf8"));
+    assert.equal(csvs.length, 4);
+    assert.ok(csvs.every((c) => /TOTAL;3;;20000;/.test(c))); // tous : rapport complet de la zone
+  });
+
+  it("canal « les deux » : WhatsApp (numéros) et Telegram (chat) dans le même cycle", async () => {
+    const calcule = await executer("Calculer le rapport des ventes",
+      { data: { ...CONFIG.data, canal: "les_deux" } }, [], fauxRouteur());
+    const appels = [];
+    const j = await executer("Envoyer le rapport des ventes", calcule, appels, null);
+    assert.ok(appels.some((a) => /sendMessage/.test(a.url || ""))); // Telegram au chat
+    assert.ok(appels.some((a) => a.body && a.body.to === "+22670000001")); // WhatsApp admin
+    assert.equal(j.rapportEnvois, 5); // 4 WhatsApp + 1 Telegram
   });
 
   it("envoie texte + CSV sur Telegram si la zone l'a choisi", async () => {

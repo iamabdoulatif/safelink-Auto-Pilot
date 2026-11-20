@@ -58,7 +58,11 @@ function versZone(l: LigneZone): ZoneWifi {
     numeroGerant: l.numero_gerant ?? "",
     numerosVendeurs: Array.isArray(l.numeros_vendeurs) ? l.numeros_vendeurs : [],
     rapportActif: l.rapport_actif === true,
-    rapportCanal: l.rapport_canal === "telegram" ? "telegram" : "whatsapp",
+    rapportCanal: l.rapport_canal === "telegram"
+      ? "telegram"
+      : l.rapport_canal === "les_deux"
+        ? "les_deux"
+        : "whatsapp",
     rapportPlanification: l.rapport_planification === "journalier"
       || l.rapport_planification === "hebdomadaire"
       || l.rapport_planification === "mensuel"

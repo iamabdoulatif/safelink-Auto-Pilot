@@ -155,7 +155,7 @@ function FicheZone({ zoneInitiale }: { zoneInitiale: Zone }) {
         <CardDescription>
           Où se trouve la zone, et qui reçoit les tickets générés sur ce routeur.
           {zoneInitiale.varianteMikhmon !== "sf-v1" && (
-            <> Version V3 : sans vendeurs ni gérant — lot unique et rapport de zone pour l'admin seul.</>
+            <> Version V3/V2 : lot unique, sans détail par vendeur — mais admin, gérant et vendeurs renseignés reçoivent tous le rapport complet de la zone.</>
           )}
         </CardDescription>
       </CardHeader>
@@ -303,6 +303,7 @@ function FicheZone({ zoneInitiale }: { zoneInitiale: Zone }) {
                 <select id={`canal-rapport-${zoneInitiale.routerConnectionId}`} className="h-9 rounded-lg border border-input bg-background px-2.5 text-sm outline-none focus-visible:border-ring" value={rapportCanal} onChange={(e) => setRapportCanal(e.target.value)}>
                   <option value="whatsapp">WhatsApp (admin, gérant, vendeurs)</option>
                   <option value="telegram">Telegram (chat de l'espace)</option>
+                  <option value="les_deux">WhatsApp + Telegram (les deux)</option>
                 </select>
               </div>
               <div className="flex flex-col gap-1.5">
@@ -334,10 +335,12 @@ function FicheZone({ zoneInitiale }: { zoneInitiale: Zone }) {
             </div>
           )}
           <p className="text-xs text-muted-foreground">
-            Le gérant et l'admin reçoivent le total, le détail par profil et
-            le CSV ticket par ticket (avec l'heure de vente relevée toutes
-            les 15 minutes) ; chaque vendeur reçoit uniquement ses ventes,
-            en texte et en CSV, sur le canal choisi.
+            Admin et gérant reçoivent le total, le détail par profil et le
+            CSV ticket par ticket (avec l'heure de vente relevée toutes les
+            15 minutes). En SF v1, chaque vendeur reçoit uniquement ses
+            ventes ; en V3/V2 (lot unique), les vendeurs reçoivent le rapport
+            complet. Canal « les deux » = envoi WhatsApp (numéros) et Telegram
+            (chat de l'espace) en un seul cycle.
           </p>
         </div>
         <div>

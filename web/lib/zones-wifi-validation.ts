@@ -23,7 +23,7 @@ export type EntreeZoneWifi = {
   numeroGerant: string;
   numerosVendeurs: string[];
   rapportActif: boolean;
-  rapportCanal: "telegram" | "whatsapp";
+  rapportCanal: "telegram" | "whatsapp" | "les_deux";
   rapportPlanification: "journalier" | "decade" | "hebdomadaire" | "mensuel" | "personnalise";
   rapportDebut: string;
   rapportFin: string;
@@ -114,7 +114,11 @@ export function validerZoneWifi(
   if (!numeroAdmin && !numeroGerant && numerosVendeurs.length === 0) {
     return { erreur: "Renseignez au moins un numéro (admin, gérant ou vendeur)." };
   }
-  const rapportCanal = b["rapportCanal"] === "whatsapp" ? "whatsapp" : "telegram";
+  const rapportCanal = b["rapportCanal"] === "whatsapp"
+    ? "whatsapp"
+    : b["rapportCanal"] === "les_deux"
+      ? "les_deux"
+      : "telegram";
   const planificationBrute = b["rapportPlanification"];
   const rapportPlanification = planificationBrute === "journalier"
     || planificationBrute === "decade"
