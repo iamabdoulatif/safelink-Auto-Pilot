@@ -4,6 +4,9 @@ import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createRequire } from "node:module";
+import { createHash } from "node:crypto";
+
+const empreinte = (code) => createHash("sha256").update(code, "utf8").digest("hex");
 
 const require = createRequire(import.meta.url);
 const RACINE = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
@@ -94,18 +97,76 @@ describe("Rapport des ventes (cycle 00h à 00h)", () => {
     ]);
   });
 
-  it("envoie le complet au gérant/admin et le résumé aux vendeurs (WhatsApp)", async () => {
+  it("envoie texte + CSV au gérant/admin et les seules ventes de chaque vendeur (WhatsApp)", async () => {
     const calcule = await executer("Calculer le rapport des ventes", CONFIG, [], fauxRouteur());
     const appels = [];
     const j = await executer("Envoyer le rapport des ventes", calcule, appels, null);
     assert.equal(j.rapportEnvois, 4);
-    const parNumero = new Map(appels.map((a) => [a.body.to, a.body.text]));
+    const textes = appels.filter((a) => a.body && a.body.text);
+    const documents = appels.filter((a) => Buffer.isBuffer(a.body));
+    assert.equal(textes.length, 4);
+    assert.equal(documents.length, 4);
+    const parNumero = new Map(textes.map((a) => [a.body.to, a.body.text]));
     assert.match(parNumero.get("+22670000002"), /Total vendu : 20 000 F/);
     assert.match(parNumero.get("+22670000002"), /01-JOUR : 2 vendus · 10 000 F · reste 1/);
-    assert.match(parNumero.get("+22670000003"), /Vos ventes : 2 tickets · 10 000 F/);
-    assert.match(parNumero.get("+22670000004"), /Vos ventes : 1 tickets · 10 000 F/);
     assert.match(parNumero.get("+22670000002"), /Par vendeur :/);
-    assert.match(parNumero.get("+22670000004"), /Tickets vendus : 3/);
+    assert.match(parNumero.get("+22670000002"), /document CSV joint/);
+    assert.match(parNumero.get("+22670000003"), /Vos tickets vendus : 2/);
+    assert.match(parNumero.get("+22670000003"), /Votre total : 10 000 F/);
+    assert.match(parNumero.get("+22670000004"), /Vos tickets vendus : 1/);
+    const csvParNumero = new Map(documents.map((a) => {
+      const corps = a.body.toString("utf8");
+      const numero = /name="to"\r\n\r\n(\+\d+)/.exec(corps)?.[1];
+      return [numero, corps];
+    }));
+    const csvGestion = csvParNumero.get("+22670000002");
+    assert.match(csvGestion, /ticket;date de vente;heure de vente;profil/);
+    assert.match(csvGestion, /a1;2026-11-03;—;01-JOUR;5000;\+22670000003/);
+    assert.match(csvGestion, /TOTAL;3;;20000;/);
+    const csvVendeur = csvParNumero.get("+22670000004");
+    assert.match(csvVendeur, /b1;2026-11-05;—;05-JOURS;10000;\+22670000004/);
+    assert.doesNotMatch(csvVendeur, /a1;/);
+    assert.match(csvVendeur, /TOTAL;1;;10000;/);
+  });
+
+  it("rattache chaque vente à son heure relevée par le suivi de 15 min", async () => {
+    const cfg = { data: { ...CONFIG.data,
+      periode: { debut: "2026-11-05", fin: "2026-11-06" },
+      ventesSuivi: [
+        { ticketHash: empreinte("a1"), vuLe: "2026-11-05T08:42:00Z", heureConnue: true, lotDate: "2026-11-03" },
+        { ticketHash: empreinte("a2"), vuLe: "2026-11-07T09:00:00Z", heureConnue: true, lotDate: "2026-11-03" },
+      ] } };
+    const j = await executer("Calculer le rapport des ventes", cfg, [], fauxRouteur());
+    // a1 vendu le 05 à 08h42 (suivi), b1 le 05 (date du lot, sans
+    // heure), a2 vu le 07 : hors journée, exclu.
+    assert.equal(j.ticketsVendus, 2);
+    assert.equal(j.totalVendu, 15000);
+    assert.equal(j.ventesSansHeure, 1);
+    assert.deepEqual(j.ventes.map((v) => [v.ticket, v.date, v.heure]), [
+      ["a1", "2026-11-05", "08:42"],
+      ["b1", "2026-11-05", ""],
+    ]);
+    const appels = [];
+    await executer("Envoyer le rapport des ventes", j, appels, null);
+    const textes = appels.filter((a) => a.body && a.body.text);
+    assert.match(textes[0].body.text, /Rapport journalier des ventes/);
+    assert.match(textes[0].body.text, /le 2026-11-05 \(00h à 00h\)/);
+    const doc = appels.find((a) => Buffer.isBuffer(a.body)).body.toString("utf8");
+    assert.match(doc, /a1;2026-11-05;08:42;01-JOUR;5000;/);
+  });
+
+  it("le relevé de 15 min n'envoie que l'empreinte des tickets utilisés", async () => {
+    const cfg = { data: {
+      tenantId: "t1", routerConnectionId: 7,
+      routeur: { adresse: "https://routeur.test", utilisateur: "lecture", motDePasse: "x" },
+    } };
+    const j = await executer("Relever les tickets utilisés", cfg, [], fauxRouteur());
+    assert.equal(j.tenantId, "t1");
+    assert.equal(j.routerConnectionId, 7);
+    assert.equal(j.tickets.length, 4); // c1 jamais utilisé : exclu
+    const a1 = j.tickets.find((t) => t.hash === empreinte("a1"));
+    assert.deepEqual(a1, { hash: empreinte("a1"), profil: "01-JOUR", lot: 101, lotDate: "2026-11-03" });
+    assert.ok(j.tickets.every((t) => /^[0-9a-f]{64}$/.test(t.hash)));
   });
 
   it("en V3 (sans vendeurs ni gérant), rapport de zone pour l'admin seul", async () => {
@@ -115,16 +176,21 @@ describe("Rapport des ventes (cycle 00h à 00h)", () => {
     const appels = [];
     const j = await executer("Envoyer le rapport des ventes", calcule, appels, null);
     assert.equal(j.rapportEnvois, 1);
+    assert.equal(appels.length, 2); // texte + document CSV
     assert.equal(appels[0].body.to, "+22670000001");
+    assert.match(appels[1].body.toString("utf8"), /TOTAL;3;;20000;/);
   });
 
-  it("envoie le rapport complet sur Telegram si la zone l'a choisi", async () => {
+  it("envoie texte + CSV sur Telegram si la zone l'a choisi", async () => {
     const calcule = await executer("Calculer le rapport des ventes",
       { data: { ...CONFIG.data, canal: "telegram" } }, [], fauxRouteur());
     const appels = [];
     await executer("Envoyer le rapport des ventes", calcule, appels, null);
-    assert.equal(appels.length, 1);
+    assert.equal(appels.length, 2);
+    assert.match(appels[0].url, /sendMessage/);
     assert.equal(appels[0].body.chat_id, "99");
     assert.match(appels[0].body.text, /Total vendu : 20 000 F/);
+    assert.match(appels[1].url, /sendDocument/);
+    assert.match(appels[1].body.toString("utf8"), /a1;2026-11-03;—;01-JOUR;5000;/);
   });
 });

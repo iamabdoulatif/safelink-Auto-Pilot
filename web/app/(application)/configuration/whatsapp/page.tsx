@@ -308,6 +308,7 @@ function FicheZone({ zoneInitiale }: { zoneInitiale: Zone }) {
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor={`cycle-rapport-${zoneInitiale.routerConnectionId}`}>Cycle de calcul (de 00h à 00h)</Label>
                 <select id={`cycle-rapport-${zoneInitiale.routerConnectionId}`} className="h-9 rounded-lg border border-input bg-background px-2.5 text-sm outline-none focus-visible:border-ring" value={rapportPlanification} onChange={(e) => setRapportPlanification(e.target.value)}>
+                  <option value="journalier">Journalier : chaque jour, la veille (00h à 00h)</option>
                   <option value="decade">Décade : 1er-10, 11-20, 21-fin du mois</option>
                   <option value="hebdomadaire">Hebdomadaire : lundi à lundi</option>
                   <option value="mensuel">Mensuel : 1er au 1er</option>
@@ -333,8 +334,10 @@ function FicheZone({ zoneInitiale }: { zoneInitiale: Zone }) {
             </div>
           )}
           <p className="text-xs text-muted-foreground">
-            Le gérant et l'admin reçoivent le total et le détail par profil ;
-            chaque vendeur reçoit le point de sa zone, sur le canal choisi.
+            Le gérant et l'admin reçoivent le total, le détail par profil et
+            le CSV ticket par ticket (avec l'heure de vente relevée toutes
+            les 15 minutes) ; chaque vendeur reçoit uniquement ses ventes,
+            en texte et en CSV, sur le canal choisi.
           </p>
         </div>
         <div>

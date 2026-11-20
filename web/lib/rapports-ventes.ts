@@ -2,6 +2,9 @@
 // Logique pure (dates ISO AAAA-MM-JJ, fuseau du serveur = UTC,
 // cohérent avec Africa/Abidjan) : aucune requête ici.
 //
+// - journalier   : la veille 00:00 à aujourd'hui 00:00. Dû chaque
+//                  jour : le workflow l'envoie au premier cycle qui
+//                  suit minuit (vers 00h05 avec le cycle de 15 min).
 // - decade       : du 1er 00:00 au 11 00:00 (le 1er au 10 inclus),
 //                  du 11 au 21 (11 au 20), du 21 au 1er du mois
 //                  suivant (21 à fin de mois). Envoi le 11, le 21
@@ -12,7 +15,7 @@
 //                  lendemain), envoi à la date d'envoi choisie.
 
 export type PlanificationRapport =
-  | "decade" | "hebdomadaire" | "mensuel" | "personnalise";
+  | "journalier" | "decade" | "hebdomadaire" | "mensuel" | "personnalise";
 
 export type PeriodeRapport = { debut: string; fin: string }; // fin exclusive
 
@@ -37,6 +40,9 @@ export function periodePrecedente(
   aujourdhui: string,
   personnalisee?: PeriodeRapport,
 ): PeriodeRapport | null {
+  if (planification === "journalier") {
+    return { debut: ajouterJours(aujourdhui, -1), fin: aujourdhui };
+  }
   const jour = Number(aujourdhui.slice(8, 10));
   if (planification === "decade") {
     if (jour === 1) {

@@ -75,6 +75,14 @@ describe("validerZoneWifi", () => {
     assert.ok("zone" in ok && ok.zone.latitude === 12.3714);
   });
 
+  it("accepte le cycle journalier du rapport des ventes", () => {
+    const ok = validerZoneWifi({
+      numeroAdmin: "+22670000001", rapportActif: true,
+      rapportPlanification: "journalier",
+    });
+    assert.ok("zone" in ok && ok.zone.rapportPlanification === "journalier");
+  });
+
   it("refuse une période personnalisée incohérente", () => {
     assert.ok("erreur" in validerZoneWifi({
       numeroAdmin: "+22670000001", rapportActif: true,

@@ -6,8 +6,18 @@ import {
   rapportEstDu,
 } from "./rapports-ventes.ts";
 
-// Cycles de 00h à 00h : décade (1-10, 11-20, 21-fin), semaine, mois.
+// Cycles de 00h à 00h : journalier, décade (1-10, 11-20, 21-fin),
+// semaine, mois.
 describe("rapportEstDu", () => {
+  it("journalier : chaque jour, la veille complète", () => {
+    assert.deepEqual(rapportEstDu("journalier", "2026-11-20"),
+      { debut: "2026-11-19", fin: "2026-11-20" });
+    assert.deepEqual(rapportEstDu("journalier", "2026-12-01"),
+      { debut: "2026-11-30", fin: "2026-12-01" });
+    assert.deepEqual(rapportEstDu("journalier", "2027-01-01"),
+      { debut: "2026-12-31", fin: "2027-01-01" });
+  });
+
   it("décade : envoi le 11, le 21 et le 1er, pour le cycle fermé", () => {
     assert.deepEqual(rapportEstDu("decade", "2026-11-11"),
       { debut: "2026-11-01", fin: "2026-11-11" });

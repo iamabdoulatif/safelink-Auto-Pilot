@@ -74,6 +74,29 @@ export async function GET(
     "SELECT chat_id, jeton_chiffre FROM configurations_telegram WHERE tenant_id = $1",
     [l["tenant_id"]],
   );
+  // Heures de première utilisation relevées par le suivi de
+  // 15 minutes : seules les empreintes voyagent, jamais les codes.
+  // Le workflow rattache chaque ticket vendu à son empreinte et
+  // retombe sur la date du lot quand l'heure n'est pas connue.
+  const { rows: suivi } = await db.query(
+    `SELECT ticket_hash,
+        to_char(premiere_utilisation_le AT TIME ZONE 'UTC',
+                'YYYY-MM-DD"T"HH24:MI:SS"Z"') AS vu_le,
+        heure_connue, lot_date::text AS lot_date
+     FROM suivi_ventes_tickets
+     WHERE tenant_id = $1 AND router_connection_id = $2
+       AND ((lot_date >= $3::date AND lot_date < $4::date)
+         OR (premiere_utilisation_le >= $3::date
+             AND premiere_utilisation_le < $4::date))`,
+    [l["tenant_id"], l["router_connection_id"], l["debut"], l["fin"]],
+  );
+  const ventesSuivi = (suivi as Record<string, unknown>[]).map((s) => ({
+    ticketHash: s["ticket_hash"],
+    vuLe: s["vu_le"],
+    heureConnue: s["heure_connue"] === true,
+    lotDate: s["lot_date"] ?? "",
+  }));
+
   const ligneWa = (wa as Record<string, unknown>[])[0];
   const ligneTg = (tg as Record<string, unknown>[])[0];
   let jetonTelegram: string | null = null;
@@ -107,6 +130,7 @@ export async function GET(
         motDePasse,
       },
       lotsVendeurs: lots,
+      ventesSuivi,
       canaux: {
         telegramChatId: ligneTg?.["chat_id"] ?? "",
         telegramBotToken: jetonTelegram ?? "",

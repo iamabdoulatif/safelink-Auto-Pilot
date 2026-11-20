@@ -24,7 +24,7 @@ export type EntreeZoneWifi = {
   numerosVendeurs: string[];
   rapportActif: boolean;
   rapportCanal: "telegram" | "whatsapp";
-  rapportPlanification: "decade" | "hebdomadaire" | "mensuel" | "personnalise";
+  rapportPlanification: "journalier" | "decade" | "hebdomadaire" | "mensuel" | "personnalise";
   rapportDebut: string;
   rapportFin: string;
   rapportDateEnvoi: string;
@@ -116,7 +116,8 @@ export function validerZoneWifi(
   }
   const rapportCanal = b["rapportCanal"] === "whatsapp" ? "whatsapp" : "telegram";
   const planificationBrute = b["rapportPlanification"];
-  const rapportPlanification = planificationBrute === "decade"
+  const rapportPlanification = planificationBrute === "journalier"
+    || planificationBrute === "decade"
     || planificationBrute === "hebdomadaire"
     || planificationBrute === "mensuel" || planificationBrute === "personnalise"
     ? planificationBrute : "decade";
