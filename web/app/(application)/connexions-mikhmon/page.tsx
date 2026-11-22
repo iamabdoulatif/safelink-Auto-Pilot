@@ -15,6 +15,8 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { ImportSafelinkhub } from "@/components/import-safelinkhub";
+import { versFormulaireMikhmon } from "@/lib/safelinkhub-import";
 
 // Page « Mes connexions Mikhmon » : installations Mikhmon de l'espace
 // (nom, variante V3/SF v1/V2, hôte, port, URL, rôle, identifiant, mot de
@@ -218,6 +220,15 @@ function Contenu({ initiales }: { initiales: Promise<{ data?: Installation[] }> 
         </Alert>
       )}
 
+      <ImportSafelinkhub
+        libelle="Utiliser"
+        onChoisir={(r) => {
+          setEditionId(null);
+          setErreur(null);
+          setMessage("Champs remplis depuis SafeLinkHub : saisissez l'identifiant et le mot de passe Mikhmon, puis enregistrez.");
+          setFormulaire((f) => ({ ...f, ...versFormulaireMikhmon(r), mot_de_passe: "" }));
+        }}
+      />
       <Card>
         <CardHeader>
           <CardTitle>

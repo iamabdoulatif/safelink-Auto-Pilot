@@ -15,6 +15,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { ImportSafelinkhub } from "@/components/import-safelinkhub";
 
 // Page « Mes routeurs » : section RouterOS SEPAREE de Mikhmon
 // (adresse, utilisateur + mot de passe de lecture, utilisateur + mot de
@@ -188,6 +189,14 @@ function Contenu() {
         </Alert>
       )}
 
+      <ImportSafelinkhub
+        libelle="Utiliser cette adresse"
+        onChoisir={(r) => {
+          setErreur(null);
+          setFormulaire((f) => ({ ...f, adresse_routeros: r.routerosUrl }));
+          setMessage("Adresse RouterOS remplie par le tunnel SafeLinkHub (" + r.name + ") : choisissez la configuration, saisissez les mots de passe, puis enregistrez.");
+        }}
+      />
       <Card>
         <CardHeader>
           <CardTitle>Configuration</CardTitle>
