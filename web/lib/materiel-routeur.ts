@@ -2,10 +2,12 @@ import { db } from "@/lib/db";
 import { dechiffrer } from "@/lib/chiffrement-serveur";
 import { extraireMateriel } from "@/lib/extraire-materiel";
 import type { Materiel } from "@/lib/extraire-materiel";
-import { rosAvecIdentifiants } from "@/lib/routeros";
+import { rosAvecIdentifiants, rosLecture } from "@/lib/routeros";
 
-// Lit le materiel en direct avec le compte de lecture de l'espace. Le modele
-// et la version sont gardes en base pour rester affiches si le routeur tombe.
+// Lit le materiel en direct avec le compte de lecture de l'espace, a defaut
+// avec le compte de lecture du parc (ROUTEROS_USER, celui des releves et des
+// routeurs importes de SafeLinkHub). Le modele et la version sont gardes en
+// base pour rester affiches si le routeur tombe.
 export async function lireMaterielRouteur(
   tenantId: string,
   routeurId: number,
@@ -21,15 +23,16 @@ export async function lireMaterielRouteur(
     [tenantId, urlBase],
   );
   const compte = rows[0];
-  if (!compte?.utilisateur_lecture || !compte.mot_de_passe_lecture_chiffre) {
-    return null;
-  }
+  const compteEspace = !!compte?.utilisateur_lecture && !!compte.mot_de_passe_lecture_chiffre;
+  if (!compteEspace && !process.env.ROUTEROS_USER) return null;
   try {
-    const ros = rosAvecIdentifiants(
-      urlBase,
-      compte.utilisateur_lecture,
-      dechiffrer(compte.mot_de_passe_lecture_chiffre),
-    );
+    const ros = compteEspace
+      ? rosAvecIdentifiants(
+          urlBase,
+          compte.utilisateur_lecture as string,
+          dechiffrer(compte.mot_de_passe_lecture_chiffre as string),
+        )
+      : rosLecture(urlBase);
     const [resource, routerboard] = await Promise.all([
       ros.get<Record<string, unknown>>("/system/resource"),
       ros
