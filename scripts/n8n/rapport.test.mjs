@@ -6,6 +6,10 @@ import { fileURLToPath } from "node:url";
 import { createRequire } from "node:module";
 import { createHash } from "node:crypto";
 
+// Document joint : formulaire multipart envoyé en texte (le bac à sable de
+// n8n sérialisait un Buffer en JSON et Telegram ne recevait aucun fichier).
+const estDocument = (b) => typeof b === "string" && b.includes("Content-Disposition: form-data");
+
 const empreinte = (code) => createHash("sha256").update(code, "utf8").digest("hex");
 
 const require = createRequire(import.meta.url);
@@ -103,7 +107,7 @@ describe("Rapport des ventes (cycle 00h à 00h)", () => {
     const j = await executer("Envoyer le rapport des ventes", calcule, appels, null);
     assert.equal(j.rapportEnvois, 4);
     const textes = appels.filter((a) => a.body && a.body.text);
-    const documents = appels.filter((a) => Buffer.isBuffer(a.body));
+    const documents = appels.filter((a) => estDocument(a.body));
     assert.equal(textes.length, 4);
     assert.equal(documents.length, 4);
     const parNumero = new Map(textes.map((a) => [a.body.to, a.body.text]));
@@ -151,7 +155,7 @@ describe("Rapport des ventes (cycle 00h à 00h)", () => {
     const textes = appels.filter((a) => a.body && a.body.text);
     assert.match(textes[0].body.text, /Rapport journalier des ventes/);
     assert.match(textes[0].body.text, /le 2026-11-05 \(00h à 00h\)/);
-    const doc = appels.find((a) => Buffer.isBuffer(a.body)).body.toString("utf8");
+    const doc = appels.find((a) => estDocument(a.body)).body.toString("utf8");
     assert.match(doc, /a1;2026-11-05;08:42;01-JOUR;5000;/);
   });
 
@@ -180,7 +184,7 @@ describe("Rapport des ventes (cycle 00h à 00h)", () => {
     const destinataires = appels.filter((a) => a.body && a.body.to).map((a) => a.body.to);
     assert.deepEqual([...new Set(destinataires)].sort(),
       ["+22670000001", "+22670000002", "+22670000003", "+22670000004"]);
-    const csvs = appels.filter((a) => Buffer.isBuffer(a.body)).map((a) => a.body.toString("utf8"));
+    const csvs = appels.filter((a) => estDocument(a.body)).map((a) => a.body.toString("utf8"));
     assert.equal(csvs.length, 4);
     assert.ok(csvs.every((c) => /TOTAL;3;;20000;/.test(c))); // tous : rapport complet de la zone
   });
