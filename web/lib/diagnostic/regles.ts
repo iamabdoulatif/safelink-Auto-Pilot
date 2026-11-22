@@ -39,8 +39,10 @@ export async function analyser(routeurId: number, releveId: number) {
        RETURNING id, regle, titre, gravite, cible`,
       [routeurId, regle.code, regle.categorie, regle.gravite,
         trouve.cible ?? null, regle.titre, trouve.constat,
-        { releve_id: releveId, extrait: releveLu.donnees[section] ?? null },
-        trouve.correctif ?? null]);
+        // JSON explicite : pg enverrait un tableau JS comme tableau
+        // PostgreSQL (« {…} »), refusé par une colonne jsonb.
+        JSON.stringify({ releve_id: releveId, extrait: releveLu.donnees[section] ?? null }),
+        trouve.correctif == null ? null : JSON.stringify(trouve.correctif)]);
     constats.push(lignes[0] as ConstatEnregistre);
   }
   return constats;
