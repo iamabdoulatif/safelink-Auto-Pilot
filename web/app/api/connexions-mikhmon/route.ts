@@ -7,6 +7,7 @@ import {
   testerInstallation,
 } from "@/lib/mikhmon-installations";
 import type { EntreeInstallation } from "@/lib/mikhmon-installations";
+import { configurerComptesConnexion } from "@/lib/safelinkhub";
 
 // Connexions Mikhmon de l'espace : liste masquee (jamais de mot de
 // passe) et creation. Apres creation, le test serveur immediat
@@ -57,11 +58,19 @@ export async function POST(req: Request) {
     if ("erreur" in creee) {
       return Response.json({ error: creee.erreur }, { status: 400 });
     }
+    // Routeur SafeLinkHub (hôte de tunnel) : comptes RouterOS lecture +
+    // écriture posés automatiquement, la connexion est prête pour le
+    // réapprovisionnement sans saisie supplémentaire.
+    let comptes: string | null = null;
+    if (entree.hote.trim().startsWith("10.66.")) {
+      comptes = await configurerComptesConnexion(tenantId, creee.installation.id, entree.hote)
+        .catch((e) => (e instanceof Error ? e.message : "échec"));
+    }
     // Test serveur immediat : jamais depuis le navigateur.
     const test = await testerInstallation(ctx, creee.installation.id);
     if ("erreur" in test) {
       return Response.json(
-        { data: { ...creee.installation, test: test.erreur } },
+        { data: { ...creee.installation, test: test.erreur, comptesRouterOS: comptes ?? "ok" } },
         { status: 201 });
     }
     const { rows } = await db.query(
@@ -76,6 +85,7 @@ export async function POST(req: Request) {
         ...creee.installation,
         statutConnexion: lignes[0]?.statut_connexion ?? "en-ligne",
         dernierTestLe: lignes[0]?.dernier_test_le ?? null,
+        comptesRouterOS: entree.hote.trim().startsWith("10.66.") ? (comptes ?? "ok") : null,
       },
     }, { status: 201 });
   } catch (e) {

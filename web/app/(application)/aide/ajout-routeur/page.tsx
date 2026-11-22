@@ -105,6 +105,27 @@ export default function TutorielAjoutRouteur() {
 
       <Card>
         <CardHeader>
+          <CardTitle>Ensuite : réapprovisionnement automatique des tickets</CardTitle>
+          <CardDescription>Pour qu&apos;Auto-Pilot régénère les tickets quand le stock baisse.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ol className="flex flex-col gap-4">
+            <Etape n={1} titre="Créer la connexion Mikhmon">
+              <b>Routeurs → Connexions Mikhmon → Importer depuis SafeLinkHub → « Utiliser »</b> sur le routeur, puis
+              l&apos;identifiant et le mot de passe MikHmon, et <b>Enregistrer</b>. Les comptes RouterOS (lecture et
+              écriture) sont posés automatiquement par SafeLinkHub : rien d&apos;autre à saisir. Pour une connexion
+              déjà créée : <b>Mes routeurs → « Comptes automatiques (SafeLinkHub) »</b>.
+            </Etape>
+            <Etape n={2} titre="Créer la règle">
+              <b>Tickets → Réapprovisionnement automatique</b> : routeur, profil Hotspot, seuil minimum (ex. 50),
+              quantité à générer (ex. 120), fréquence (15 min) et canal de livraison du PDF (Telegram).
+            </Etape>
+          </ol>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
           <CardTitle>En cas de problème</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-4 text-sm">

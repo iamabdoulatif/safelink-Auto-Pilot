@@ -116,7 +116,7 @@ function Contenu({ initiales }: { initiales: Promise<{ data?: Installation[] }> 
         }),
       });
       const j = (await r.json()) as {
-        data?: Installation & { test?: string };
+        data?: Installation & { test?: string; comptesRouterOS?: string | null };
         error?: string;
       };
       if (!r.ok) {
@@ -136,9 +136,14 @@ function Contenu({ initiales }: { initiales: Promise<{ data?: Installation[] }> 
       setMessage(
         editionId !== null
           ? "Connexion Mikhmon modifiée."
-          : j.data?.test
-            ? "Enregistrée, mais test en échec : " + j.data.test
-            : "Connexion enregistrée et en ligne.",
+          : (j.data?.test
+              ? "Enregistrée, mais test en échec : " + j.data.test
+              : "Connexion enregistrée et en ligne.") +
+            (j.data?.comptesRouterOS === "ok"
+              ? " Comptes RouterOS posés automatiquement par SafeLinkHub : prête pour le réapprovisionnement."
+              : j.data?.comptesRouterOS
+                ? " Comptes RouterOS non posés : " + j.data.comptesRouterOS
+                : ""),
       );
       await recharger();
     } catch {

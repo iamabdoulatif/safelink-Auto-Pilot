@@ -140,6 +140,30 @@ function Contenu() {
     }
   }
 
+  async function comptesAuto() {
+    setMessage(null);
+    setErreur(null);
+    setOccupe(true);
+    try {
+      const r = await fetch("/api/safelinkhub/comptes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ configurationId: Number(configId) }),
+      });
+      const j = (await r.json().catch(() => ({}))) as { error?: string };
+      if (!r.ok) {
+        setErreur(j.error ?? "Configuration impossible.");
+        return;
+      }
+      setMessage("Comptes RouterOS lecture et écriture posés par SafeLinkHub : la connexion est prête (réapprovisionnement compris).");
+      await charger(configId);
+    } catch {
+      setErreur("Requête impossible : vérifiez votre connexion.");
+    } finally {
+      setOccupe(false);
+    }
+  }
+
   async function tester() {
     setMessage(null);
     setErreur(null);
@@ -311,6 +335,15 @@ function Contenu() {
             />
           </div>
           <div className="flex flex-wrap gap-2 pt-1">
+            <Button
+              type="button"
+              variant="outline"
+              disabled={occupe || !configId}
+              onClick={() => void comptesAuto()}
+              title="Pour un routeur connecté à SafeLinkHub : comptes posés automatiquement, sans mot de passe à saisir"
+            >
+              Comptes automatiques (SafeLinkHub)
+            </Button>
             <Button
               type="button"
               variant="outline"

@@ -199,3 +199,42 @@ export async function lierSansCompte(tenantId: string, libelle: string): Promise
   );
   return j.orgName;
 }
+
+// Comptes RouterOS d'une connexion Mikhmon pointant vers un routeur
+// SafeLinkHub (hôte 10.66.0.x) : SafeLinkHub pose le compte de lecture du
+// parc et un compte d'écriture propre à ce routeur (mot de passe aléatoire,
+// chiffré ici, jamais affiché), puis la connexion est remplie. Sans cela,
+// le réapprovisionnement ne peut pas créer de tickets. Renvoie une erreur
+// lisible ou null.
+export const UTILISATEUR_ECRITURE = "autopilot-fix";
+
+export async function configurerComptesConnexion(
+  tenantId: string,
+  configurationId: number,
+  hote: string,
+): Promise<string | null> {
+  if (!hote.trim().startsWith("10.66.")) return "Hôte hors du tunnel SafeLinkHub.";
+  const liste = await routeursSafelinkhub(tenantId);
+  const r = liste?.routeurs.find((x) => x.tunnelIp === hote.trim());
+  if (!r) return "Routeur introuvable dans l'organisation SafeLinkHub liée.";
+  const { randomBytes } = await import("node:crypto");
+  const motDePasse = randomBytes(18).toString("base64url");
+  const lecture = comptesAutoPilot().find((c) => c.access === "read");
+  await appelInterne(tenantId, "/api/internal/autopilot/accounts", {
+    routerId: r.id,
+    accounts: [...(lecture ? [lecture] : []), { name: UTILISATEUR_ECRITURE, password: motDePasse, access: "write" }],
+  });
+  await db.query(
+    `UPDATE configurations_routeurs
+     SET adresse_routeros = $3, utilisateur_lecture = $4, mot_de_passe_lecture_chiffre = $5,
+         utilisateur_correction = $6, mot_de_passe_correction_chiffre = $7, updated_at = now()
+     WHERE id = $1 AND tenant_id = $2`,
+    [
+      configurationId, tenantId, r.routerosUrl,
+      lecture?.name ?? UTILISATEUR_ECRITURE,
+      chiffrer(lecture?.password ?? motDePasse),
+      UTILISATEUR_ECRITURE, chiffrer(motDePasse),
+    ],
+  );
+  return null;
+}
