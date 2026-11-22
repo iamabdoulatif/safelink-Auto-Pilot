@@ -77,6 +77,19 @@ export function AjouterParc() {
     setLie(!!j.data?.lie);
   }
 
+  async function sansCompte() {
+    setOccupe(true);
+    setErreur(null);
+    try {
+      const r = await fetch("/api/safelinkhub/autonome", { method: "POST" });
+      const j = (await r.json().catch(() => ({}))) as { error?: string };
+      if (!r.ok) { setErreur(j.error ?? "Création impossible."); return; }
+      setLie(true);
+    } finally {
+      setOccupe(false);
+    }
+  }
+
   async function lier() {
     setOccupe(true);
     setErreur(null);
@@ -199,8 +212,17 @@ export function AjouterParc() {
               {lie === null && <p className="text-muted-foreground">Chargement…</p>}
               {lie === false && (
                 <div className="flex flex-col gap-2">
+                  <p className="font-medium">Pas de compte SafeLinkHub ?</p>
                   <p className="text-muted-foreground">
-                    Liez d&apos;abord votre compte : SafeLinkHub → Réglages →
+                    Continuez directement : le tunnel WireGuard est fourni par
+                    SafeLinkHub en coulisse, sans compte à créer.
+                  </p>
+                  <Button className="w-fit" disabled={occupe} onClick={() => void sansCompte()}>
+                    Continuer sans compte SafeLinkHub
+                  </Button>
+                  <p className="mt-2 font-medium">Vous avez déjà un compte SafeLinkHub ?</p>
+                  <p className="text-muted-foreground">
+                    Liez-le pour retrouver vos routeurs : SafeLinkHub → Réglages →
                     Avancé → « Générer un code de liaison ».
                   </p>
                   <div className="flex gap-2">
@@ -265,6 +287,9 @@ export function AjouterParc() {
                   <AlertDescription>{erreur}</AlertDescription>
                 </Alert>
               )}
+              <a href="/aide/ajout-routeur" className="w-fit text-xs text-muted-foreground underline">
+                Voir le tutoriel pas à pas
+              </a>
               <button
                 type="button"
                 className="w-fit text-xs text-muted-foreground underline"

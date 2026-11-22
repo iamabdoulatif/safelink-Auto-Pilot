@@ -25,6 +25,7 @@ import {
   UserRound,
   Users,
   Wrench,
+  BookOpen,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { SelecteurEspace } from "@/components/selecteur-espace";
@@ -84,6 +85,7 @@ const GROUPES: Groupe[] = [
         titre: "Configuration routeur",
         icone: Wrench,
       },
+      { href: "/aide/ajout-routeur", titre: "Tutoriel : ajouter un routeur", icone: BookOpen },
     ],
   },
   {

@@ -175,3 +175,27 @@ export async function exclureDuParc(tenantId: string, urlBase: string): Promise<
     [tenantId, r.id],
   );
 }
+
+// Espace sans compte SafeLinkHub : SafeLinkHub lui crée une organisation
+// technique (une seule par espace) et la lie d'emblée. L'identité de
+// l'espace part hachée, jamais en clair.
+export async function lierSansCompte(tenantId: string, libelle: string): Promise<string> {
+  const { createHash } = await import("node:crypto");
+  const ref = createHash("sha256").update("safelink-autopilot:" + tenantId).digest("hex");
+  const r = await fetch(base() + "/api/internal/autopilot/standalone", {
+    method: "POST",
+    headers: entetes({ "content-type": "application/json" }),
+    body: JSON.stringify({ ref, label: libelle.slice(0, 60) || "Espace" }),
+    signal: AbortSignal.timeout(10000),
+  });
+  const j = (await r.json().catch(() => ({}))) as { token?: string; orgName?: string; error?: string };
+  if (!r.ok || !j.token || !j.orgName) throw new Error(j.error ?? "SafeLinkHub injoignable.");
+  await db.query(
+    `INSERT INTO liaisons_safelinkhub (tenant_id, jeton_chiffre, organisation)
+     VALUES ($1, $2, $3)
+     ON CONFLICT (tenant_id) DO UPDATE SET jeton_chiffre = EXCLUDED.jeton_chiffre,
+       organisation = EXCLUDED.organisation, lie_le = now()`,
+    [tenantId, chiffrer(j.token), j.orgName],
+  );
+  return j.orgName;
+}
