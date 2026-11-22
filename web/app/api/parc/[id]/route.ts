@@ -4,7 +4,8 @@ import {
   modifierRouteurParc,
   supprimerRouteurParc,
 } from "@/lib/parc-routeurs";
-import { adresseTunnelAutorisee } from "@/lib/safelinkhub";
+import { adresseTunnelAutorisee, exclureDuParc } from "@/lib/safelinkhub";
+import { db } from "@/lib/db";
 
 // Un routeur du parc : renommer (nom + URL affiches) ou retirer
 // (suppression locale, le routeur lui-meme est intact). Isole par tenant,
@@ -74,8 +75,11 @@ export async function DELETE(
     return Response.json({ error: "Identifiant invalide." }, { status: 400 });
   }
   try {
+    const { rows: [avant] } = await db.query<{ url_base: string }>(
+      "SELECT url_base FROM routeurs WHERE id = $1 AND tenant_id = $2", [id, tenantId]);
     const resultat = await supprimerRouteurParc(
       { tenantId, utilisateurId }, id);
+    if (!("erreur" in resultat) && avant) await exclureDuParc(tenantId, avant.url_base).catch(() => {});
     if ("erreur" in resultat) {
       const statut = resultat.erreur === "Routeur introuvable."
         ? 404

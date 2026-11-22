@@ -114,9 +114,14 @@ export async function synchroniserParc(tenantId: string): Promise<ResultatSynchr
     [tenantId],
   );
   const { rosLecture } = await import("@/lib/routeros");
+  const { rows: [l] } = await db.query<{ exclus: string[] }>(
+    "SELECT exclus FROM liaisons_safelinkhub WHERE tenant_id = $1",
+    [tenantId],
+  );
+  const exclus = new Set(l?.exclus ?? []);
   const nouveaux: number[] = [];
   for (const r of liste.routeurs) {
-    if (!r.online) continue;
+    if (!r.online || exclus.has(r.id)) continue;
     const memeUrl = rows.find((x) => x.url_base === r.routerosUrl);
     if (memeUrl) continue;
     const memeNom = rows.find((x) => x.nom.trim().toLowerCase() === r.name.trim().toLowerCase());
@@ -155,4 +160,18 @@ export async function adresseTunnelAutorisee(tenantId: string, urlBase: string):
   if (!hote.startsWith("10.66.")) return true;
   const liste = await routeursSafelinkhub(tenantId).catch(() => null);
   return !!liste?.routeurs.some((r) => r.tunnelIp === hote);
+}
+
+// Retrait d'un routeur du parc : s'il vient de SafeLinkHub (adresse de
+// tunnel), il est exclu de la reconnaissance automatique, sinon il
+// reviendrait à la prochaine ouverture du tableau de bord.
+export async function exclureDuParc(tenantId: string, urlBase: string): Promise<void> {
+  if (!/^https?:\/\/10\.66\./i.test(urlBase)) return;
+  const liste = await routeursSafelinkhub(tenantId).catch(() => null);
+  const r = liste?.routeurs.find((x) => x.routerosUrl === urlBase);
+  if (!r) return;
+  await db.query(
+    "UPDATE liaisons_safelinkhub SET exclus = array_append(exclus, $2) WHERE tenant_id = $1 AND NOT ($2 = ANY(exclus))",
+    [tenantId, r.id],
+  );
 }
