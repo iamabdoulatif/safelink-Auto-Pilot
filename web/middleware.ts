@@ -14,7 +14,7 @@ const NOM_COOKIE = "sl_session";
 // - /api/internal/* : HMAC-SHA256 (x-signature, voir lib/n8n-interne) ;
 // - /api/n8n/retour : HMAC-SHA256 des comptes rendus ;
 // - /api/telegram/* : secret partage x-n8n-secret ;
-// - /api/tickets/auto : secret CRON (x-cron-secret) ;
+// - /api/tickets/auto, /api/routeurs/releves : secret CRON (x-cron-secret) ;
 // - /api/bots-telegram/webhook : secret propre a l'espace ;
 // - /api/printnode/webhook : secret propre a l'espace (en-tete
 //   x-printnode-webhook-secret).
@@ -24,6 +24,7 @@ const PUBLIC: readonly string[] = [
   "/api/n8n/retour",
   "/api/telegram/",
   "/api/tickets/auto",
+  "/api/routeurs/releves",
   "/api/bots-telegram/webhook",
   "/api/printnode/webhook",
   "/api/mobile/v1/auth/",

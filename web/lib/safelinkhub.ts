@@ -114,6 +114,7 @@ export async function synchroniserParc(tenantId: string): Promise<ResultatSynchr
     [tenantId],
   );
   const { rosLecture } = await import("@/lib/routeros");
+  const nouveaux: number[] = [];
   for (const r of liste.routeurs) {
     if (!r.online) continue;
     const memeUrl = rows.find((x) => x.url_base === r.routerosUrl);
@@ -124,14 +125,24 @@ export async function synchroniserParc(tenantId: string): Promise<ResultatSynchr
       await rosLecture(r.routerosUrl).get("/system/identity");
       if (memeNom) {
         await db.query("UPDATE routeurs SET url_base = $1, updated_at = now() WHERE id = $2 AND tenant_id = $3", [r.routerosUrl, memeNom.id, tenantId]);
+        nouveaux.push(memeNom.id);
         res.misAJour.push(r.name);
       } else {
-        await db.query("INSERT INTO routeurs (nom, url_base, tenant_id) VALUES ($1, $2, $3)", [r.name, r.routerosUrl, tenantId]);
+        const { rows: [ajout] } = await db.query<{ id: number }>(
+          "INSERT INTO routeurs (nom, url_base, tenant_id) VALUES ($1, $2, $3) RETURNING id",
+          [r.name, r.routerosUrl, tenantId],
+        );
+        nouveaux.push(ajout.id);
         res.ajoutes.push(r.name);
       }
     } catch (e) {
       res.erreurs.push(r.name + " : " + (e instanceof Error ? e.message : "échec"));
     }
+  }
+  // Premier relevé tout de suite : la carte affiche CPU/RAM dès l'ajout.
+  if (nouveaux.length) {
+    const { releverParc } = await import("@/lib/diagnostic/releve-parc");
+    await releverParc({ ids: nouveaux });
   }
   return res;
 }
