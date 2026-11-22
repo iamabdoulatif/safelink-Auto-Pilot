@@ -64,3 +64,84 @@ export async function routeursSafelinkhub(tenantId: string): Promise<{ organisat
 export async function delierSafelinkhub(tenantId: string): Promise<void> {
   await db.query("DELETE FROM liaisons_safelinkhub WHERE tenant_id = $1", [tenantId]);
 }
+
+async function appelInterne<T>(tenantId: string, chemin: string, corps: unknown): Promise<T> {
+  const liaison = await lireLiaison(tenantId);
+  if (!liaison) throw new Error("Espace non lié à SafeLinkHub : saisissez d'abord un code de liaison.");
+  const r = await fetch(base() + chemin, {
+    method: "POST",
+    headers: entetes({ "content-type": "application/json", "x-slh-link": liaison.jeton }),
+    body: JSON.stringify(corps),
+    signal: AbortSignal.timeout(45000),
+  });
+  const j = (await r.json().catch(() => ({}))) as T & { error?: string };
+  if (r.status === 401) throw new Error("Liaison révoquée dans SafeLinkHub : saisissez un nouveau code.");
+  if (!r.ok) throw new Error(j.error ?? "SafeLinkHub injoignable.");
+  return j;
+}
+
+// Ligne à coller dans le terminal MikroTik (générée par SafeLinkHub, seul
+// gestionnaire WireGuard). Si le routeur porte déjà le tunnel SafeLinkHub,
+// elle n'installe rien et le routeur est reconnu par synchroniserParc.
+export async function scriptInstallation(tenantId: string, nom: string): Promise<string> {
+  const j = await appelInterne<{ command: string }>(tenantId, "/api/internal/autopilot/install", { name: nom });
+  return j.command;
+}
+
+// Comptes RouterOS d'Auto-Pilot (variables ROUTEROS_*), posés sur le routeur
+// par SafeLinkHub via sa propre connexion : aucun mot de passe dans un script.
+function comptesAutoPilot() {
+  const comptes: { name: string; password: string; access: "read" | "write" }[] = [];
+  const { ROUTEROS_USER, ROUTEROS_PASS, ROUTEROS_FIX_USER, ROUTEROS_FIX_PASS } = process.env;
+  if (ROUTEROS_USER && ROUTEROS_PASS) comptes.push({ name: ROUTEROS_USER, password: ROUTEROS_PASS, access: "read" });
+  if (ROUTEROS_FIX_USER && ROUTEROS_FIX_PASS) comptes.push({ name: ROUTEROS_FIX_USER, password: ROUTEROS_FIX_PASS, access: "write" });
+  if (!comptes.length) throw new Error("Compte de lecture RouterOS non configuré sur ce serveur (ROUTEROS_USER).");
+  return comptes;
+}
+
+export type ResultatSynchro = { ajoutes: string[]; misAJour: string[]; erreurs: string[] };
+
+// Reconnaît automatiquement les routeurs SafeLinkHub (en ligne) absents du
+// parc : comptes posés par SafeLinkHub, lecture REST vérifiée par le tunnel,
+// puis inscription. Un routeur du parc portant le même nom est repassé sur
+// l'adresse du tunnel au lieu d'être dupliqué.
+export async function synchroniserParc(tenantId: string): Promise<ResultatSynchro> {
+  const res: ResultatSynchro = { ajoutes: [], misAJour: [], erreurs: [] };
+  const liste = await routeursSafelinkhub(tenantId);
+  if (!liste) return res;
+  const { rows } = await db.query<{ id: number; nom: string; url_base: string }>(
+    "SELECT id, nom, url_base FROM routeurs WHERE tenant_id = $1",
+    [tenantId],
+  );
+  const { rosLecture } = await import("@/lib/routeros");
+  for (const r of liste.routeurs) {
+    if (!r.online) continue;
+    const memeUrl = rows.find((x) => x.url_base === r.routerosUrl);
+    if (memeUrl) continue;
+    const memeNom = rows.find((x) => x.nom.trim().toLowerCase() === r.name.trim().toLowerCase());
+    try {
+      await appelInterne(tenantId, "/api/internal/autopilot/accounts", { routerId: r.id, accounts: comptesAutoPilot() });
+      await rosLecture(r.routerosUrl).get("/system/identity");
+      if (memeNom) {
+        await db.query("UPDATE routeurs SET url_base = $1, updated_at = now() WHERE id = $2 AND tenant_id = $3", [r.routerosUrl, memeNom.id, tenantId]);
+        res.misAJour.push(r.name);
+      } else {
+        await db.query("INSERT INTO routeurs (nom, url_base, tenant_id) VALUES ($1, $2, $3)", [r.name, r.routerosUrl, tenantId]);
+        res.ajoutes.push(r.name);
+      }
+    } catch (e) {
+      res.erreurs.push(r.name + " : " + (e instanceof Error ? e.message : "échec"));
+    }
+  }
+  return res;
+}
+
+// Adresse de tunnel (10.66.0.x) : réservée aux routeurs de l'organisation
+// SafeLinkHub liée à l'espace. Sans ce contrôle, un espace pourrait inscrire
+// le routeur d'un autre (même compte de lecture global sur tout le parc).
+export async function adresseTunnelAutorisee(tenantId: string, urlBase: string): Promise<boolean> {
+  const hote = /^https?:\/\/([^/:]+)/i.exec(urlBase)?.[1] ?? "";
+  if (!hote.startsWith("10.66.")) return true;
+  const liste = await routeursSafelinkhub(tenantId).catch(() => null);
+  return !!liste?.routeurs.some((r) => r.tunnelIp === hote);
+}

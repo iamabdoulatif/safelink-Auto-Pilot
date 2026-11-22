@@ -4,6 +4,7 @@ import {
   modifierRouteurParc,
   supprimerRouteurParc,
 } from "@/lib/parc-routeurs";
+import { adresseTunnelAutorisee } from "@/lib/safelinkhub";
 
 // Un routeur du parc : renommer (nom + URL affiches) ou retirer
 // (suppression locale, le routeur lui-meme est intact). Isole par tenant,
@@ -30,6 +31,12 @@ export async function PUT(
     return Response.json({ error: "Corps JSON invalide." }, { status: 400 });
   }
   const b = (corps ?? {}) as Record<string, unknown>;
+  if (typeof b["url_base"] === "string" && !(await adresseTunnelAutorisee(tenantId, b["url_base"]))) {
+    return Response.json(
+      { error: "Adresse de tunnel SafeLinkHub inconnue pour cet espace." },
+      { status: 403 },
+    );
+  }
   try {
     const resultat = await modifierRouteurParc(
       { tenantId, utilisateurId },

@@ -2,6 +2,7 @@ import { db } from "@/lib/db";
 import { session } from "@/lib/session";
 import { peutAgir } from "@/lib/membres";
 import { rosLecture, ErreurRouterOS } from "@/lib/routeros";
+import { adresseTunnelAutorisee } from "@/lib/safelinkhub";
 
 // Inscrit un routeur : nom + base d'API, connectivite verifiee aussitot.
 // Sans connectivite, pas d'inscription : un routeur injoignable des le
@@ -33,6 +34,12 @@ export async function POST(req: Request) {
   if (!/^https?:\/\/[^/\s]+(\/.*)?$/i.test(urlBase) || urlBase.length > 200) {
     return Response.json({ error: "url_base doit etre une URL http(s)." },
       { status: 400 });
+  }
+
+  if (!(await adresseTunnelAutorisee(tenantId, urlBase))) {
+    return Response.json(
+      { error: "Adresse de tunnel SafeLinkHub inconnue pour cet espace : ajoutez ce routeur par le script ou liez d'abord votre compte SafeLinkHub." },
+      { status: 403 });
   }
 
   try {

@@ -6,7 +6,7 @@ import { sessionPage } from "@/lib/session";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { AjouterParc } from "@/components/ajouter-parc";
+import { AjouterParc, SynchroSafelinkhub } from "@/components/ajouter-parc";
 import { CarteRouteur, Pastille } from "@/components/carte-routeur";
 
 // Tableau de bord opérationnel (quotidien) : la question est « où
@@ -446,6 +446,7 @@ export default function TableauDeBord() {
           </p>
         </div>
         <AjouterParc />
+        <SynchroSafelinkhub />
       </div>
       <Suspense fallback={<Chargement />}>
         <TableauBord />
