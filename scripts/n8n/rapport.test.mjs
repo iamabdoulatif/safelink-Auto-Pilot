@@ -8,7 +8,8 @@ import { createHash } from "node:crypto";
 
 // Document joint : formulaire multipart envoyé en texte (le bac à sable de
 // n8n sérialisait un Buffer en JSON et Telegram ne recevait aucun fichier).
-const estDocument = (b) => typeof b === "string" && b.includes("Content-Disposition: form-data");
+const estDocument = (b) => typeof b === "string" && b.includes("Content-Type: text/csv");
+const estHtml = (b) => typeof b === "string" && b.includes("Content-Type: text/html");
 
 const empreinte = (code) => createHash("sha256").update(code, "utf8").digest("hex");
 
@@ -130,11 +131,15 @@ describe("Rapport des ventes (cycle 00h à 00h)", () => {
     const documents = appels.filter((a) => estDocument(a.body));
     assert.equal(textes.length, 4);
     assert.equal(documents.length, 4);
+    const rapportsHtml = appels.filter((a) => estHtml(a.body)).map((a) => a.body);
+    assert.equal(rapportsHtml.length, 4, "un rapport mis en forme par destinataire");
+    assert.match(rapportsHtml[0], /<table>/);
+    assert.match(rapportsHtml[0], /Total vendu<\/small><b[^>]*>20 000 F/);
     const parNumero = new Map(textes.map((a) => [a.body.to, a.body.text]));
     assert.match(parNumero.get("+22670000002"), /Total vendu : 20 000 F/);
     assert.match(parNumero.get("+22670000002"), /01-JOUR : 2 vendus · 10 000 F · reste 1/);
     assert.match(parNumero.get("+22670000002"), /Par vendeur :/);
-    assert.match(parNumero.get("+22670000002"), /document CSV joint/);
+    assert.match(parNumero.get("+22670000002"), /rapport mis en forme et fichier CSV joints/);
     assert.match(parNumero.get("+22670000003"), /Vos tickets vendus : 2/);
     assert.match(parNumero.get("+22670000003"), /Votre total : 10 000 F/);
     assert.match(parNumero.get("+22670000004"), /Vos tickets vendus : 1/);
@@ -200,7 +205,7 @@ describe("Rapport des ventes (cycle 00h à 00h)", () => {
     const appels = [];
     const j = await executer("Envoyer le rapport des ventes", calcule, appels, null);
     assert.equal(j.rapportEnvois, 4); // admin + gérant + 2 vendeurs
-    assert.equal(appels.length, 8); // (texte + CSV) × 4
+    assert.equal(appels.length, 12); // (texte + rapport mis en forme + CSV) × 4
     const destinataires = appels.filter((a) => a.body && a.body.to).map((a) => a.body.to);
     assert.deepEqual([...new Set(destinataires)].sort(),
       ["+22670000001", "+22670000002", "+22670000003", "+22670000004"]);
@@ -224,11 +229,13 @@ describe("Rapport des ventes (cycle 00h à 00h)", () => {
       { data: { ...CONFIG.data, canal: "telegram" } }, [], fauxRouteur());
     const appels = [];
     await executer("Envoyer le rapport des ventes", calcule, appels, null);
-    assert.equal(appels.length, 2);
+    assert.equal(appels.length, 3); // texte, rapport mis en forme, CSV
     assert.match(appels[0].url, /sendMessage/);
     assert.equal(appels[0].body.chat_id, "99");
     assert.match(appels[0].body.text, /Total vendu : 20 000 F/);
     assert.match(appels[1].url, /sendDocument/);
-    assert.match(appels[1].body.toString("utf8"), /a1;2026-11-03;—;01-JOUR;5000;/);
+    assert.ok(estHtml(appels[1].body));
+    assert.match(appels[1].body, /filename="rapport-ventes-2026-11-01\.html"/);
+    assert.match(appels[2].body.toString("utf8"), /a1;2026-11-03;—;01-JOUR;5000;/);
   });
 });
