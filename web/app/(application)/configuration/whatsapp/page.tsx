@@ -32,6 +32,7 @@ type Zone = {
   rapportActif: boolean;
   rapportCanal: string;
   rapportPlanification: string;
+  rapportFormat?: string;
   rapportDebut: string;
   rapportFin: string;
   rapportDateEnvoi: string;
@@ -87,6 +88,7 @@ function FicheZone({ zoneInitiale }: { zoneInitiale: Zone }) {
   const [rapportActif, setRapportActif] = useState(zoneInitiale.rapportActif);
   const [rapportCanal, setRapportCanal] = useState(zoneInitiale.rapportCanal || "whatsapp");
   const [rapportPlanification, setRapportPlanification] = useState(zoneInitiale.rapportPlanification || "decade");
+  const [rapportFormat, setRapportFormat] = useState(zoneInitiale.rapportFormat || "xlsx");
   const [rapportDebut, setRapportDebut] = useState(zoneInitiale.rapportDebut);
   const [rapportFin, setRapportFin] = useState(zoneInitiale.rapportFin);
   const [rapportDateEnvoi, setRapportDateEnvoi] = useState(zoneInitiale.rapportDateEnvoi);
@@ -118,7 +120,7 @@ function FicheZone({ zoneInitiale }: { zoneInitiale: Zone }) {
           numeroAdmin,
           numeroGerant,
           numerosVendeurs: vendeurs.split(/[\n,;]+/).map((v) => v.trim()).filter(Boolean),
-          rapportActif, rapportCanal, rapportPlanification,
+          rapportActif, rapportCanal, rapportPlanification, rapportFormat,
           rapportDebut, rapportFin, rapportDateEnvoi,
           latitude: latitude ? Number(latitude) : null,
           longitude: longitude ? Number(longitude) : null,
@@ -314,6 +316,14 @@ function FicheZone({ zoneInitiale }: { zoneInitiale: Zone }) {
                   <option value="hebdomadaire">Hebdomadaire : lundi à lundi</option>
                   <option value="mensuel">Mensuel : 1er au 1er</option>
                   <option value="personnalise">Période personnalisée ci-dessous</option>
+                </select>
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor={`format-rapport-${zoneInitiale.routerConnectionId}`}>Fichier joint</Label>
+                <select id={`format-rapport-${zoneInitiale.routerConnectionId}`} className="h-9 rounded-lg border border-input bg-background px-2.5 text-sm outline-none focus-visible:border-ring" value={rapportFormat} onChange={(e) => setRapportFormat(e.target.value)}>
+                  <option value="xlsx">Excel mis en forme (.xlsx)</option>
+                  <option value="doc">Word mis en forme (.docx)</option>
+                  <option value="csv">CSV, données brutes (.csv)</option>
                 </select>
               </div>
               {rapportPlanification === "personnalise" && (

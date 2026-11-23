@@ -139,7 +139,7 @@ describe("Rapport des ventes (cycle 00h à 00h)", () => {
     assert.match(parNumero.get("+22670000002"), /Total vendu : 20 000 F/);
     assert.match(parNumero.get("+22670000002"), /01-JOUR : 2 vendus · 10 000 F · reste 1/);
     assert.match(parNumero.get("+22670000002"), /Par vendeur :/);
-    assert.match(parNumero.get("+22670000002"), /rapport mis en forme et fichier CSV joints/);
+    assert.match(parNumero.get("+22670000002"), /rapport mis en forme et fichier \(Excel, Word ou CSV\) joints/);
     assert.match(parNumero.get("+22670000003"), /Vos tickets vendus : 2/);
     assert.match(parNumero.get("+22670000003"), /Votre total : 10 000 F/);
     assert.match(parNumero.get("+22670000004"), /Vos tickets vendus : 1/);

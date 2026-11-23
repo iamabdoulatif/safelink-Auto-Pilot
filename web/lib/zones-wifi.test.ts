@@ -26,7 +26,7 @@ describe("validerZoneWifi", () => {
         numeroGerant: "+22670000002",
         numerosVendeurs: ["+22670000003"],
         rapportActif: false, rapportCanal: "telegram",
-        rapportPlanification: "decade", rapportDebut: "",
+        rapportPlanification: "decade", rapportFormat: "xlsx", rapportDebut: "",
         rapportFin: "", rapportDateEnvoi: "",
         latitude: null, longitude: null, wifiNom: "",
         prixProfils: [],

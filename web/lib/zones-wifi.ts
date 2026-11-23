@@ -38,6 +38,7 @@ type LigneZone = {
   rapport_actif: boolean | null;
   rapport_canal: string | null;
   rapport_planification: string | null;
+  rapport_format: string | null;
   rapport_debut: string | null;
   rapport_fin: string | null;
   rapport_date_envoi: string | null;
@@ -68,6 +69,7 @@ function versZone(l: LigneZone): ZoneWifi {
       || l.rapport_planification === "mensuel"
       || l.rapport_planification === "personnalise"
       ? l.rapport_planification : "decade",
+    rapportFormat: l.rapport_format === "csv" || l.rapport_format === "doc" ? l.rapport_format : "xlsx",
     rapportDebut: l.rapport_debut ?? "",
     rapportFin: l.rapport_fin ?? "",
     rapportDateEnvoi: l.rapport_date_envoi ?? "",
@@ -81,7 +83,7 @@ function versZone(l: LigneZone): ZoneWifi {
 const SELECT_ZONES = `SELECT r.id AS router_connection_id, r.nom AS routeur_nom,
     r.variante_mikhmon, z.localisation, z.commune, z.numero_admin,
     z.numero_gerant, z.numeros_vendeurs, z.rapport_actif, z.rapport_canal,
-    z.rapport_planification, z.rapport_debut::text AS rapport_debut,
+    z.rapport_planification, z.rapport_format, z.rapport_debut::text AS rapport_debut,
     z.rapport_fin::text AS rapport_fin,
     z.rapport_date_envoi::text AS rapport_date_envoi,
     z.latitude, z.longitude, z.wifi_nom, z.prix_profils
@@ -116,21 +118,21 @@ export async function enregistrerZoneWifi(
         numero_admin, numero_gerant, numeros_vendeurs, rapport_actif,
         rapport_canal, rapport_planification, rapport_debut, rapport_fin,
         rapport_date_envoi, latitude, longitude, wifi_nom, prix_profils,
-        updated_at)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,now())
+        rapport_format, updated_at)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,now())
      ON CONFLICT (tenant_id, router_connection_id) DO UPDATE
      SET localisation=$3, commune=$4, numero_admin=$5, numero_gerant=$6,
          numeros_vendeurs=$7, rapport_actif=$8, rapport_canal=$9,
          rapport_planification=$10, rapport_debut=$11, rapport_fin=$12,
          rapport_date_envoi=$13, latitude=$14, longitude=$15,
-         wifi_nom=$16, prix_profils=$17, updated_at=now()`,
+         wifi_nom=$16, prix_profils=$17, rapport_format=$18, updated_at=now()`,
     [ctx.tenantId, routerConnectionId, entree.localisation, entree.commune,
       entree.numeroAdmin, entree.numeroGerant,
       JSON.stringify(entree.numerosVendeurs), entree.rapportActif,
       entree.rapportCanal, entree.rapportPlanification,
       entree.rapportDebut || null, entree.rapportFin || null,
       entree.rapportDateEnvoi || null, entree.latitude, entree.longitude,
-      entree.wifiNom, JSON.stringify(entree.prixProfils)],
+      entree.wifiNom, JSON.stringify(entree.prixProfils), entree.rapportFormat],
   );
   const zones = await listerZonesWifi(ctx);
   const zone = zones.find((z) => z.routerConnectionId === routerConnectionId);

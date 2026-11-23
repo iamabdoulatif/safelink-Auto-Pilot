@@ -25,6 +25,7 @@ export type EntreeZoneWifi = {
   rapportActif: boolean;
   rapportCanal: "telegram" | "whatsapp" | "les_deux";
   rapportPlanification: "journalier" | "decade" | "hebdomadaire" | "mensuel" | "personnalise";
+  rapportFormat: "xlsx" | "csv" | "doc";
   rapportDebut: string;
   rapportFin: string;
   rapportDateEnvoi: string;
@@ -119,6 +120,7 @@ export function validerZoneWifi(
     : b["rapportCanal"] === "les_deux"
       ? "les_deux"
       : "telegram";
+  const rapportFormat = b["rapportFormat"] === "csv" ? "csv" : b["rapportFormat"] === "doc" ? "doc" : "xlsx";
   const planificationBrute = b["rapportPlanification"];
   const rapportPlanification = planificationBrute === "journalier"
     || planificationBrute === "decade"
@@ -176,7 +178,7 @@ export function validerZoneWifi(
     zone: {
       localisation, commune, numeroAdmin, numeroGerant, numerosVendeurs,
       latitude, longitude, wifiNom, prixProfils,
-      rapportActif, rapportCanal, rapportPlanification,
+      rapportActif, rapportCanal, rapportPlanification, rapportFormat,
       rapportDebut, rapportFin, rapportDateEnvoi,
     },
   };
