@@ -85,6 +85,26 @@ async function executer(nom, cfg, appels, routeur) {
   return sorties[0].json;
 }
 
+describe("Rapport des ventes : source MikHmon (/system/script)", () => {
+  it("compte exactement les ventes enregistrées par MikHmon, pas les tickets déjà utilisés", async () => {
+    const base = fauxRouteur();
+    const scripts = [
+      { name: `${"nov/03/2026"}-|-08:10:00-|-a1-|-5000-|-ip-|-mac-|-1d-|-01-JOUR-|-vc-101-11.03.26` },
+      { name: `2026-11-05-|-19:45:12-|-zz-|-10000-|-ip-|-mac-|-5d-|-05-JOURS-|-vc-102-11.05.26` },
+      { name: `oct/25/2026-|-10:00:00-|-d1-|-5000-|-ip-|-mac-|-1d-|-01-JOUR-|-vc-099-10.25.26` },
+    ];
+    const routeur = { async httpRequest(o) {
+      if (o.url.endsWith("/system/script")) { assert.equal(o.qs.comment, "mikhmon"); return scripts; }
+      return base.httpRequest(o);
+    } };
+    const j = await executer("Calculer le rapport des ventes", CONFIG, [], routeur);
+    assert.equal(j.sourceVentes, "mikhmon");
+    assert.equal(j.ticketsVendus, 2); // la vente du 25/10 est hors période ; a2 et b1 « utilisés » ne comptent pas
+    assert.equal(j.totalVendu, 15000);
+    assert.deepEqual(j.ventes.map((v) => [v.ticket, v.date, v.heure]), [["a1", "2026-11-03", "08:10"], ["zz", "2026-11-05", "19:45"]]);
+  });
+});
+
 describe("Rapport des ventes (cycle 00h à 00h)", () => {
   it("compte les tickets vendus du cycle et totalise par profil", async () => {
     const j = await executer("Calculer le rapport des ventes", CONFIG, [], fauxRouteur());
